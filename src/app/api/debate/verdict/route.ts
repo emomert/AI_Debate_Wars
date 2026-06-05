@@ -48,6 +48,8 @@ import { now } from "@/lib/utils/time";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// The judge can be a slow reasoning model; same Vercel duration note as /turn.
+export const maxDuration = 60;
 
 /** Resolve which provider+model acts as judge. */
 function resolveJudgeRef(session: DebateSession): { providerId: string; modelId: string } {

@@ -51,6 +51,9 @@ import { now } from "@/lib/utils/time";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Reasoning models (DeepSeek/OpenRouter) can take 20-40s. Vercel's default is
+// 10s; 60 is the Hobby cap (Pro/Enterprise can raise it up to 300+).
+export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
