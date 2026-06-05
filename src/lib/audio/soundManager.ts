@@ -1,0 +1,423 @@
+"use client";
+
+/**
+ * Sound manager (docs/12_SOUND_ANIMATION.md).
+ *
+ * Instead of shipping audio files, the SFX are SYNTHESIZED with the Web Audio
+ * API — short chiptune-style blips that fit the arcade feel and add no binary
+ * assets. Muted by default; the preference is persisted to localStorage. The
+ * AudioContext is created lazily on the first user gesture (enabling sound or
+ * any click) to satisfy browser autoplay policies.
+ */
+
+export type SoundKey =
+  | "buttonClick"
+  | "modeSelect"
+  | "modelSelected"
+  | "debateStart"
+  | "roundStart"
+  | "typingStart"
+  | "turnComplete"
+  | "costTick"
+  | "judgeEnter"
+  | "verdictReveal"
+  | "next"
+  | "error";
+
+const STORAGE_KEY = "ada:sound-enabled";
+const MUSIC_STORAGE_KEY = "ada:music-enabled";
+
+// If you drop a real track here it plays instead of the generative synth below.
+// (See public/music/README.md.)
+const MUSIC_ASSET = "/music/background.mp3";
+
+// Generative fallback — a chill lo-fi loop: Dm7 → G7 → Cmaj7 → Am7 (ii–V–I–vi in
+// C), with a soft pad, a walking bass, and a sparse pentatonic melody motif that
+// gives it a recognisable tune instead of a generic pad drone.
+const MUSIC_STEP_DUR = 0.5; // seconds per step
+const STEPS_PER_BAR = 8;
+const MUSIC_BARS = 4;
+const MUSIC_STEPS = MUSIC_BARS * STEPS_PER_BAR; // 32-step (~16s) loop
+
+const MUSIC_PADS: number[][] = [
+  [293.66, 349.23, 440.0], // Dm7  (D F A)
+  [246.94, 293.66, 392.0], // G7   (B D G)
+  [261.63, 329.63, 392.0], // Cmaj7 (C E G)
+  [220.0, 261.63, 329.63], // Am7  (A C E)
+];
+const MUSIC_BASS = [146.83, 196.0, 130.81, 110.0]; // D3 G3 C3 A2
+
+// Sparse C-major-pentatonic melody (0 = rest), one entry per absolute step.
+const MUSIC_MELODY = [
+  659.25, 0, 587.33, 0, 0, 0, 783.99, 0, // bar 1
+  587.33, 0, 0, 0, 659.25, 0, 0, 0, // bar 2
+  523.25, 0, 659.25, 0, 783.99, 0, 0, 0, // bar 3
+  880.0, 0, 783.99, 0, 659.25, 0, 0, 0, // bar 4
+];
+
+interface Note {
+  freq: number;
+  start: number; // seconds offset
+  dur: number;
+  type?: OscillatorType;
+  gain?: number;
+}
+
+/** Each key is a tiny sequence of notes. */
+const PATTERNS: Record<SoundKey, Note[]> = {
+  buttonClick: [{ freq: 420, start: 0, dur: 0.06, type: "square", gain: 0.12 }],
+  next: [
+    { freq: 520, start: 0, dur: 0.05, type: "square", gain: 0.12 },
+    { freq: 700, start: 0.05, dur: 0.06, type: "square", gain: 0.12 },
+  ],
+  modeSelect: [
+    { freq: 500, start: 0, dur: 0.06, type: "triangle", gain: 0.14 },
+    { freq: 660, start: 0.06, dur: 0.08, type: "triangle", gain: 0.14 },
+  ],
+  modelSelected: [
+    { freq: 600, start: 0, dur: 0.05, type: "square", gain: 0.12 },
+    { freq: 820, start: 0.06, dur: 0.07, type: "square", gain: 0.12 },
+  ],
+  debateStart: [
+    { freq: 392, start: 0, dur: 0.1, type: "square", gain: 0.16 },
+    { freq: 523, start: 0.1, dur: 0.1, type: "square", gain: 0.16 },
+    { freq: 784, start: 0.2, dur: 0.16, type: "square", gain: 0.16 },
+  ],
+  roundStart: [
+    { freq: 330, start: 0, dur: 0.08, type: "triangle", gain: 0.16 },
+    { freq: 494, start: 0.09, dur: 0.12, type: "triangle", gain: 0.16 },
+  ],
+  typingStart: [{ freq: 240, start: 0, dur: 0.05, type: "sine", gain: 0.07 }],
+  turnComplete: [
+    { freq: 660, start: 0, dur: 0.06, type: "triangle", gain: 0.13 },
+    { freq: 990, start: 0.07, dur: 0.1, type: "triangle", gain: 0.13 },
+  ],
+  costTick: [{ freq: 1200, start: 0, dur: 0.03, type: "square", gain: 0.05 }],
+  judgeEnter: [
+    { freq: 294, start: 0, dur: 0.12, type: "sawtooth", gain: 0.12 },
+    { freq: 440, start: 0.12, dur: 0.12, type: "sawtooth", gain: 0.12 },
+    { freq: 587, start: 0.24, dur: 0.18, type: "sawtooth", gain: 0.12 },
+  ],
+  verdictReveal: [
+    { freq: 523, start: 0, dur: 0.1, type: "square", gain: 0.16 },
+    { freq: 659, start: 0.1, dur: 0.1, type: "square", gain: 0.16 },
+    { freq: 784, start: 0.2, dur: 0.1, type: "square", gain: 0.16 },
+    { freq: 1047, start: 0.3, dur: 0.24, type: "square", gain: 0.16 },
+  ],
+  error: [
+    { freq: 200, start: 0, dur: 0.16, type: "sawtooth", gain: 0.16 },
+    { freq: 140, start: 0.16, dur: 0.22, type: "sawtooth", gain: 0.16 },
+  ],
+};
+
+class SoundManager {
+  private enabled = false;
+  private hydrated = false;
+  private ctx: AudioContext | null = null;
+  private master: GainNode | null = null;
+  private listeners = new Set<(enabled: boolean) => void>();
+
+  // Background music
+  private musicEnabled = false;
+  private musicHydrated = false;
+  private musicMaster: GainNode | null = null;
+  private musicTimer: ReturnType<typeof setInterval> | null = null;
+  private musicNextTime = 0;
+  private musicStep = 0;
+  private musicListeners = new Set<(enabled: boolean) => void>();
+  private musicAudio: HTMLAudioElement | null = null; // real-file track, if present
+
+  hydrate(): boolean {
+    if (this.hydrated) return this.enabled;
+    if (typeof window !== "undefined") {
+      try {
+        this.enabled = window.localStorage.getItem(STORAGE_KEY) === "true";
+      } catch {
+        this.enabled = false;
+      }
+    }
+    this.hydrated = true;
+    return this.enabled;
+  }
+
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  private ensureContext(): AudioContext | null {
+    if (typeof window === "undefined") return null;
+    if (!this.ctx) {
+      const Ctor =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (!Ctor) return null;
+      try {
+        this.ctx = new Ctor();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.5;
+        this.master.connect(this.ctx.destination);
+      } catch {
+        return null;
+      }
+    }
+    if (this.ctx.state === "suspended") void this.ctx.resume();
+    return this.ctx;
+  }
+
+  setEnabled(value: boolean): void {
+    this.enabled = value;
+    if (value) this.ensureContext(); // create on the enabling gesture
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, String(value));
+      } catch {
+        /* ignore */
+      }
+    }
+    this.listeners.forEach((fn) => fn(value));
+    if (value) this.play("buttonClick"); // little confirmation chirp
+  }
+
+  toggle(): boolean {
+    this.setEnabled(!this.enabled);
+    return this.enabled;
+  }
+
+  subscribe(fn: (enabled: boolean) => void): () => void {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  play(key: SoundKey): void {
+    if (!this.enabled) return;
+    const ctx = this.ensureContext();
+    if (!ctx || !this.master) return;
+    const pattern = PATTERNS[key];
+    if (!pattern) return;
+    const now = ctx.currentTime;
+    try {
+      for (const note of pattern) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = note.type ?? "square";
+        osc.frequency.value = note.freq;
+        const t0 = now + note.start;
+        const peak = note.gain ?? 0.12;
+        // Quick attack, smooth decay — avoids clicks.
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(peak, t0 + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + note.dur);
+        osc.connect(gain);
+        gain.connect(this.master);
+        osc.start(t0);
+        osc.stop(t0 + note.dur + 0.02);
+      }
+    } catch {
+      /* never let audio break the UI */
+    }
+  }
+
+  /**
+   * A short, soft, slightly-randomized keystroke tick for the typewriter — the
+   * pitch varies per key so a stream of them sounds like real typing rather than
+   * a metronome. Throttled by the caller (~15/sec).
+   */
+  keystroke(): void {
+    if (!this.enabled) return;
+    const ctx = this.ensureContext();
+    if (!ctx || !this.master) return;
+    try {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = 600 + Math.random() * 380; // ~600–980 Hz
+      const t0 = ctx.currentTime;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.045, t0 + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.03);
+      osc.connect(g);
+      g.connect(this.master);
+      osc.start(t0);
+      osc.stop(t0 + 0.045);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // ── Background music (generative, calm, looping) ─────────────────────────
+
+  hydrateMusic(): boolean {
+    if (this.musicHydrated) return this.musicEnabled;
+    if (typeof window !== "undefined") {
+      try {
+        this.musicEnabled =
+          window.localStorage.getItem(MUSIC_STORAGE_KEY) === "true";
+      } catch {
+        this.musicEnabled = false;
+      }
+    }
+    this.musicHydrated = true;
+    if (this.musicEnabled) this.startMusic(); // resume after reload if it was on
+    return this.musicEnabled;
+  }
+
+  isMusicEnabled(): boolean {
+    return this.musicEnabled;
+  }
+
+  setMusicEnabled(value: boolean): void {
+    this.musicEnabled = value;
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(MUSIC_STORAGE_KEY, String(value));
+      } catch {
+        /* ignore */
+      }
+    }
+    if (value) this.startMusic();
+    else this.stopMusic();
+    this.musicListeners.forEach((fn) => fn(value));
+  }
+
+  toggleMusic(): boolean {
+    this.setMusicEnabled(!this.musicEnabled);
+    return this.musicEnabled;
+  }
+
+  subscribeMusic(fn: (enabled: boolean) => void): () => void {
+    this.musicListeners.add(fn);
+    return () => this.musicListeners.delete(fn);
+  }
+
+  private startMusic(): void {
+    if (typeof window === "undefined") return;
+    // Prefer a real track if one was dropped in /public/music; otherwise fall
+    // back to the generative synth loop.
+    if (!this.musicAudio) {
+      const a = new Audio(MUSIC_ASSET);
+      a.loop = true;
+      a.preload = "auto";
+      a.volume = 0.4;
+      this.musicAudio = a;
+    }
+    this.musicAudio
+      .play()
+      .then(() => this.stopSynth()) // real file playing → don't also run synth
+      .catch(() => this.startSynth()); // no file (or it failed) → synth
+  }
+
+  private stopMusic(): void {
+    if (this.musicAudio) {
+      try {
+        this.musicAudio.pause();
+      } catch {
+        /* ignore */
+      }
+    }
+    this.stopSynth();
+  }
+
+  private startSynth(): void {
+    const ctx = this.ensureContext();
+    if (!ctx) return;
+    if (!this.musicMaster) {
+      this.musicMaster = ctx.createGain();
+      this.musicMaster.gain.value = 0;
+      this.musicMaster.connect(ctx.destination);
+    }
+    const now = ctx.currentTime;
+    this.musicMaster.gain.cancelScheduledValues(now);
+    this.musicMaster.gain.setValueAtTime(this.musicMaster.gain.value, now);
+    this.musicMaster.gain.linearRampToValueAtTime(0.5, now + 1.5); // gentle fade-in
+    if (this.musicTimer != null) return; // already running
+    this.musicNextTime = ctx.currentTime + 0.15;
+    this.musicStep = 0;
+    this.musicTimer = setInterval(() => this.musicTick(), 60);
+  }
+
+  private stopSynth(): void {
+    if (this.musicMaster && this.ctx) {
+      const now = this.ctx.currentTime;
+      this.musicMaster.gain.cancelScheduledValues(now);
+      this.musicMaster.gain.setValueAtTime(this.musicMaster.gain.value, now);
+      this.musicMaster.gain.linearRampToValueAtTime(0, now + 0.4); // fade-out
+    }
+    if (this.musicTimer != null) {
+      clearInterval(this.musicTimer);
+      this.musicTimer = null;
+    }
+  }
+
+  /** Lookahead scheduler: queue any notes due within the next ~120ms. */
+  private musicTick(): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.musicMaster) return;
+    const lookahead = 0.12;
+    while (this.musicNextTime < ctx.currentTime + lookahead) {
+      this.scheduleMusicStep(this.musicStep, this.musicNextTime);
+      this.musicNextTime += MUSIC_STEP_DUR;
+      this.musicStep = (this.musicStep + 1) % MUSIC_STEPS;
+    }
+  }
+
+  private scheduleMusicStep(step: number, time: number): void {
+    const bar = Math.floor(step / STEPS_PER_BAR) % MUSIC_BARS;
+    const inBar = step % STEPS_PER_BAR;
+    const barLen = MUSIC_STEP_DUR * STEPS_PER_BAR;
+
+    if (inBar === 0) {
+      // Walking bass + a soft sustained pad on each bar's downbeat.
+      this.musicNote(MUSIC_BASS[bar], time, barLen * 0.95, "triangle", 0.13);
+      for (const tone of MUSIC_PADS[bar]) {
+        this.musicNote(tone, time, barLen * 0.9, "sine", 0.045);
+      }
+    } else if (inBar === 4) {
+      // A gentle mid-bar shimmer for movement.
+      this.musicNote(MUSIC_PADS[bar][2], time, MUSIC_STEP_DUR * 1.5, "sine", 0.04);
+    }
+
+    // The melody motif is what gives the loop its identity (brighter triangle).
+    const mel = MUSIC_MELODY[step % MUSIC_STEPS];
+    if (mel > 0) {
+      this.musicNote(mel, time, MUSIC_STEP_DUR * 1.6, "triangle", 0.09);
+    }
+  }
+
+  private musicNote(
+    freq: number,
+    t0: number,
+    dur: number,
+    type: OscillatorType,
+    gain: number,
+  ): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.musicMaster) return;
+    try {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gain, t0 + 0.08);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g);
+      g.connect(this.musicMaster);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export const soundManager = new SoundManager();
+
+export function playSound(key: SoundKey): void {
+  soundManager.play(key);
+}
+
+/** Soft keystroke tick for the typewriter effect. */
+export function playKeystroke(): void {
+  soundManager.keystroke();
+}

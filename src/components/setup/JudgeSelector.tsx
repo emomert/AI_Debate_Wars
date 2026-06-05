@@ -1,0 +1,168 @@
+"use client";
+
+/**
+ * JudgeSelector — optional Judge Mode (docs/04, docs/01 Feature 6).
+ * Enable/disable, choose how the judge is picked, warn when a participant
+ * judges itself, and pick a neutral third model when relevant.
+ */
+
+import { JUDGE_MODE_OPTIONS } from "@/lib/constants";
+import type { ModelCatalogEntry } from "@/lib/models/modelRegistry";
+import type { JudgeConfig, JudgeMode, ModelRef } from "@/lib/debate/debateTypes";
+import { Badge } from "@/components/game/Badge";
+import { ModelSelector } from "@/components/setup/ModelSelector";
+import type { ProviderAvailability } from "@/lib/state/ArenaContext";
+import { cn } from "@/lib/utils/cn";
+import { playSound } from "@/lib/audio/soundManager";
+
+interface JudgeSelectorProps {
+  value: JudgeConfig;
+  onChange: (judge: JudgeConfig) => void;
+  /** Model ids currently fighting — used to warn if the judge isn't neutral. */
+  fighterModelIds?: string[];
+  availability?: ProviderAvailability | null;
+}
+
+export function JudgeSelector({
+  value,
+  onChange,
+  fighterModelIds = [],
+  availability,
+}: JudgeSelectorProps) {
+  const setEnabled = (enabled: boolean) => {
+    playSound("buttonClick");
+    onChange(
+      enabled
+        ? { enabled: true, mode: value.mode === "none" ? "auto" : value.mode, model: value.model }
+        : { enabled: false, mode: "none" },
+    );
+  };
+
+  const setMode = (mode: JudgeMode) => {
+    playSound("buttonClick");
+    onChange({ ...value, enabled: true, mode });
+  };
+
+  const setThirdModel = (entry: ModelCatalogEntry) => {
+    playSound("modelSelected");
+    const model: ModelRef = { providerId: entry.providerId, modelId: entry.id };
+    onChange({ ...value, enabled: true, mode: "thirdModel", model });
+  };
+
+  const warns =
+    value.enabled && (value.mode === "modelA" || value.mode === "modelB");
+
+  const thirdMatchesFighter =
+    value.enabled &&
+    value.mode === "thirdModel" &&
+    !!value.model &&
+    fighterModelIds.includes(value.model.modelId);
+
+  return (
+    <div>
+      {/* Enable / disable toggle */}
+      <div className="flex items-center justify-between gap-3 rounded-card border-4 border-ink bg-white p-3 shadow-hard-sm">
+        <div>
+          <p className="font-heading text-base font-extrabold">⚖️ Bring in a judge?</p>
+          <p className="text-sm text-ink/60">
+            A judge delivers a final verdict once all rounds finish.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={value.enabled}
+          aria-label="Enable judge mode"
+          onClick={() => setEnabled(!value.enabled)}
+          className={cn(
+            "relative h-9 w-16 shrink-0 rounded-full border-3 border-ink transition",
+            value.enabled ? "bg-arcade-green" : "bg-paper",
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 border-ink bg-white transition-all",
+              value.enabled ? "left-[34px]" : "left-1",
+            )}
+          />
+        </button>
+      </div>
+
+      {!value.enabled ? (
+        <p className="mt-3 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-sm text-ink/65">
+          No judge selected. The debate will end after the final round.
+        </p>
+      ) : (
+        <div className="mt-3 space-y-3">
+          <div
+            role="radiogroup"
+            aria-label="Judge type"
+            className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+          >
+            {JUDGE_MODE_OPTIONS.map((opt) => {
+              const selected = value.mode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setMode(opt.id)}
+                  className={cn(
+                    "rounded-card border-3 border-ink p-3 text-left transition",
+                    "focus-visible:outline-3 focus-visible:outline-offset-2",
+                    selected
+                      ? "bg-arcade-purple text-white shadow-hard-sm"
+                      : "bg-white hover:-translate-y-0.5 hover:shadow-hard-sm",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-heading text-sm font-extrabold">
+                      {opt.label}
+                    </span>
+                    {opt.warns ? (
+                      <Badge color="orange" size="sm">Less neutral</Badge>
+                    ) : null}
+                  </div>
+                  <p
+                    className={cn(
+                      "mt-0.5 text-xs",
+                      selected ? "text-white/80" : "text-ink/60",
+                    )}
+                  >
+                    {opt.blurb}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          {warns ? (
+            <p className="rounded-card border-3 border-arcade-orange bg-arcade-orange/15 p-3 text-sm font-semibold text-ink">
+              ⚠️ This judge participated in the debate, so the verdict may be
+              less neutral.
+            </p>
+          ) : null}
+
+          {value.mode === "thirdModel" ? (
+            <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-3">
+              <ModelSelector
+                label="Judge model"
+                accent="purple"
+                selectedId={value.model?.modelId ?? ""}
+                onSelect={setThirdModel}
+                availability={availability}
+              />
+              {thirdMatchesFighter ? (
+                <p className="mt-3 rounded-card border-3 border-arcade-orange bg-arcade-orange/15 p-3 text-sm font-semibold text-ink">
+                  ⚠️ This judge is also fighting in the match, so the verdict may
+                  be less neutral.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}

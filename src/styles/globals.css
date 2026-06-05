@@ -1,0 +1,92 @@
+/* Fonts (docs/02_DESIGN.md). Loaded at runtime so offline builds still pass;
+   robust system fallbacks are declared on every font variable below. */
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Lilita+One&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   AI Debate Arena — global styles
+   Arcade interface. Serious intelligence. (docs/02_DESIGN.md)
+   ========================================================================= */
+
+:root {
+  --paper: #f7f7f2;
+  --dot: #c9c9c9;
+  --ink: #050505;
+
+  /* Display / hero, chunky heading, readable body, monospace numbers. */
+  --font-display: "Lilita One", "Baloo 2", system-ui, sans-serif;
+  --font-heading: "Baloo 2", system-ui, sans-serif;
+  --font-body: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, "JetBrains Mono", monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--paper);
+    /* Dotted grid background — never a flat white page. */
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 16px 16px;
+    color: var(--ink);
+    font-family: var(--font-body), system-ui, sans-serif;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible, arcade-friendly focus ring for keyboard users (accessibility). */
+  :focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading), system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  /* Reusable dotted-surface utility for nested panels that want the texture. */
+  .bg-dotted {
+    background-color: var(--paper);
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  /* Chunky display title with a subtle ink stroke feel. */
+  .text-stroke-ink {
+    -webkit-text-stroke: 2px var(--ink);
+  }
+
+  /* Hide scrollbars on horizontal carousels (mobile model row) while keeping
+     them scrollable. */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Respect users who prefer reduced motion (docs/12_SOUND_ANIMATION.md). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
