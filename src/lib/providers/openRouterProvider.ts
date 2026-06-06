@@ -17,6 +17,10 @@ import { ProviderError } from "@/lib/utils/errors";
 const OPENROUTER_BASE_URL =
   process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
 
+// Per-process memo of models that rejected the `reasoning` param (warm-instance
+// only; resets on cold start). Lets later turns skip the doomed capped call.
+const reasoningUnsupported = new Set<string>();
+
 export const openRouterProvider: Provider = {
   id: "openrouter",
   async generate(input: GenerateInput): Promise<GenerateResult> {
@@ -45,18 +49,21 @@ export const openRouterProvider: Provider = {
       signal: input.signal,
     };
 
+    const useCap = effort && !reasoningUnsupported.has(input.model.modelId);
     let response;
-    if (effort) {
+    if (useCap) {
       try {
         response = await callChatCompletions({
           ...baseCall,
           extraBody: { reasoning: { effort } },
         });
       } catch (err) {
-        // Safety net: should a provider ever reject the reasoning param (4xx
-        // maps to PROVIDER_ERROR), retry once WITHOUT the cap rather than
-        // failing the turn. Timeouts/rate limits/key errors are rethrown.
-        if (err instanceof ProviderError && err.code === "PROVIDER_ERROR") {
+        // Narrow safety net: only a deterministic bad-request (INVALID_REQUEST,
+        // i.e. an HTTP 400 — the model rejecting the `reasoning` param) triggers
+        // the uncapped retry. 5xx / empty-content / timeouts are rethrown so we
+        // don't silently double every call and strip the speed cap on a fluke.
+        if (err instanceof ProviderError && err.code === "INVALID_REQUEST") {
+          reasoningUnsupported.add(input.model.modelId); // skip the cap next time
           response = await callChatCompletions(baseCall);
         } else {
           throw err;
@@ -72,7 +79,6 @@ export const openRouterProvider: Provider = {
       usage,
       finishReason,
       latencyMs: Date.now() - start,
-      usageEstimated: !usage,
     };
   },
 };

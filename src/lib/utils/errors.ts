@@ -14,6 +14,7 @@ export type AppErrorCode =
   | "INVALID_SESSION"
   | "INVALID_REQUEST"
   | "RATE_LIMITED"
+  | "INSUFFICIENT_CREDITS"
   | "TOKEN_LIMIT_EXCEEDED"
   | "UNKNOWN_ERROR";
 
@@ -42,6 +43,8 @@ export function httpStatusForCode(code: AppErrorCode): number {
       return 401;
     case "RATE_LIMITED":
       return 429;
+    case "INSUFFICIENT_CREDITS":
+      return 402;
     case "PROVIDER_TIMEOUT":
       return 504;
     case "TOKEN_LIMIT_EXCEEDED":
@@ -71,6 +74,11 @@ export function friendlyMessage(code: AppErrorCode): { title: string; body: stri
       return {
         title: "The arena is cooling down",
         body: "The provider is rate-limiting requests. Wait a moment and try again.",
+      };
+    case "INSUFFICIENT_CREDITS":
+      return {
+        title: "This fighter is out of coins",
+        body: "The provider account is out of credits for this model. Add credits, or pick a free model in setup.",
       };
     case "INVALID_MODEL":
       return {

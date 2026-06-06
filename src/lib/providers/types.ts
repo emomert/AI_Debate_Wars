@@ -48,8 +48,6 @@ export interface GenerateResult {
   usage?: TokenUsage;
   latencyMs: number;
   finishReason?: string;
-  /** True when usage was estimated from text rather than reported by the API. */
-  usageEstimated?: boolean;
 }
 
 export interface Provider {

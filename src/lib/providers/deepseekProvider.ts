@@ -40,7 +40,6 @@ export const deepseekProvider: Provider = {
       usage,
       finishReason,
       latencyMs: Date.now() - start,
-      usageEstimated: !usage,
     };
   },
 };

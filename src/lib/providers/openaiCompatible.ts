@@ -38,9 +38,14 @@ interface ChatCallResult {
 
 function mapHttpStatus(status: number): AppErrorCode {
   if (status === 401 || status === 403) return "MISSING_API_KEY";
+  if (status === 402) return "INSUFFICIENT_CREDITS"; // out of provider credits
   if (status === 404) return "INVALID_MODEL";
   if (status === 429) return "RATE_LIMITED";
   if (status === 408 || status === 504) return "PROVIDER_TIMEOUT";
+  // A 400 is a deterministic bad request (e.g. an unsupported param like
+  // `reasoning`); map it to a NON-transient code so it fails fast instead of
+  // being retried, and so callers can detect param rejection specifically.
+  if (status === 400 || status === 422) return "INVALID_REQUEST";
   return "PROVIDER_ERROR";
 }
 
@@ -107,8 +112,17 @@ export async function callChatCompletions(
       };
     };
 
-    const content = data.choices?.[0]?.message?.content?.trim() ?? "";
-    if (!content) throw new ProviderError("PROVIDER_ERROR");
+    const choice = data.choices?.[0];
+    const finishReason = choice?.finish_reason;
+    const content = choice?.message?.content?.trim() ?? "";
+    if (!content) {
+      // Empty content with finish_reason "length" means the model spent its
+      // entire token budget on hidden reasoning and never emitted an answer.
+      // That's deterministic (not a transient hiccup), so surface the
+      // token-ceiling error and let it fail fast instead of retrying blindly.
+      if (finishReason === "length") throw new ProviderError("TOKEN_LIMIT_EXCEEDED");
+      throw new ProviderError("PROVIDER_ERROR");
+    }
 
     const usage: TokenUsage | undefined = data.usage
       ? {
@@ -120,7 +134,7 @@ export async function callChatCompletions(
         }
       : undefined;
 
-    return { content, usage, finishReason: data.choices?.[0]?.finish_reason };
+    return { content, usage, finishReason };
   } catch (err) {
     if (err instanceof ProviderError) throw err;
     if (err instanceof DOMException && err.name === "AbortError") {
