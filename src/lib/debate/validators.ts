@@ -1,7 +1,13 @@
 /**
- * Lightweight client-side validation for the Setup screen (docs/14_TEST_PLAN.md
- * "start button disabled until valid"). The authoritative server-side
- * validation arrives with the API routes in Phase 3.
+ * Validation lives here in two flavors:
+ *  - `assertValidSession` / `assertConsistentTranscript` — the AUTHORITATIVE
+ *    server-side validators, called by the API routes before any model is hit.
+ *  - `validateSetup` — the lightweight client-side check that gates the Setup
+ *    screen's start button (docs/14 "start button disabled until valid").
+ *
+ * The server validators also enforce upper bounds on every client-supplied
+ * string (topic, transcript content), so a crafted session can't make the
+ * server build an enormous prompt and burn the deployer's API key.
  */
 
 import type { DebateConfig, DebateSession } from "@/lib/debate/debateTypes";
@@ -11,6 +17,13 @@ import { ProviderError } from "@/lib/utils/errors";
 
 const VALID_MODES = ["debate", "discussion"];
 const VALID_ROUNDS = [3, 5, 7];
+const VALID_LENGTHS = ["short", "medium", "long"];
+const VALID_TONES = ["serious", "academic", "aggressive", "casual"];
+
+// Generous per-message ceiling: the "long" preset allows ~1200 output tokens
+// (~5-6k chars with markdown), so 16k never clips a legitimate turn but stops a
+// forged transcript from amplifying the prompt the server pays for.
+const MAX_MESSAGE_CONTENT = 16_000;
 
 /**
  * Authoritative server-side validation for the API routes. Throws a normalized
@@ -21,14 +34,28 @@ export function assertValidSession(session: DebateSession): void {
   if (!session || typeof session !== "object") {
     throw new ProviderError("INVALID_SESSION", "Missing session");
   }
-  if (!session.topic || session.topic.trim().length < TOPIC_MIN_LENGTH) {
+  if (typeof session.topic !== "string" || session.topic.trim().length < TOPIC_MIN_LENGTH) {
     throw new ProviderError("INVALID_REQUEST", "Topic too short");
+  }
+  // Enforce the same cap as the client so a forged session can't smuggle a huge
+  // topic into the prompt the server pays for.
+  if (session.topic.trim().length > TOPIC_MAX_LENGTH) {
+    throw new ProviderError("INVALID_REQUEST", "Topic too long");
   }
   if (!VALID_MODES.includes(session.mode)) {
     throw new ProviderError("INVALID_REQUEST", "Invalid mode");
   }
   if (!VALID_ROUNDS.includes(session.roundCount)) {
     throw new ProviderError("INVALID_REQUEST", "Invalid round count");
+  }
+  if (!VALID_LENGTHS.includes(session.responseLength)) {
+    throw new ProviderError("INVALID_REQUEST", "Invalid response length");
+  }
+  if (!VALID_TONES.includes(session.tone)) {
+    throw new ProviderError("INVALID_REQUEST", "Invalid tone");
+  }
+  if (!session.judge || typeof session.judge.enabled !== "boolean") {
+    throw new ProviderError("INVALID_REQUEST", "Invalid judge config");
   }
   if (!session.modelA?.modelId || !session.modelB?.modelId) {
     throw new ProviderError("INVALID_REQUEST", "Both fighters are required");
@@ -46,20 +73,31 @@ export function assertValidSession(session: DebateSession): void {
 }
 
 /**
- * Cross-check the transcript against turn state: the number of completed turns
- * must equal the number of messages. This stops a client from claiming turns are
- * "complete" while sending an empty/partial transcript (which would otherwise let
- * the judge run on a debate that never happened, or generate a turn with missing
- * context). Server-derived consistency, not trust in client `status` flags.
+ * Best-effort transcript sanity check (NOT an anti-forgery boundary — the server
+ * is stateless and holds no record of what it actually generated, so a
+ * determined client can still fabricate consistent-looking content; true
+ * anti-forgery needs server-side persistence or signed messages, see docs/11).
+ *
+ * It (a) requires the number of completed turns to equal the number of messages
+ * — so the judge can't run on an empty/partial transcript — and (b) bounds each
+ * message's content so a giant fake transcript can't amplify the prompt cost.
  */
 export function assertConsistentTranscript(session: DebateSession): void {
   const completed = session.turns.filter((t) => t.status === "complete").length;
-  const messageCount = Array.isArray(session.messages) ? session.messages.length : -1;
-  if (messageCount !== completed) {
+  const messages = Array.isArray(session.messages) ? session.messages : null;
+  if (!messages || messages.length !== completed) {
     throw new ProviderError(
       "INVALID_REQUEST",
       "Transcript does not match turn state",
     );
+  }
+  for (const m of messages) {
+    if (typeof m?.content !== "string") {
+      throw new ProviderError("INVALID_REQUEST", "Malformed transcript message");
+    }
+    if (m.content.length > MAX_MESSAGE_CONTENT) {
+      throw new ProviderError("INVALID_REQUEST", "Transcript message too long");
+    }
   }
 }
 
