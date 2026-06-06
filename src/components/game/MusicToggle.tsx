@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * MusicToggle — turns the calm generative background music on/off. Off by
- * default (no autoplay); preference persisted via the sound manager.
+ * MusicToggle — turns the background music on/off. ON by default (it actually
+ * starts on the first user interaction, per browser autoplay policy) and only
+ * stops when the user presses this button; preference persisted via the sound
+ * manager.
  */
 
 import { IconButton } from "@/components/game/IconButton";

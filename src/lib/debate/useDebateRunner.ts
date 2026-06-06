@@ -31,7 +31,12 @@ import {
 } from "@/lib/cost/calculateCost";
 import { generateTurn, generateVerdict } from "@/lib/api/debateClient";
 import { type AppErrorShape, toAppError } from "@/lib/utils/errors";
-import { playKeystroke, playSound } from "@/lib/audio/soundManager";
+import {
+  playKeystroke,
+  playSound,
+  startDrumRoll,
+  stopDrumRoll,
+} from "@/lib/audio/soundManager";
 
 export type RunnerPhase =
   | "thinking"
@@ -152,6 +157,7 @@ export function useDebateRunner(
 
   const stop = useCallback(() => {
     controllerRef.current?.abort();
+    stopDrumRoll(); // don't leave the suspense loop playing after a stop
     const w = workingRef.current;
     if (w) {
       onPersistRef.current?.(snapshot(w, "stopped"));
@@ -403,7 +409,9 @@ export function useDebateRunner(
             if (signal.aborted) return;
           }
           setState((p) => ({ ...p, phase: "judging", activeTurn: null, awaitingKind: null }));
-          playSound("judgeEnter");
+          // Suspense drum roll while the judge deliberates — stopped the moment
+          // the verdict is disclosed (falls back to the judgeEnter synth blip).
+          startDrumRoll();
 
           // Same silent-retry resilience for the verdict.
           let verdict: DebateVerdict | undefined;
@@ -434,6 +442,7 @@ export function useDebateRunner(
           }
           if (!verdict || signal.aborted) return;
           working.verdict = verdict;
+          stopDrumRoll(); // the verdict is disclosed — cut the suspense loop
           playSound("verdictReveal");
           setState((p) => ({ ...p, verdict }));
         }
@@ -450,6 +459,7 @@ export function useDebateRunner(
           verdict: working.verdict ?? null,
         }));
       } catch (err) {
+        stopDrumRoll(); // a verdict failure must not leave the loop running
         if (isAbort(err)) return;
         playSound("error");
         setState((p) => ({
@@ -463,7 +473,10 @@ export function useDebateRunner(
     }
 
     void run();
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      stopDrumRoll(); // navigating away mid-judging must silence the loop
+    };
     // Re-runs on retry (runToken) and once per session (keyed remount).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSession.id, runToken]);

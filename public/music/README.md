@@ -26,6 +26,9 @@ plays the file instead of the synthesized blip and falls back to the synth when
 the file is missing. Currently registered:
 
 - `round_start.mp3` → the `roundStart` effect (new round begins)
+- `drum_roll.mp3` → verdict suspense loop (`startDrumRoll`/`stopDrumRoll`,
+  volume: `DRUM_ROLL_VOLUME`); plays while the judge deliberates and stops the
+  moment the verdict is disclosed
 
 Tips for a good loop:
 - Keep it **calm and low-key** so it doesn't fight the debate text.

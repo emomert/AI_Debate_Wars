@@ -32,9 +32,15 @@ const MUSIC_STORAGE_KEY = "ada:music-enabled";
 // If you drop a real track here it plays instead of the generative synth below.
 // (See public/music/README.md.)
 const MUSIC_ASSET = "/music/background.mp3";
-// The raw track is mastered loud — keep it well under the SFX so it stays
-// background (user feedback: default volume was too high).
-const MUSIC_FILE_VOLUME = 0.18;
+// The raw track is mastered loud — keep it WAY under the SFX so it reads as a
+// faint ambience (user feedback: "only a slight sound" is ideal).
+const MUSIC_FILE_VOLUME = 0.06;
+
+// Dedicated verdict suspense cue: loops while the judge deliberates and is
+// stopped the moment the verdict is disclosed (falls back to the judgeEnter
+// synth blip when the file is missing/blocked).
+const DRUM_ROLL_ASSET = "/music/drum_roll.mp3";
+const DRUM_ROLL_VOLUME = 0.5;
 
 // Real-file SFX overrides — same pattern as the music track: when the file
 // exists it plays instead of the synthesized pattern for that key.
@@ -143,6 +149,12 @@ class SoundManager {
   // its file is missing or fails to play).
   private sfxAudio = new Map<SoundKey, HTMLAudioElement>();
   private sfxFileBroken = new Set<SoundKey>();
+
+  // Verdict drum roll (looping suspense cue, start/stop controlled).
+  private drumRollAudio: HTMLAudioElement | null = null;
+
+  // One-shot retry armed when autoplay policy blocks the default-on music.
+  private musicGestureArmed = false;
 
   hydrate(): boolean {
     if (this.hydrated) return this.enabled;
@@ -303,16 +315,53 @@ class SoundManager {
     }
   }
 
+  // ── Verdict drum roll ─────────────────────────────────────────────────────
+
+  /**
+   * Looping suspense cue for the judging phase. Stopped explicitly by
+   * stopDrumRoll() the moment the verdict is disclosed (or the match is
+   * stopped/errors/unmounts). Falls back to the judgeEnter synth blip when the
+   * file can't play.
+   */
+  startDrumRoll(): void {
+    if (!this.enabled || typeof window === "undefined") return;
+    try {
+      if (!this.drumRollAudio) {
+        const a = new Audio(DRUM_ROLL_ASSET);
+        a.loop = true; // judging can outlast the clip
+        a.preload = "auto";
+        a.volume = DRUM_ROLL_VOLUME;
+        this.drumRollAudio = a;
+      }
+      this.drumRollAudio.currentTime = 0;
+      void this.drumRollAudio.play().catch(() => this.play("judgeEnter"));
+    } catch {
+      /* never let audio break the UI */
+    }
+  }
+
+  stopDrumRoll(): void {
+    if (!this.drumRollAudio) return;
+    try {
+      this.drumRollAudio.pause();
+      this.drumRollAudio.currentTime = 0;
+    } catch {
+      /* ignore */
+    }
+  }
+
   // ── Background music (generative, calm, looping) ─────────────────────────
 
   hydrateMusic(): boolean {
     if (this.musicHydrated) return this.musicEnabled;
     if (typeof window !== "undefined") {
       try {
+        // ON by default ("positive") — it only turns off when the user presses
+        // the music button, which persists an explicit "false".
         this.musicEnabled =
-          window.localStorage.getItem(MUSIC_STORAGE_KEY) === "true";
+          window.localStorage.getItem(MUSIC_STORAGE_KEY) !== "false";
       } catch {
-        this.musicEnabled = false;
+        this.musicEnabled = true;
       }
     }
     this.musicHydrated = true;
@@ -362,7 +411,30 @@ class SoundManager {
     this.musicAudio
       .play()
       .then(() => this.stopSynth()) // real file playing → don't also run synth
-      .catch(() => this.startSynth()); // no file (or it failed) → synth
+      .catch((err: unknown) => {
+        // Autoplay policy (no user gesture yet — music is on by default): retry
+        // on the first interaction instead of falling back to the synth, which
+        // would be equally blocked.
+        if (err instanceof DOMException && err.name === "NotAllowedError") {
+          this.armMusicGestureRetry();
+        } else {
+          this.startSynth(); // no file (or it failed) → synth
+        }
+      });
+  }
+
+  /** Retry the (default-on) music on the user's first interaction. */
+  private armMusicGestureRetry(): void {
+    if (this.musicGestureArmed || typeof window === "undefined") return;
+    this.musicGestureArmed = true;
+    const retry = () => {
+      window.removeEventListener("pointerdown", retry);
+      window.removeEventListener("keydown", retry);
+      this.musicGestureArmed = false;
+      if (this.musicEnabled) this.startMusic();
+    };
+    window.addEventListener("pointerdown", retry);
+    window.addEventListener("keydown", retry);
   }
 
   private stopMusic(): void {
@@ -478,4 +550,13 @@ export function playSound(key: SoundKey): void {
 /** Soft keystroke tick for the typewriter effect. */
 export function playKeystroke(): void {
   soundManager.keystroke();
+}
+
+/** Looping verdict-suspense drum roll (stops via stopDrumRoll). */
+export function startDrumRoll(): void {
+  soundManager.startDrumRoll();
+}
+
+export function stopDrumRoll(): void {
+  soundManager.stopDrumRoll();
 }
