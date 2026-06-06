@@ -60,10 +60,12 @@ function DebateHUDComponent({
   const status = PHASE_LABEL[phase];
   const showActive = activeModelName && (phase === "thinking" || phase === "streaming");
   const live = phase !== "done" && phase !== "stopped" && phase !== "error";
+  // top offset = compact header height (52px). Kept tight: this bar plus the
+  // header are sticky and were eating too much reading space.
   return (
-    <div className="sticky top-[68px] z-20 -mx-4 border-b-4 border-ink bg-paper/90 px-4 py-2.5 backdrop-blur sm:top-[76px]">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="sticky top-[52px] z-20 -mx-4 border-b-4 border-ink bg-paper/90 px-4 py-1.5 backdrop-blur">
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <RoundCounter
             mode={mode}
             roundNumber={currentRound}
@@ -83,7 +85,7 @@ function DebateHUDComponent({
               type="button"
               onClick={onTogglePace}
               aria-label={`Pacing: ${pace === "auto" ? "Fast" : "Normal"}. Click to switch.`}
-              className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-white px-2 py-1 text-[11px] font-extrabold uppercase transition hover:bg-arcade-yellow focus-visible:outline-3 focus-visible:outline-offset-2"
+              className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
             >
               {pace === "auto" ? "⚡ Fast" : "🚶 Normal"}
             </button>
@@ -95,7 +97,7 @@ function DebateHUDComponent({
           initial={{ scale: 1.08 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.2 }}
-          className="inline-flex items-center gap-2 rounded-btn border-3 border-ink bg-ink px-2.5 py-1 font-mono text-xs font-bold text-arcade-green"
+          className="inline-flex items-center gap-1.5 rounded-btn border-3 border-ink bg-night px-2 py-0.5 font-mono text-[11px] font-bold text-arcade-green"
           aria-label="Total cost so far"
         >
           <span aria-hidden>💰</span>

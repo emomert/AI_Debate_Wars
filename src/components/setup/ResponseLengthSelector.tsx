@@ -38,15 +38,26 @@ export function ResponseLengthSelector({
               onChange(opt.id);
             }}
             className={cn(
-              "rounded-btn border-3 border-ink px-2 py-2 text-center transition",
+              "group rounded-btn border-3 border-ink px-2 py-2 text-center transition",
               "focus-visible:outline-3 focus-visible:outline-offset-2",
-              selected ? "bg-arcade-orange shadow-hard-sm" : "bg-white hover:bg-arcade-yellow",
+              selected
+                ? "bg-arcade-orange text-night shadow-hard-sm"
+                : "bg-surface hover:bg-arcade-yellow hover:text-night",
             )}
           >
             <div className="font-heading text-sm font-extrabold uppercase">
               {opt.label}
             </div>
-            <div className="text-[10px] text-ink/55">{opt.blurb}</div>
+            {/* group-hover: the blurb must flip with the yellow hover fill too —
+                its own text-ink class would otherwise stay light in dark mode. */}
+            <div
+              className={cn(
+                "text-[10px]",
+                selected ? "text-night/60" : "text-ink/55 group-hover:text-night/60",
+              )}
+            >
+              {opt.blurb}
+            </div>
           </button>
         );
       })}

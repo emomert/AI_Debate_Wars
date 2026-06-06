@@ -9,8 +9,9 @@ import { GameShell } from "@/components/game/GameShell";
 import { DebateArena } from "@/components/debate/DebateArena";
 
 export default function DebatePage() {
+  // hideFooter: the sticky bottom controls own the page end here.
   return (
-    <GameShell wide>
+    <GameShell wide hideFooter>
       <DebateArena />
     </GameShell>
   );

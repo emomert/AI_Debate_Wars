@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * Home — the game start screen (docs/02, docs/09). Hero, topic input, sample
- * topics and the two primary CTAs: start a match (→ setup) or try a ready-made
- * sample debate (→ straight into the arena).
+ * Home — the game start screen (docs/02, docs/09). Focused pitch: what Debator
+ * is, how a match works, example topics (display only — the actual topic is
+ * written on the Setup screen) and two CTAs: "Use Debator" (→ setup) or
+ * "Try a Sample" (→ straight into a ready-made arena match).
  */
 
 import { useRouter } from "next/navigation";
@@ -14,8 +15,7 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
-import { TopicInput } from "@/components/setup/TopicInput";
-import { MODE_OPTIONS } from "@/lib/constants";
+import { MODE_OPTIONS, SAMPLE_TOPICS } from "@/lib/constants";
 import { useArena, toSelectedModel } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { createDebateSession } from "@/lib/debate/orchestrator";
@@ -39,11 +39,29 @@ function sampleConfig(): DebateConfig {
   };
 }
 
+const HOW_IT_WORKS: { emoji: string; title: string; body: string }[] = [
+  {
+    emoji: "📝",
+    title: "Pick a topic & two fighters",
+    body: "Any question, claim or idea — then choose two AI models like arcade characters.",
+  },
+  {
+    emoji: "🎚️",
+    title: "Set the rules",
+    body: "Debate or Discussion, 3 / 5 / 7 rounds, a tone, and an optional AI judge.",
+  },
+  {
+    emoji: "🍿",
+    title: "Watch the match",
+    body: "The arena runs every round live — costs on screen, verdict at the end.",
+  },
+];
+
 export default function HomePage() {
   const router = useRouter();
-  const { config, setConfig, setSession } = useArena();
+  const { setConfig, setSession } = useArena();
 
-  const startMatch = () => router.push("/setup");
+  const useDebator = () => router.push("/setup");
 
   const trySample = () => {
     const sample = sampleConfig();
@@ -74,9 +92,11 @@ export default function HomePage() {
           <span className="text-arcade-purple">Your Ideas</span>
         </motion.h1>
 
-        <p className="mx-auto mt-4 max-w-xl text-base text-ink/70 sm:text-lg">
-          Pick a topic, choose two models, set the rules, and watch the debate
-          unfold in a browser-game arena.
+        <p className="mx-auto mt-4 max-w-2xl text-base text-ink/70 sm:text-lg">
+          Debator is a browser arcade where <strong>two AI models argue your
+          topic</strong> in structured rounds — debate with opposing sides, or a
+          discussion that stress-tests an idea. An optional AI judge scores the
+          match, and every token spent is counted live.
         </p>
 
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">
@@ -87,7 +107,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Topic + CTAs */}
+      {/* Primary CTAs */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
@@ -95,19 +115,15 @@ export default function HomePage() {
         className="mx-auto mt-8 max-w-2xl"
       >
         <GamePanel padding="lg">
-          <TopicInput
-            value={config.topic}
-            onChange={(topic) => setConfig({ topic })}
-          />
-          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <ArcadeButton
               variant="primary-green"
               size="lg"
               fullWidth
-              onClick={startMatch}
+              onClick={useDebator}
               rightIcon={<span aria-hidden>▶</span>}
             >
-              Start Match
+              🎮 Use Debator
             </ArcadeButton>
             <ArcadeButton
               variant="primary-yellow"
@@ -118,17 +134,64 @@ export default function HomePage() {
               🎲 Try a Sample
             </ArcadeButton>
           </div>
+          <p className="mt-3 text-center text-xs text-ink/55">
+            <strong>Use Debator</strong> sets up your own match · <strong>Try a
+            Sample</strong> jumps straight into a ready-made demo debate.
+          </p>
         </GamePanel>
       </motion.div>
 
+      {/* How it works */}
+      <section className="mx-auto mt-10 max-w-4xl">
+        <h2 className="mb-3 text-center font-heading text-xl font-extrabold">
+          How it works
+        </h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {HOW_IT_WORKS.map((step, i) => (
+            <GamePanel key={step.title} padding="md">
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow font-mono text-sm font-bold text-night">
+                  {i + 1}
+                </span>
+                <span aria-hidden className="text-2xl">{step.emoji}</span>
+              </div>
+              <p className="mt-2 font-heading text-base font-extrabold">
+                {step.title}
+              </p>
+              <p className="mt-1 text-sm text-ink/65">{step.body}</p>
+            </GamePanel>
+          ))}
+        </div>
+      </section>
+
+      {/* Example topics — display only; the topic is written on the Setup screen */}
+      <section className="mx-auto mt-10 max-w-3xl text-center">
+        <h2 className="mb-1 font-heading text-xl font-extrabold">
+          What can you throw in the arena?
+        </h2>
+        <p className="mb-3 text-sm text-ink/60">
+          Anything debatable — questions, hot takes, even your own plans:
+        </p>
+        <div className="flex flex-wrap justify-center gap-2">
+          {SAMPLE_TOPICS.map((topic) => (
+            <span
+              key={topic}
+              className="rounded-badge border-3 border-ink bg-surface px-2.5 py-1 text-xs font-semibold"
+            >
+              {topic}
+            </span>
+          ))}
+        </div>
+      </section>
+
       {/* Mode preview */}
-      <section className="mx-auto mt-8 max-w-3xl">
+      <section className="mx-auto mt-10 max-w-3xl">
         <h2 className="mb-3 text-center font-heading text-xl font-extrabold">
           Two ways to play
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {MODE_OPTIONS.map((opt) => (
-            <GamePanel key={opt.id} padding="md" className="bg-white">
+            <GamePanel key={opt.id} padding="md">
               <p className="font-heading text-lg font-extrabold">
                 <span aria-hidden className="mr-1.5 text-2xl">{opt.emoji}</span>
                 {opt.title}

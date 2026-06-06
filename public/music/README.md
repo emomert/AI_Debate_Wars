@@ -14,8 +14,18 @@ synth loop** (no file needed). To use your own track instead:
    it on loop; if the file is missing it automatically falls back to the synth.
 
 That's it — no code changes. (Want a different filename/format like `.ogg`, or a
-volume tweak? It's one line: `MUSIC_ASSET` / `a.volume` in
+volume tweak? Adjust `MUSIC_ASSET` / `MUSIC_FILE_VOLUME` in
 `src/lib/audio/soundManager.ts`.)
+
+## SFX overrides
+
+This folder can also hold real-file replacements for individual sound effects.
+Each override is registered in the `SFX_ASSETS` map in
+`src/lib/audio/soundManager.ts` (volume: `SFX_FILE_VOLUME`); a registered key
+plays the file instead of the synthesized blip and falls back to the synth when
+the file is missing. Currently registered:
+
+- `round_start.mp3` → the `roundStart` effect (new round begins)
 
 Tips for a good loop:
 - Keep it **calm and low-key** so it doesn't fight the debate text.

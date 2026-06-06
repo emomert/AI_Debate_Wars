@@ -39,8 +39,12 @@ export function HelpButton() {
 
   return (
     <>
+      {/* A real text glyph (not the ❔ emoji) so it renders in solid ink —
+          emoji ignore CSS color and looked washed-out. */}
       <IconButton label="How to play" onClick={() => setOpen(true)} color="white">
-        <span aria-hidden>❔</span>
+        <span aria-hidden className="font-display text-[1.2em] leading-none">
+          ?
+        </span>
       </IconButton>
 
       {mounted
@@ -48,7 +52,7 @@ export function HelpButton() {
             <AnimatePresence>
         {open ? (
           <motion.div
-            className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
+            className="fixed inset-0 z-50 grid place-items-center bg-night/50 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -75,7 +79,7 @@ export function HelpButton() {
               <ol className="space-y-3">
                 {STEPS.map((s, i) => (
                   <li key={s.title} className="flex items-start gap-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow font-mono text-sm font-bold">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow font-mono text-sm font-bold text-night">
                       {i + 1}
                     </span>
                     <div>

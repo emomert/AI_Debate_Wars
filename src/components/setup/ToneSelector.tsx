@@ -37,8 +37,8 @@ export function ToneSelector({ value, onChange }: ToneSelectorProps) {
               "flex items-center gap-1.5 rounded-btn border-3 border-ink px-2.5 py-2 text-sm font-bold transition",
               "focus-visible:outline-3 focus-visible:outline-offset-2",
               selected
-                ? "bg-arcade-pink shadow-hard-sm"
-                : "bg-white hover:bg-arcade-yellow",
+                ? "bg-arcade-pink text-night shadow-hard-sm"
+                : "bg-surface hover:bg-arcade-yellow hover:text-night",
             )}
           >
             <span aria-hidden>{opt.emoji}</span>

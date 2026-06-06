@@ -61,7 +61,7 @@ export function JudgeSelector({
   return (
     <div>
       {/* Enable / disable toggle */}
-      <div className="flex items-center justify-between gap-3 rounded-card border-4 border-ink bg-white p-3 shadow-hard-sm">
+      <div className="flex items-center justify-between gap-3 rounded-card border-4 border-ink bg-surface p-3 shadow-hard-sm">
         <div>
           <p className="font-heading text-base font-extrabold">⚖️ Bring in a judge?</p>
           <p className="text-sm text-ink/60">
@@ -81,7 +81,7 @@ export function JudgeSelector({
         >
           <span
             className={cn(
-              "absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 border-ink bg-white transition-all",
+              "absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 border-night bg-white transition-all",
               value.enabled ? "left-[34px]" : "left-1",
             )}
           />
@@ -113,7 +113,7 @@ export function JudgeSelector({
                     "focus-visible:outline-3 focus-visible:outline-offset-2",
                     selected
                       ? "bg-arcade-purple text-white shadow-hard-sm"
-                      : "bg-white hover:-translate-y-0.5 hover:shadow-hard-sm",
+                      : "bg-surface hover:-translate-y-0.5 hover:shadow-hard-sm",
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">

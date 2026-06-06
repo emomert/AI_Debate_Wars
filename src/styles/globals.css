@@ -12,15 +12,38 @@
    ========================================================================= */
 
 :root {
+  /* Hex tokens for plain-CSS use… */
   --paper: #f7f7f2;
   --dot: #c9c9c9;
   --ink: #050505;
+  /* …and RGB triplets for Tailwind tokens (alpha-modifier support). */
+  --c-ink: 5 5 5;
+  --c-paper: 247 247 242;
+  --c-card: 255 255 255;
+  --c-surface: 255 255 255;
+  --c-dot: 201 201 201;
+  color-scheme: light;
 
   /* Display / hero, chunky heading, readable body, monospace numbers. */
   --font-display: "Lilita One", "Baloo 2", system-ui, sans-serif;
   --font-heading: "Baloo 2", system-ui, sans-serif;
   --font-body: "Space Grotesk", system-ui, sans-serif;
   --font-mono: "Space Mono", ui-monospace, "JetBrains Mono", monospace;
+}
+
+/* Dark theme (class-based; toggled in the header, persisted to localStorage,
+   default stays light). Ink flips to warm off-white so the thick comic borders
+   and text keep their contrast; bright arcade colors are unchanged. */
+.dark {
+  --paper: #15161a;
+  --dot: #343640;
+  --ink: #f0efe8;
+  --c-ink: 240 239 232;
+  --c-paper: 21 22 26;
+  --c-card: 35 37 43;
+  --c-surface: 46 48 55;
+  --c-dot: 52 54 64;
+  color-scheme: dark;
 }
 
 @layer base {
@@ -77,6 +100,25 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* Dark-mode contrast guard: anything sitting on a SOLID bright arcade color
+   keeps near-black text even though the global ink token flips light. The
+   centralized components (Badge/ArcadeButton/IconButton) set text-night
+   explicitly; this catches the long tail of one-off chips. */
+.dark :is(.bg-arcade-yellow, .bg-arcade-green, .bg-arcade-pink, .bg-arcade-orange) {
+  color: #050505;
+  border-color: #050505; /* keep the comic outline — adaptive ink would vanish */
+}
+.dark
+  :is(
+    .hover\:bg-arcade-yellow:hover,
+    .hover\:bg-arcade-green:hover,
+    .hover\:bg-arcade-pink:hover,
+    .hover\:bg-arcade-orange:hover
+  ) {
+  color: #050505;
+  border-color: #050505;
 }
 
 /* Respect users who prefer reduced motion (docs/12_SOUND_ANIMATION.md). */

@@ -37,8 +37,8 @@ export function RoundSelector({ value, onChange }: RoundSelectorProps) {
               "rounded-card border-4 border-ink p-3 text-center transition",
               "focus-visible:outline-3 focus-visible:outline-offset-2",
               selected
-                ? "-translate-y-0.5 bg-arcade-green shadow-hard"
-                : "bg-white shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
+                ? "-translate-y-0.5 bg-arcade-green text-night shadow-hard"
+                : "bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
             )}
           >
             <div className="font-display text-3xl leading-none sm:text-4xl">
@@ -47,7 +47,14 @@ export function RoundSelector({ value, onChange }: RoundSelectorProps) {
             <div className="mt-1 font-heading text-xs font-extrabold uppercase sm:text-sm">
               {opt.label}
             </div>
-            <div className="text-[10px] text-ink/55 sm:text-xs">{opt.blurb}</div>
+            <div
+              className={cn(
+                "text-[10px] sm:text-xs",
+                selected ? "text-night/60" : "text-ink/55",
+              )}
+            >
+              {opt.blurb}
+            </div>
           </button>
         );
       })}

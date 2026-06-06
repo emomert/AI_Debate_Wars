@@ -103,7 +103,7 @@ export function ModelSelector({
         className={cn(
           "inline-flex items-center gap-1.5 rounded-btn border-3 border-ink px-3 py-1.5 text-sm font-extrabold transition",
           "focus-visible:outline-3 focus-visible:outline-offset-2",
-          active ? "bg-ink text-white shadow-hard-sm" : "bg-white hover:bg-paper",
+          active ? "bg-night text-white shadow-hard-sm" : "bg-surface hover:bg-paper",
         )}
       >
         <span>{b.brand}</span>
@@ -143,11 +143,11 @@ export function ModelSelector({
             className={cn(
               "inline-flex items-center gap-1.5 rounded-btn border-3 border-ink px-3 py-1.5 text-sm font-extrabold transition",
               "focus-visible:outline-3 focus-visible:outline-offset-2",
-              freeOpen ? "bg-arcade-green" : "bg-arcade-yellow",
+              freeOpen ? "bg-arcade-green text-night" : "bg-arcade-yellow text-night",
             )}
           >
             <span>🆓 Free models</span>
-            <span className="rounded-badge border-2 border-ink bg-white px-1 text-[10px]">
+            <span className="rounded-badge border-2 border-night bg-white px-1 text-[10px] text-night">
               {freeModelCount}
             </span>
             <span aria-hidden>{freeOpen ? "▴" : "▾"}</span>
@@ -199,7 +199,7 @@ export function ModelSelector({
                 "focus-visible:outline-3 focus-visible:outline-offset-2",
                 isSelected
                   ? ACCENT_SELECTED[accent]
-                  : "border-ink bg-white shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
+                  : "border-ink bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
               )}
             >
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-btn border-3 border-ink bg-paper text-2xl">

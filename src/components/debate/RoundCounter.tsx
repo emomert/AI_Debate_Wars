@@ -23,13 +23,13 @@ export function RoundCounter({
   mode,
 }: RoundCounterProps) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1.5">
       <motion.div
         key={roundNumber}
         initial={{ scale: 0.9, opacity: 0.6 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="inline-flex items-center gap-1.5 rounded-btn border-3 border-ink bg-ink px-2.5 py-1 font-mono text-sm font-bold text-arcade-yellow"
+        className="inline-flex items-center gap-1.5 rounded-btn border-3 border-ink bg-night px-2 py-0.5 font-mono text-xs font-bold text-arcade-yellow"
       >
         ROUND {Math.min(roundNumber, totalRounds)} / {totalRounds}
       </motion.div>

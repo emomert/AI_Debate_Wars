@@ -162,7 +162,7 @@ export default function SetupPage() {
 
         {/* Sticky summary / start */}
         <aside>
-          <div className="lg:sticky lg:top-[96px]">
+          <div className="lg:sticky lg:top-[72px]">
             <SetupSummaryCard
               config={config}
               validation={validation}

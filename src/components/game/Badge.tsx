@@ -19,16 +19,19 @@ export type BadgeColor =
 
 export type BadgeSize = "sm" | "md";
 
+// Bright colors pair with `night` (constant near-black) so they stay readable
+// when the adaptive ink token flips light in dark mode; neutral "white" pills
+// use the adaptive surface token instead.
 const COLOR_CLASSES: Record<BadgeColor, string> = {
-  yellow: "bg-arcade-yellow text-ink",
-  green: "bg-arcade-green text-ink",
+  yellow: "bg-arcade-yellow text-night",
+  green: "bg-arcade-green text-night",
   blue: "bg-arcade-blue text-white",
   red: "bg-arcade-red text-white",
-  pink: "bg-arcade-pink text-ink",
+  pink: "bg-arcade-pink text-night",
   purple: "bg-arcade-purple text-white",
-  orange: "bg-arcade-orange text-ink",
-  white: "bg-white text-ink",
-  ink: "bg-ink text-white",
+  orange: "bg-arcade-orange text-night",
+  white: "bg-surface text-ink",
+  ink: "bg-night text-white",
 };
 
 interface BadgeProps {

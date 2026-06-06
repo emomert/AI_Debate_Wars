@@ -64,7 +64,7 @@ export function DebateTimeline({
   return (
     <div className="space-y-3">
       {empty ? (
-        <div className="rounded-card border-3 border-dashed border-ink/40 bg-white/60 p-8 text-center">
+        <div className="rounded-card border-3 border-dashed border-ink/40 bg-surface/60 p-8 text-center">
           <p className="font-heading text-lg font-extrabold">The arena is warming up…</p>
           <p className="mt-1 text-sm text-ink/60">
             The first fighter is about to step up.

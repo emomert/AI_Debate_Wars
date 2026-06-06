@@ -3,9 +3,11 @@
 /**
  * Sound manager (docs/12_SOUND_ANIMATION.md).
  *
- * Instead of shipping audio files, the SFX are SYNTHESIZED with the Web Audio
- * API — short chiptune-style blips that fit the arcade feel and add no binary
- * assets. Muted by default; the preference is persisted to localStorage. The
+ * SFX are SYNTHESIZED with the Web Audio API by default — short chiptune-style
+ * blips that fit the arcade feel — with optional real-file overrides per key
+ * (SFX_ASSETS, served from public/music/, falling back to synth when missing).
+ * The background track plays from public/music/background.mp3 when present.
+ * Muted by default; the preference is persisted to localStorage. The
  * AudioContext is created lazily on the first user gesture (enabling sound or
  * any click) to satisfy browser autoplay policies.
  */
@@ -30,6 +32,16 @@ const MUSIC_STORAGE_KEY = "ada:music-enabled";
 // If you drop a real track here it plays instead of the generative synth below.
 // (See public/music/README.md.)
 const MUSIC_ASSET = "/music/background.mp3";
+// The raw track is mastered loud — keep it well under the SFX so it stays
+// background (user feedback: default volume was too high).
+const MUSIC_FILE_VOLUME = 0.18;
+
+// Real-file SFX overrides — same pattern as the music track: when the file
+// exists it plays instead of the synthesized pattern for that key.
+const SFX_ASSETS: Partial<Record<SoundKey, string>> = {
+  roundStart: "/music/round_start.mp3",
+};
+const SFX_FILE_VOLUME = 0.5;
 
 // Generative fallback — a chill lo-fi loop: Dm7 → G7 → Cmaj7 → Am7 (ii–V–I–vi in
 // C), with a soft pad, a walking bass, and a sparse pentatonic melody motif that
@@ -127,6 +139,11 @@ class SoundManager {
   private musicListeners = new Set<(enabled: boolean) => void>();
   private musicAudio: HTMLAudioElement | null = null; // real-file track, if present
 
+  // Real-file SFX (cached per key; a key falls back to synth permanently if
+  // its file is missing or fails to play).
+  private sfxAudio = new Map<SoundKey, HTMLAudioElement>();
+  private sfxFileBroken = new Set<SoundKey>();
+
   hydrate(): boolean {
     if (this.hydrated) return this.enabled;
     if (typeof window !== "undefined") {
@@ -191,6 +208,47 @@ class SoundManager {
 
   play(key: SoundKey): void {
     if (!this.enabled) return;
+    if (this.playFileSfx(key)) return; // real file handles this key
+    this.playSynth(key);
+  }
+
+  /**
+   * Try the real-file override for a key. Returns true when a file is handling
+   * playback; if the file turns out to be missing/broken the first play falls
+   * back to the synth and the key is marked broken for future calls.
+   */
+  private playFileSfx(key: SoundKey): boolean {
+    const src = SFX_ASSETS[key];
+    if (!src || this.sfxFileBroken.has(key) || typeof window === "undefined") {
+      return false;
+    }
+    try {
+      let audio = this.sfxAudio.get(key);
+      if (!audio) {
+        audio = new Audio(src);
+        audio.preload = "auto";
+        audio.volume = SFX_FILE_VOLUME;
+        this.sfxAudio.set(key, audio);
+      }
+      audio.currentTime = 0;
+      void audio.play().catch((err: unknown) => {
+        // NotAllowedError is the browser's autoplay policy (no user gesture yet,
+        // e.g. a sound fired right after a reload) — transient, so the file must
+        // NOT be permanently disabled. Anything else (404 → NotSupportedError,
+        // decode failures) means the file is genuinely unusable.
+        const transient =
+          err instanceof DOMException && err.name === "NotAllowedError";
+        if (!transient) this.sfxFileBroken.add(key);
+        this.playSynth(key); // don't lose this occurrence
+      });
+      return true;
+    } catch {
+      this.sfxFileBroken.add(key);
+      return false;
+    }
+  }
+
+  private playSynth(key: SoundKey): void {
     const ctx = this.ensureContext();
     if (!ctx || !this.master) return;
     const pattern = PATTERNS[key];
@@ -298,7 +356,7 @@ class SoundManager {
       const a = new Audio(MUSIC_ASSET);
       a.loop = true;
       a.preload = "auto";
-      a.volume = 0.4;
+      a.volume = MUSIC_FILE_VOLUME;
       this.musicAudio = a;
     }
     this.musicAudio

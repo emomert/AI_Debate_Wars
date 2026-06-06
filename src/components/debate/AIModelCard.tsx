@@ -99,11 +99,14 @@ function AIModelCardComponent({
           </span>
           <span
             className={cn(
-              "absolute -bottom-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border-2 border-ink text-[11px] font-extrabold text-white",
-              color === "blue" && "bg-arcade-blue",
-              color === "red" && "bg-arcade-red",
-              color === "purple" && "bg-arcade-purple",
-              color === "yellow" && "bg-arcade-orange",
+              "absolute -bottom-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border-2 border-ink text-[11px] font-extrabold",
+              // Text pairs per fill: white only reads on the dark fills; the
+              // orange fill takes constant night in BOTH themes (white-on-orange
+              // was illegible and the dark guard would flip it anyway).
+              color === "blue" && "bg-arcade-blue text-white",
+              color === "red" && "bg-arcade-red text-white",
+              color === "purple" && "bg-arcade-purple text-white",
+              color === "yellow" && "bg-arcade-orange text-night",
             )}
           >
             {side === "Judge" ? "J" : side}

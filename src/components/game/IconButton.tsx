@@ -14,11 +14,11 @@ import { playSound } from "@/lib/audio/soundManager";
 export type IconButtonColor = "white" | "yellow" | "purple" | "red" | "ink";
 
 const COLOR_CLASSES: Record<IconButtonColor, string> = {
-  white: "bg-white text-ink",
-  yellow: "bg-arcade-yellow text-ink",
+  white: "bg-surface text-ink",
+  yellow: "bg-arcade-yellow text-night",
   purple: "bg-arcade-purple text-white",
   red: "bg-arcade-red text-white",
-  ink: "bg-ink text-white",
+  ink: "bg-night text-white",
 };
 
 interface IconButtonProps {
@@ -57,7 +57,7 @@ export function IconButton({
       transition={{ duration: 0.12, ease: "easeOut" }}
       style={{ boxShadow: "3px 3px 0 #050505" }}
       className={cn(
-        "grid h-11 w-11 place-items-center rounded-btn border-3 border-ink text-xl",
+        "grid h-9 w-9 place-items-center rounded-btn border-3 border-ink text-lg",
         COLOR_CLASSES[color],
         className,
       )}

@@ -155,13 +155,21 @@ function ArenaInner({
   useEffect(() => {
     const live = runner.phase === "thinking" || runner.phase === "streaming";
     if (live && runner.currentRound !== prevRoundRef.current) {
-      prevRoundRef.current = runner.currentRound;
       setFlashRound(runner.currentRound);
-      const t = setTimeout(() => setFlashRound(null), 1300);
-      return () => clearTimeout(t);
+    } else if (runner.phase === "stopped" || runner.phase === "error") {
+      // Don't let a mid-flash banner linger over the stopped/error card.
+      setFlashRound(null);
     }
     prevRoundRef.current = runner.currentRound;
   }, [runner.currentRound, runner.phase]);
+  // Hide timer lives in its OWN effect keyed only on flashRound: in Fast mode
+  // the phase flips within the flash window, and when the timer lived in the
+  // effect above those re-runs cleared it — the banner never went away.
+  useEffect(() => {
+    if (flashRound == null) return;
+    const t = setTimeout(() => setFlashRound(null), 1300);
+    return () => clearTimeout(t);
+  }, [flashRound]);
 
   const cardA = (
     <AIModelCard
@@ -245,7 +253,7 @@ function ArenaInner({
       {/* Desktop 3-column arena */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_240px]">
         <aside className="hidden lg:block">
-          <div className="sticky top-[150px]">{cardA}</div>
+          <div className="sticky top-[112px]">{cardA}</div>
         </aside>
 
         <div className="space-y-4">
@@ -327,7 +335,7 @@ function ArenaInner({
         </div>
 
         <aside className="hidden lg:block">
-          <div className="sticky top-[150px]">{cardB}</div>
+          <div className="sticky top-[112px]">{cardB}</div>
         </aside>
       </div>
 

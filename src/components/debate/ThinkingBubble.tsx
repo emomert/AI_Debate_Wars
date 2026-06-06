@@ -23,7 +23,7 @@ interface ThinkingBubbleProps {
 export function ThinkingBubble({ name, color = "blue" }: ThinkingBubbleProps) {
   return (
     <div
-      className="inline-flex items-center gap-2 rounded-card border-3 border-ink bg-white px-3 py-2 shadow-hard-sm"
+      className="inline-flex items-center gap-2 rounded-card border-3 border-ink bg-surface px-3 py-2 shadow-hard-sm"
       role="status"
     >
       <span className="flex items-end gap-1" aria-hidden>

@@ -39,8 +39,8 @@ export function ModeSelector({ value, onChange }: ModeSelectorProps) {
               "rounded-card border-4 border-ink p-4 text-left transition",
               "focus-visible:outline-3 focus-visible:outline-offset-2",
               selected
-                ? "-translate-y-0.5 bg-arcade-yellow shadow-hard"
-                : "bg-white shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
+                ? "-translate-y-0.5 bg-arcade-yellow text-night shadow-hard"
+                : "bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
             )}
           >
             <div className="flex items-center justify-between gap-2">
@@ -50,8 +50,17 @@ export function ModeSelector({ value, onChange }: ModeSelectorProps) {
               </span>
               {selected ? <Badge color="green" size="sm">Picked</Badge> : null}
             </div>
-            <p className="mt-1 text-sm font-semibold text-ink/70">{opt.tagline}</p>
-            <p className="mt-2 text-sm text-ink/60">{opt.description}</p>
+            <p
+              className={cn(
+                "mt-1 text-sm font-semibold",
+                selected ? "text-night/70" : "text-ink/70",
+              )}
+            >
+              {opt.tagline}
+            </p>
+            <p className={cn("mt-2 text-sm", selected ? "text-night/60" : "text-ink/60")}>
+              {opt.description}
+            </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               <Badge color="blue" size="sm">A · {opt.modelARole}</Badge>
               <Badge color="red" size="sm">B · {opt.modelBRole}</Badge>

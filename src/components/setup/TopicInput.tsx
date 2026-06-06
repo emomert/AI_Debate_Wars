@@ -64,7 +64,7 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
               key={topic}
               type="button"
               onClick={() => onChange(topic)}
-              className="rounded-badge border-3 border-ink bg-white px-2.5 py-1 text-left text-xs font-semibold transition hover:bg-arcade-yellow focus-visible:outline-3 focus-visible:outline-offset-2"
+              className="rounded-badge border-3 border-ink bg-surface px-2.5 py-1 text-left text-xs font-semibold transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
             >
               {topic}
             </button>

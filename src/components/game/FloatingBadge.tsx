@@ -18,9 +18,9 @@ interface FloatingBadgeProps {
 }
 
 const COLOR: Record<NonNullable<FloatingBadgeProps["color"]>, string> = {
-  yellow: "bg-arcade-yellow text-ink",
-  pink: "bg-arcade-pink text-ink",
-  green: "bg-arcade-green text-ink",
+  yellow: "bg-arcade-yellow text-night",
+  pink: "bg-arcade-pink text-night",
+  green: "bg-arcade-green text-night",
   purple: "bg-arcade-purple text-white",
 };
 

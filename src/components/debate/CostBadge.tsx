@@ -41,7 +41,7 @@ export function CostBadge({ cost, usage, latencyMs, className }: CostBadgeProps)
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-ink px-2 py-1 font-mono text-[11px] font-semibold text-white transition hover:bg-ink/80 focus-visible:outline-3 focus-visible:outline-offset-2"
+        className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-night px-2 py-1 font-mono text-[11px] font-semibold text-white transition hover:bg-night/80 focus-visible:outline-3 focus-visible:outline-offset-2"
       >
         <span aria-hidden>💰</span>
         <span>{costBadgeText(cost.totalCost, usage.totalTokens, latencyMs)}</span>
@@ -50,7 +50,7 @@ export function CostBadge({ cost, usage, latencyMs, className }: CostBadgeProps)
       </button>
 
       {open ? (
-        <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 rounded-card border-3 border-ink bg-white p-2.5 font-mono text-[11px]">
+        <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 rounded-card border-3 border-ink bg-surface p-2.5 font-mono text-[11px]">
           <dt className="text-ink/55">Input</dt>
           <dd className="text-right">{formatTokens(usage.inputTokens)}</dd>
           <dt className="text-ink/55">Output</dt>

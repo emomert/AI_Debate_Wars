@@ -53,7 +53,7 @@ function Insight({
 }) {
   if (!value) return null;
   return (
-    <li className="rounded-card border-3 border-ink bg-white p-2.5">
+    <li className="rounded-card border-3 border-ink bg-surface p-2.5">
       <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
         {tone === "good" ? "💪 " : "⚠️ "}
         {label}
@@ -79,7 +79,7 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
             initial={reduce ? false : { rotate: -3, scale: 0.9 }}
             animate={{ rotate: -2, scale: 1 }}
             transition={{ type: "spring", stiffness: 220, damping: 12 }}
-            className="inline-block rounded-btn border-3 border-ink bg-arcade-yellow px-3 py-1 font-display text-3xl tracking-tight sm:text-4xl"
+            className="inline-block rounded-btn border-3 border-ink bg-arcade-yellow px-3 py-1 font-display text-3xl tracking-tight text-night sm:text-4xl"
           >
             🏆 VERDICT
           </motion.h2>

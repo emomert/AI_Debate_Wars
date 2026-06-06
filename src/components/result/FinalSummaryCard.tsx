@@ -66,20 +66,20 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
           "mt-3 grid gap-2 " + (session.verdict ? "grid-cols-3" : "grid-cols-2")
         }
       >
-        <div className="rounded-card border-3 border-ink bg-white p-3">
+        <div className="rounded-card border-3 border-ink bg-surface p-3">
           <p className="text-[10px] font-bold uppercase tracking-wide text-arcade-blue">
             A · {session.modelA.displayName}
           </p>
           <p className="mt-0.5 font-mono text-base font-bold sm:text-lg">{formatCost(split.a)}</p>
         </div>
-        <div className="rounded-card border-3 border-ink bg-white p-3">
+        <div className="rounded-card border-3 border-ink bg-surface p-3">
           <p className="text-[10px] font-bold uppercase tracking-wide text-arcade-red">
             B · {session.modelB.displayName}
           </p>
           <p className="mt-0.5 font-mono text-base font-bold sm:text-lg">{formatCost(split.b)}</p>
         </div>
         {session.verdict ? (
-          <div className="rounded-card border-3 border-ink bg-white p-3">
+          <div className="rounded-card border-3 border-ink bg-surface p-3">
             <p className="text-[10px] font-bold uppercase tracking-wide text-arcade-purple">
               ⚖️ Judge
             </p>
@@ -105,14 +105,20 @@ function Stat({
   value: string;
   accent?: boolean;
 }) {
+  // Accent stat sits on solid green → constant `night` text in both themes.
   return (
     <div
       className={
         "rounded-card border-3 border-ink p-2.5 text-center " +
-        (accent ? "bg-arcade-green" : "bg-white")
+        (accent ? "bg-arcade-green text-night" : "bg-surface")
       }
     >
-      <p className="text-[10px] font-bold uppercase tracking-wide text-ink/50">
+      <p
+        className={
+          "text-[10px] font-bold uppercase tracking-wide " +
+          (accent ? "text-night/60" : "text-ink/50")
+        }
+      >
         {label}
       </p>
       <p className="mt-0.5 font-mono text-base font-bold">{value}</p>

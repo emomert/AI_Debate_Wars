@@ -34,7 +34,7 @@ export function PaceSelector({ value, onChange }: PaceSelectorProps) {
               "focus-visible:outline-3 focus-visible:outline-offset-2",
               selected
                 ? "-translate-y-0.5 bg-arcade-blue text-white shadow-hard"
-                : "bg-white shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
+                : "bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
             )}
           >
             <div className="font-heading text-base font-extrabold">

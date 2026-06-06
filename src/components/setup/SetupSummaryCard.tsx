@@ -27,15 +27,17 @@ export function SetupSummaryCard({
   const tone = TONE_OPTIONS.find((t) => t.id === config.tone);
   const errorList = Object.values(validation.errors);
 
+  // Solid yellow panel: constant `night` text in both themes; inner cards stay
+  // literal white so the match card reads like a printed ticket.
   return (
-    <div className="rounded-panel border-4 border-ink bg-arcade-yellow p-4 shadow-hard sm:p-5">
+    <div className="rounded-panel border-4 border-ink bg-arcade-yellow p-4 text-night shadow-hard sm:p-5">
       <h2 className="font-heading text-xl font-extrabold sm:text-2xl">
         🎮 Match Card
       </h2>
 
       <div className="mt-3 space-y-3">
-        <div className="rounded-card border-3 border-ink bg-white p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-ink/50">
+        <div className="rounded-card border-3 border-night bg-white p-3 text-night">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
             Topic
           </p>
           <p className="mt-0.5 line-clamp-2 text-sm font-semibold">
@@ -44,16 +46,16 @@ export function SetupSummaryCard({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-card border-3 border-ink bg-white p-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-ink/50">
+          <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
               Fighter A
             </p>
             <p className="truncate text-sm font-bold text-arcade-blue">
               {config.modelA.displayName}
             </p>
           </div>
-          <div className="rounded-card border-3 border-ink bg-white p-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-ink/50">
+          <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
               Fighter B
             </p>
             <p className="truncate text-sm font-bold text-arcade-red">
@@ -79,7 +81,7 @@ export function SetupSummaryCard({
       </div>
 
       {errorList.length > 0 ? (
-        <ul className="mt-3 space-y-1 rounded-card border-3 border-ink bg-white p-3">
+        <ul className="mt-3 space-y-1 rounded-card border-3 border-night bg-white p-3 text-night">
           {errorList.map((err) => (
             <li key={err} className="text-xs font-bold text-arcade-red">
               • {err}
@@ -98,7 +100,7 @@ export function SetupSummaryCard({
       >
         ▶ Start the Match
       </ArcadeButton>
-      <p className="mt-2 text-center text-[11px] text-ink/55">
+      <p className="mt-2 text-center text-[11px] text-night/55">
         Live models · OpenRouter brands are free with a key
       </p>
     </div>

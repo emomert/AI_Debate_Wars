@@ -7,6 +7,7 @@ import type { Config } from "tailwindcss";
  * than hard-coding hex values.
  */
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/app/**/*.{ts,tsx}",
     "./src/components/**/*.{ts,tsx}",
@@ -15,10 +16,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#050505",
-        paper: "#F7F7F2",
-        card: "#FFFFFF",
-        dot: "#C9C9C9",
+        // Adaptive tokens — RGB triplets live in globals.css (:root / .dark) so
+        // every existing `border-ink`, `bg-paper`, `text-ink/60`… flips with the
+        // theme while keeping alpha-modifier support.
+        ink: "rgb(var(--c-ink) / <alpha-value>)",
+        paper: "rgb(var(--c-paper) / <alpha-value>)",
+        card: "rgb(var(--c-card) / <alpha-value>)",
+        /** Neutral "white" surface (chips, selector cards) — darkens in dark mode. */
+        surface: "rgb(var(--c-surface) / <alpha-value>)",
+        /** Constant near-black — black chips + text on bright arcade colors. */
+        night: "#050505",
+        dot: "rgb(var(--c-dot) / <alpha-value>)",
         arcade: {
           yellow: "#FFD91A",
           green: "#4CAF50",

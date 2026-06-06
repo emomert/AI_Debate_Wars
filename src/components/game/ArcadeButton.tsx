@@ -24,13 +24,15 @@ export type ArcadeButtonVariant =
 
 export type ArcadeButtonSize = "sm" | "md" | "lg";
 
+// Bright variants use `night` text (constant near-black) so they stay readable
+// in dark mode where the adaptive ink token flips light.
 const VARIANT_CLASSES: Record<ArcadeButtonVariant, string> = {
-  "primary-green": "bg-arcade-green text-ink",
-  "primary-yellow": "bg-arcade-yellow text-ink",
+  "primary-green": "bg-arcade-green text-night",
+  "primary-yellow": "bg-arcade-yellow text-night",
   "model-blue": "bg-arcade-blue text-white",
   "model-red": "bg-arcade-red text-white",
   "danger-red": "bg-arcade-red text-white",
-  "neutral-white": "bg-white text-ink",
+  "neutral-white": "bg-surface text-ink",
   "judge-purple": "bg-arcade-purple text-white",
 };
 
