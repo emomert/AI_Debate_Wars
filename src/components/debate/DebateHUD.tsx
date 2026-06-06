@@ -61,9 +61,11 @@ function DebateHUDComponent({
   const showActive = activeModelName && (phase === "thinking" || phase === "streaming");
   const live = phase !== "done" && phase !== "stopped" && phase !== "error";
   // top offset = compact header height (52px). Kept tight: this bar plus the
-  // header are sticky and were eating too much reading space.
+  // header are sticky and were eating too much reading space. Deliberately
+  // TRANSPARENT (no fill, no blur) so the dotted page background shows through
+  // — the chips themselves are solid, so the info stays readable.
   return (
-    <div className="sticky top-[52px] z-20 -mx-4 border-b-4 border-ink bg-paper/90 px-4 py-1.5 backdrop-blur">
+    <div className="sticky top-[52px] z-20 -mx-4 border-b-4 border-ink px-4 py-1.5">
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <RoundCounter

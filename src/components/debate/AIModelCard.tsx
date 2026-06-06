@@ -114,7 +114,15 @@ function AIModelCardComponent({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className={cn("truncate font-heading text-base font-extrabold", ACCENT_TEXT[color])}>
+          {/* Mobile: the fighter cards sit two-up in a narrow grid, so long
+              model names WRAP instead of being cut off; lg+ (240px asides)
+              keeps the tidy single-line truncation. */}
+          <p
+            className={cn(
+              "break-words font-heading text-sm font-extrabold leading-tight lg:truncate lg:text-base",
+              ACCENT_TEXT[color],
+            )}
+          >
             {model.displayName}
           </p>
           <p className="truncate text-xs font-semibold text-ink/55">
