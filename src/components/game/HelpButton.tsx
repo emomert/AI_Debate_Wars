@@ -6,7 +6,7 @@
  */
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { IconButton } from "@/components/game/IconButton";
@@ -24,17 +24,50 @@ const STEPS: { emoji: string; title: string; body: string }[] = [
 export function HelpButton() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   // Portal target only exists on the client.
   useEffect(() => setMounted(true), []);
 
+  // While open: focus the dialog, trap Tab inside it, close on Escape, and
+  // restore focus to the trigger on close (modal a11y).
   useEffect(() => {
     if (!open) return;
+    restoreFocusRef.current = document.activeElement as HTMLElement | null;
+    dialogRef.current?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusables = root.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      restoreFocusRef.current?.focus?.();
+    };
   }, [open]);
 
   return (
@@ -62,7 +95,9 @@ export function HelpButton() {
             aria-label="How to play"
           >
             <motion.div
-              className="w-full max-w-lg rounded-modal border-4 border-ink bg-card p-5 shadow-hard-lg sm:p-7"
+              ref={dialogRef}
+              tabIndex={-1}
+              className="w-full max-w-lg rounded-modal border-4 border-ink bg-card p-5 shadow-hard-lg outline-none sm:p-7"
               initial={{ scale: 0.9, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}

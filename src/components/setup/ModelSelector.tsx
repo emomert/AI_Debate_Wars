@@ -11,7 +11,7 @@
  * ever sees the brand.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import {
@@ -78,6 +78,19 @@ export function ModelSelector({
   const [freeOpen, setFreeOpen] = useState<boolean>(
     selected?.providerId === "openrouter",
   );
+
+  // The selected model can change AFTER mount (config rehydrates from
+  // sessionStorage a tick later), which would otherwise leave the brand tab
+  // stuck on its mount-time default. Re-sync the active tab / free menu to the
+  // selection when it changes — without clobbering a user's mid-browse tab click
+  // (this only fires when selected?.brand actually changes).
+  useEffect(() => {
+    if (!selected) return;
+    setActiveBrand(selected.brand);
+    if (selected.providerId === "openrouter") setFreeOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.brand, selected?.providerId]);
+
   const models = modelsForBrand(activeBrand);
 
   const primaryBrands = BRANDS.filter((b) => b.backend !== "openrouter");

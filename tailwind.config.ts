@@ -66,10 +66,6 @@ const config: Config = {
         "hard-purple": "6px 6px 0 #6d28d9",
       },
       keyframes: {
-        blink: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0" },
-        },
         "caret-blink": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.3" },
@@ -78,21 +74,10 @@ const config: Config = {
           "0%, 80%, 100%": { transform: "translateY(0)", opacity: "0.4" },
           "40%": { transform: "translateY(-4px)", opacity: "1" },
         },
-        "float-soft": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-4px)" },
-        },
-        "pop-in": {
-          "0%": { transform: "scale(0.92)", opacity: "0" },
-          "100%": { transform: "scale(1)", opacity: "1" },
-        },
       },
       animation: {
-        blink: "blink 1s step-end infinite",
         "caret-blink": "caret-blink 1.05s ease-in-out infinite",
         "thinking-bounce": "thinking-bounce 1.2s ease-in-out infinite",
-        "float-soft": "float-soft 3s ease-in-out infinite",
-        "pop-in": "pop-in 0.2s ease-out both",
       },
     },
   },
