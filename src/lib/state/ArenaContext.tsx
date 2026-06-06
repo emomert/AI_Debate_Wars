@@ -78,6 +78,8 @@ function defaultConfig(): DebateConfig {
     modelB: toSelectedModel(b, "red"),
     roundCount: 3,
     tone: "serious",
+    customTone: "",
+    deepDebate: false,
     responseLength: "medium",
     pace: "manual",
     judge: { enabled: true, mode: "auto" },

@@ -18,9 +18,11 @@ const DOT_COLOR: Record<ModelColor, string> = {
 interface ThinkingBubbleProps {
   name: string;
   color?: ModelColor;
+  /** Deep Debate: show a "researching the web" label so the longer wait reads. */
+  deep?: boolean;
 }
 
-export function ThinkingBubble({ name, color = "blue" }: ThinkingBubbleProps) {
+export function ThinkingBubble({ name, color = "blue", deep = false }: ThinkingBubbleProps) {
   return (
     <div
       className="inline-flex items-center gap-2 rounded-card border-3 border-ink bg-surface px-3 py-2 shadow-hard-sm"
@@ -35,7 +37,14 @@ export function ThinkingBubble({ name, color = "blue" }: ThinkingBubbleProps) {
           />
         ))}
       </span>
-      <span className="font-heading text-sm font-bold">{name} is thinking…</span>
+      {deep ? (
+        <span className="font-heading text-sm font-bold">
+          🔎 {name} is researching the web…{" "}
+          <span className="font-normal text-ink/55">(this can take a while)</span>
+        </span>
+      ) : (
+        <span className="font-heading text-sm font-bold">{name} is thinking…</span>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { Badge } from "@/components/game/Badge";
 import { VerdictCard } from "@/components/debate/VerdictCard";
 import { FinalSummaryCard } from "@/components/result/FinalSummaryCard";
 import { SharePanel } from "@/components/result/SharePanel";
+import { SourcesList, mergeCitations } from "@/components/debate/SourcesList";
 import { useArena } from "@/lib/state/ArenaContext";
 
 export default function ResultPage() {
@@ -55,6 +56,9 @@ export default function ResultPage() {
     router.push("/debate");
   };
 
+  // Deep Debate: aggregate + de-dupe every source cited across the match.
+  const allSources = mergeCitations(session.messages.map((m) => m.citations));
+
   return (
     <GameShell>
       {/* Header */}
@@ -92,6 +96,16 @@ export default function ResultPage() {
         )}
 
         <FinalSummaryCard session={session} />
+
+        {allSources.length > 0 ? (
+          <GamePanel title={`📚 Sources used (${allSources.length})`}>
+            <p className="mb-3 text-sm text-ink/65">
+              Every live source the fighters cited across this Deep Debate, de-duplicated.
+            </p>
+            <SourcesList citations={allSources} defaultOpen label="All sources" />
+          </GamePanel>
+        ) : null}
+
         <SharePanel session={session} />
       </div>
 

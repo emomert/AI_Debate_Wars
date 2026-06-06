@@ -318,26 +318,47 @@ class SoundManager {
   // ── Verdict drum roll ─────────────────────────────────────────────────────
 
   /**
-   * Looping suspense cue for the judging phase. Stopped explicitly by
-   * stopDrumRoll() the moment the verdict is disclosed (or the match is
-   * stopped/errors/unmounts). Falls back to the judgeEnter synth blip when the
-   * file can't play.
+   * Play the verdict drum roll ONCE (not looped) and resolve when it FINISHES,
+   * so the caller can reveal the verdict exactly as the sound ends. Resolves
+   * immediately when sound is off / the file can't play / the request is
+   * aborted, and has a safety cap so a missing "ended" event can't hang the
+   * reveal forever. Cut early with stopDrumRoll().
    */
-  startDrumRoll(): void {
-    if (!this.enabled || typeof window === "undefined") return;
-    try {
-      if (!this.drumRollAudio) {
-        const a = new Audio(DRUM_ROLL_ASSET);
-        a.loop = true; // judging can outlast the clip
-        a.preload = "auto";
-        a.volume = DRUM_ROLL_VOLUME;
-        this.drumRollAudio = a;
+  playVerdictRoll(signal?: AbortSignal): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (typeof window === "undefined" || !this.enabled) {
+        resolve();
+        return;
       }
-      this.drumRollAudio.currentTime = 0;
-      void this.drumRollAudio.play().catch(() => this.play("judgeEnter"));
-    } catch {
-      /* never let audio break the UI */
-    }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(cap);
+        audio?.removeEventListener("ended", finish);
+        signal?.removeEventListener("abort", finish);
+        resolve();
+      };
+      const cap = setTimeout(finish, 12_000); // never hang the reveal
+
+      let audio: HTMLAudioElement | null = null;
+      try {
+        if (!this.drumRollAudio) {
+          const a = new Audio(DRUM_ROLL_ASSET);
+          a.preload = "auto";
+          a.volume = DRUM_ROLL_VOLUME;
+          this.drumRollAudio = a;
+        }
+        audio = this.drumRollAudio;
+        audio.loop = false; // one drumroll, then reveal
+        audio.currentTime = 0;
+        audio.addEventListener("ended", finish, { once: true });
+        signal?.addEventListener("abort", finish, { once: true });
+        void audio.play().catch(() => finish()); // blocked/missing → reveal now
+      } catch {
+        finish();
+      }
+    });
   }
 
   stopDrumRoll(): void {
@@ -605,9 +626,12 @@ export function playKeystroke(): void {
   soundManager.keystroke();
 }
 
-/** Looping verdict-suspense drum roll (stops via stopDrumRoll). */
-export function startDrumRoll(): void {
-  soundManager.startDrumRoll();
+/**
+ * Play the verdict drum roll once; the promise resolves when it ENDS so the
+ * caller reveals the verdict as the sound finishes.
+ */
+export function playVerdictRoll(signal?: AbortSignal): Promise<void> {
+  return soundManager.playVerdictRoll(signal);
 }
 
 export function stopDrumRoll(): void {

@@ -11,6 +11,7 @@ import { memo } from "react";
 import { motion } from "framer-motion";
 
 import type {
+  Citation,
   CostBreakdown,
   ModelColor,
   Speaker,
@@ -20,6 +21,7 @@ import type {
 import { Badge } from "@/components/game/Badge";
 import { CostBadge } from "@/components/debate/CostBadge";
 import { MarkdownText } from "@/components/debate/MarkdownText";
+import { SourcesList } from "@/components/debate/SourcesList";
 import { cn } from "@/lib/utils/cn";
 
 interface DebateMessageCardProps {
@@ -35,6 +37,7 @@ interface DebateMessageCardProps {
   cost?: CostBreakdown;
   usage?: TokenUsage;
   latencyMs?: number;
+  citations?: Citation[];
 }
 
 const ACCENT_BAR: Record<ModelColor, string> = {
@@ -57,6 +60,7 @@ function DebateMessageCardComponent({
   cost,
   usage,
   latencyMs,
+  citations,
 }: DebateMessageCardProps) {
   const isJudge = speaker === "judge";
   const align =
@@ -104,6 +108,7 @@ function DebateMessageCardComponent({
           <MarkdownText
             content={content}
             streaming={streaming}
+            citationCount={citations?.length ?? 0}
             cursor={
               streaming ? (
                 <span
@@ -119,8 +124,11 @@ function DebateMessageCardComponent({
         </div>
 
         {!streaming ? (
-          <footer className="mt-3">
+          <footer className="mt-3 flex flex-wrap items-start gap-2">
             <CostBadge cost={cost} usage={usage} latencyMs={latencyMs} />
+            {citations && citations.length > 0 ? (
+              <SourcesList citations={citations} />
+            ) : null}
           </footer>
         ) : null}
       </div>

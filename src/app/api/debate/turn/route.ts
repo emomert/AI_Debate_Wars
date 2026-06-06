@@ -35,8 +35,15 @@ import {
   lengthPreset,
 } from "@/lib/debate/promptBuilder";
 import { generateWithRetry, getProvider } from "@/lib/providers/providerRegistry";
-import { getProviderModelConfig } from "@/lib/models/modelRegistry";
+import {
+  getProviderModelConfig,
+  modelSupportsWebSearch,
+} from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
+import {
+  DEEP_SEARCH_COST_USD,
+  stripOrphanCitationMarkers,
+} from "@/lib/debate/citations";
 import {
   buildUsage,
   calculateCost,
@@ -85,10 +92,15 @@ export async function POST(req: Request): Promise<NextResponse> {
     const modelConfig = getProviderModelConfig(model.modelId);
     const provider = getProvider(modelConfig.providerId);
 
-    const systemPrompt = buildSystemPrompt(session.mode);
+    // Deep Debate: web search + fixed longer template. Only run search on a
+    // search-capable fighter (validated already, but guard anyway).
+    const deep = session.deepDebate;
+    const webSearch = deep && modelSupportsWebSearch(model.modelId);
+
+    const systemPrompt = buildSystemPrompt(session.mode, deep);
     const userPrompt = buildTurnPrompt(session, turn);
-    const preset = lengthPreset(session.responseLength);
-    const maxOutputTokens = Math.min(preset.maxTokens, modelConfig.maxOutputTokens);
+    const maxTokensTarget = deep ? 1500 : lengthPreset(session.responseLength).maxTokens;
+    const maxOutputTokens = Math.min(maxTokensTarget, modelConfig.maxOutputTokens);
 
     const result = await generateWithRetry(
       provider,
@@ -99,14 +111,16 @@ export async function POST(req: Request): Promise<NextResponse> {
         temperature: 0.8,
         maxOutputTokens,
         kind: "turn",
+        webSearch,
         // Per-attempt cap; generateWithRetry further clamps it to the remaining
-        // deadline budget so the whole call finishes before maxDuration.
-        timeoutMs: 50_000,
+        // deadline budget so the whole call finishes before maxDuration. Deep
+        // turns get the near-full budget in ONE attempt (search + long answer).
+        timeoutMs: deep ? 52_000 : 50_000,
         // Abort the upstream provider call if the client disconnects (Stop /
         // navigation), so we don't keep billing a turn nobody is waiting for.
         signal: req.signal,
       },
-      3,
+      deep ? 1 : 3,
       deadlineMs,
     );
 
@@ -119,6 +133,17 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     const cost = calculateCost(modelConfig.providerId, model.modelId, usage, estimated);
 
+    // Deep Debate: keep sources, strip any hallucinated [n] markers, and add the
+    // web-search fee so the cost display reflects what was actually billed.
+    const citations = webSearch ? result.citations : undefined;
+    const content = webSearch
+      ? stripOrphanCitationMarkers(result.content, citations)
+      : result.content;
+    if (webSearch) {
+      cost.searchCost = DEEP_SEARCH_COST_USD;
+      cost.totalCost += DEEP_SEARCH_COST_USD;
+    }
+
     const message: DebateMessage = {
       id: createId("msg"),
       sessionId: session.id,
@@ -130,9 +155,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       stance: turn.stance,
       roundNumber: turn.roundNumber,
       roundLabel: turn.roundLabel,
-      content: result.content,
+      content,
       usage,
       cost,
+      citations,
       latencyMs: result.latencyMs,
       status: "complete",
       createdAt: now(),

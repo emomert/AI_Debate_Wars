@@ -13,28 +13,63 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
 
-/** Parse inline markdown (bold / italic / code) within a line. */
-function renderInline(text: string, keyBase: string): ReactNode[] {
+/**
+ * Parse inline markdown within a line: [text](url) links, [n] citation chips
+ * (Deep Debate), **bold**, *italic*, `code`.
+ */
+function renderInline(
+  text: string,
+  keyBase: string,
+  citationCount = 0,
+): ReactNode[] {
   const nodes: ReactNode[] = [];
   const re =
-    /(\*\*([^*]+?)\*\*)|(__([^_]+?)__)|(\*([^*\s][^*]*?)\*)|(_([^_\s][^_]*?)_)|(`([^`]+?)`)/g;
+    /(\[([^\]\n]+)\]\(([^)\s]+)\))|(\[(\d{1,3})\])|(\*\*([^*]+?)\*\*)|(__([^_]+?)__)|(\*([^*\s][^*]*?)\*)|(_([^_\s][^_]*?)_)|(`([^`]+?)`)/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) nodes.push(text.slice(last, m.index));
     const key = `${keyBase}-${i++}`;
-    if (m[2] !== undefined) nodes.push(<strong key={key}>{m[2]}</strong>);
-    else if (m[4] !== undefined) nodes.push(<strong key={key}>{m[4]}</strong>);
-    else if (m[6] !== undefined) nodes.push(<em key={key}>{m[6]}</em>);
-    else if (m[8] !== undefined) nodes.push(<em key={key}>{m[8]}</em>);
-    else if (m[10] !== undefined)
+    if (m[2] !== undefined && m[3] !== undefined) {
+      nodes.push(
+        <a
+          key={key}
+          href={m[3]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-arcade-blue underline decoration-2 underline-offset-2 hover:text-arcade-purple"
+        >
+          {m[2]}
+        </a>,
+      );
+    } else if (m[5] !== undefined) {
+      // Bare [n] citation marker → small superscript chip (the Sources list
+      // below carries the actual links). Only chip valid in-range markers.
+      const n = Number(m[5]);
+      if (citationCount > 0 && n >= 1 && n <= citationCount) {
+        nodes.push(
+          <sup
+            key={key}
+            className="mx-0.5 rounded-[4px] border border-ink bg-arcade-purple/20 px-1 font-mono text-[0.7em] font-bold text-ink"
+          >
+            {n}
+          </sup>,
+        );
+      } else {
+        nodes.push(m[4]);
+      }
+    } else if (m[7] !== undefined) nodes.push(<strong key={key}>{m[7]}</strong>);
+    else if (m[9] !== undefined) nodes.push(<strong key={key}>{m[9]}</strong>);
+    else if (m[11] !== undefined) nodes.push(<em key={key}>{m[11]}</em>);
+    else if (m[13] !== undefined) nodes.push(<em key={key}>{m[13]}</em>);
+    else if (m[15] !== undefined)
       nodes.push(
         <code
           key={key}
           className="rounded bg-ink/10 px-1 py-0.5 font-mono text-[0.85em]"
         >
-          {m[10]}
+          {m[15]}
         </code>,
       );
     last = m.index + m[0].length;
@@ -69,12 +104,15 @@ export function MarkdownText({
   className,
   streaming,
   cursor,
+  citationCount = 0,
 }: {
   content: string;
   className?: string;
   streaming?: boolean;
   /** Inline node appended right after the final character (e.g. a typing caret). */
   cursor?: ReactNode;
+  /** Deep Debate: number of sources, so [n] markers render as citation chips. */
+  citationCount?: number;
 }) {
   const source = streaming ? stripIncompleteMarkdown(content) : content;
   const blocks = source.split(/\n\s*\n/);
@@ -105,7 +143,7 @@ export function MarkdownText({
         if (heading) {
           return (
             <p key={bi} className="font-heading text-base font-extrabold text-ink">
-              {renderInline(heading[2], `h-${bi}`)}
+              {renderInline(heading[2], `h-${bi}`, citationCount)}
               {tail}
             </p>
           );
@@ -120,7 +158,7 @@ export function MarkdownText({
                     ▸
                   </span>
                   <span>
-                    {renderInline(l.match(BULLET_RE)![1], `b-${bi}-${li}`)}
+                    {renderInline(l.match(BULLET_RE)![1], `b-${bi}-${li}`, citationCount)}
                     {li === lines.length - 1 ? tail : null}
                   </span>
                 </li>
@@ -141,7 +179,7 @@ export function MarkdownText({
                     {li + 1}.
                   </span>
                   <span>
-                    {renderInline(l.match(NUMBERED_RE)![1], `o-${bi}-${li}`)}
+                    {renderInline(l.match(NUMBERED_RE)![1], `o-${bi}-${li}`, citationCount)}
                     {li === lines.length - 1 ? tail : null}
                   </span>
                 </li>
@@ -152,7 +190,7 @@ export function MarkdownText({
 
         return (
           <p key={bi}>
-            {renderInline(lines.join(" "), `p-${bi}`)}
+            {renderInline(lines.join(" "), `p-${bi}`, citationCount)}
             {tail}
           </p>
         );

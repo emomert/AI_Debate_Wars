@@ -18,6 +18,7 @@ import { ModelSelector } from "@/components/setup/ModelSelector";
 import { RoundSelector } from "@/components/setup/RoundSelector";
 import { ToneSelector } from "@/components/setup/ToneSelector";
 import { ResponseLengthSelector } from "@/components/setup/ResponseLengthSelector";
+import { DeepDebateToggle } from "@/components/setup/DeepDebateToggle";
 import { PaceSelector } from "@/components/setup/PaceSelector";
 import { JudgeSelector } from "@/components/setup/JudgeSelector";
 import { SetupSummaryCard } from "@/components/setup/SetupSummaryCard";
@@ -26,6 +27,7 @@ import { useArena, toSelectedModel } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { validateSetup } from "@/lib/debate/validators";
 import { TOPIC_MAX_LENGTH } from "@/lib/constants";
+import { modelSupportsWebSearch } from "@/lib/models/modelRegistry";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -41,6 +43,10 @@ export default function SetupPage() {
   const topicTooLong = config.topic.trim().length > TOPIC_MAX_LENGTH;
   const topicError =
     attempted || topicTooLong ? validation.errors.topic : undefined;
+
+  const fightersEligibleForDeep =
+    modelSupportsWebSearch(config.modelA.modelId) &&
+    modelSupportsWebSearch(config.modelB.modelId);
 
   const handleStart = () => {
     setAttempted(true);
@@ -77,6 +83,13 @@ export default function SetupPage() {
               value={config.mode}
               onChange={(mode) => setConfig({ mode })}
             />
+            <div className="mt-4 border-t-3 border-dashed border-ink/20 pt-4">
+              <DeepDebateToggle
+                value={config.deepDebate}
+                fightersEligible={fightersEligibleForDeep}
+                onChange={(deepDebate) => setConfig({ deepDebate })}
+              />
+            </div>
           </GamePanel>
 
           <GamePanel title="3 · Choose Your Fighters">
@@ -92,6 +105,7 @@ export default function SetupPage() {
                 selectedId={config.modelA.modelId}
                 conflictId={config.modelB.modelId}
                 availability={availability}
+                requireWebSearch={config.deepDebate}
                 onSelect={(entry) =>
                   setConfig({ modelA: toSelectedModel(entry, "blue") })
                 }
@@ -102,6 +116,7 @@ export default function SetupPage() {
                 selectedId={config.modelB.modelId}
                 conflictId={config.modelA.modelId}
                 availability={availability}
+                requireWebSearch={config.deepDebate}
                 onSelect={(entry) =>
                   setConfig({ modelB: toSelectedModel(entry, "red") })
                 }
@@ -127,16 +142,31 @@ export default function SetupPage() {
                 <ToneSelector
                   value={config.tone}
                   onChange={(tone) => setConfig({ tone })}
+                  customTone={config.customTone ?? ""}
+                  onCustomToneChange={(customTone) => setConfig({ customTone })}
+                  error={attempted ? validation.errors.tone : undefined}
                 />
               </div>
               <div>
-                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
+                <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
                   Max response length
+                  {config.deepDebate ? (
+                    <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
+                      🔒 Auto
+                    </span>
+                  ) : null}
                 </p>
                 <ResponseLengthSelector
                   value={config.responseLength}
                   onChange={(responseLength) => setConfig({ responseLength })}
+                  disabled={config.deepDebate}
                 />
+                {config.deepDebate ? (
+                  <p className="mt-2 text-xs text-ink/55">
+                    Deep Debate uses a structured, longer format — length is set
+                    for you, and turns take longer.
+                  </p>
+                ) : null}
               </div>
               <div>
                 <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">

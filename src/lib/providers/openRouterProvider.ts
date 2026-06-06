@@ -36,10 +36,16 @@ export const openRouterProvider: Provider = {
       input.model.maxOutputTokens,
       input.maxOutputTokens + (effort ? 1300 : 2500),
     );
+    // Deep Debate: the ":online" suffix makes OpenRouter run a web search before
+    // generating and return url_citation annotations — zero body changes, works
+    // on any model. (Note: this bills ~$0.005/search even on :free models.)
+    const model = input.webSearch
+      ? `${input.model.modelId}:online`
+      : input.model.modelId;
     const baseCall = {
       baseUrl: OPENROUTER_BASE_URL,
       apiKey: process.env.OPENROUTER_API_KEY ?? "",
-      model: input.model.modelId,
+      model,
       systemPrompt: input.systemPrompt,
       userPrompt: input.userPrompt,
       temperature: input.temperature,
@@ -73,11 +79,12 @@ export const openRouterProvider: Provider = {
       response = await callChatCompletions(baseCall);
     }
 
-    const { content, usage, finishReason } = response;
+    const { content, usage, finishReason, citations } = response;
     return {
       content,
       usage,
       finishReason,
+      citations,
       latencyMs: Date.now() - start,
     };
   },

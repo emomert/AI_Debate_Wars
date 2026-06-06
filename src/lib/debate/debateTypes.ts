@@ -25,7 +25,9 @@ export type Stance = "pro" | "against";
 
 export type ModelColor = "blue" | "red" | "yellow" | "purple";
 
-export type DebateTone = "serious" | "academic" | "aggressive" | "casual";
+// "academic" was promoted out of tones into the Deep Debate capability; the
+// 4th slot is now a free-text "custom" tone the user describes.
+export type DebateTone = "serious" | "aggressive" | "casual" | "custom";
 
 export type JudgeMode = "none" | "auto" | "modelA" | "modelB" | "thirdModel";
 
@@ -59,10 +61,22 @@ export interface TokenUsage {
 export interface CostBreakdown {
   inputCost: number;
   outputCost: number;
+  /** Web-search add-on fee for Deep Debate turns (OpenRouter bills per search). */
+  searchCost?: number;
   totalCost: number;
   currency: "USD";
   /** True when usage was estimated from text length rather than reported. */
   estimated?: boolean;
+}
+
+/** A web source cited in a Deep Debate turn (req: references in a collapsible menu). */
+export interface Citation {
+  /** 1-based marker matching inline [n] references in the message content. */
+  index: number;
+  title: string;
+  url: string;
+  /** Optional excerpt/quote from the source (OpenRouter returns these). */
+  quote?: string;
 }
 
 export interface SessionCostSummary {
@@ -104,6 +118,8 @@ export interface DebateMessage {
   usage?: TokenUsage;
   cost?: CostBreakdown;
   latencyMs?: number;
+  /** Web sources for a Deep Debate turn (omitted for normal turns). */
+  citations?: Citation[];
   status: MessageStatus;
   createdAt: string;
 }
@@ -143,6 +159,10 @@ export interface DebateSession {
   topic: string;
   mode: DebateMode;
   tone: DebateTone;
+  /** Free-text tone, set when tone === "custom". */
+  customTone?: string;
+  /** Deep Debate: web-searched, cited, fixed-template turns (req: separate from tone). */
+  deepDebate: boolean;
   responseLength: ResponseLength;
   roundCount: RoundCount;
   pace: DebatePace;
@@ -169,6 +189,10 @@ export interface DebateConfig {
   modelB: SelectedModel;
   roundCount: RoundCount;
   tone: DebateTone;
+  /** Free-text tone, set when tone === "custom". */
+  customTone?: string;
+  /** Deep Debate: web search + citations + fixed template (separate from tone). */
+  deepDebate: boolean;
   responseLength: ResponseLength;
   pace: DebatePace;
   judge: JudgeConfig;

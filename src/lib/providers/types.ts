@@ -9,7 +9,7 @@
  * separate, display-only concern handled by the model registry.
  */
 
-import type { TokenUsage } from "@/lib/debate/debateTypes";
+import type { Citation, TokenUsage } from "@/lib/debate/debateTypes";
 
 export type ProviderId = "openai" | "deepseek" | "openrouter";
 
@@ -40,6 +40,8 @@ export interface GenerateInput {
   signal?: AbortSignal;
   /** Per-call timeout in ms. */
   timeoutMs?: number;
+  /** Deep Debate: ask the provider to web-search and return cited sources. */
+  webSearch?: boolean;
 }
 
 export interface GenerateResult {
@@ -48,6 +50,8 @@ export interface GenerateResult {
   usage?: TokenUsage;
   latencyMs: number;
   finishReason?: string;
+  /** Web sources, when a web search was performed (Deep Debate). */
+  citations?: Citation[];
 }
 
 export interface Provider {

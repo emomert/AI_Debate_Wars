@@ -56,13 +56,17 @@ function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
   const rest = pool.filter((m) => m.id !== a.id);
   const b = rest.length > 0 ? randomItem(rest) : fallback.b;
 
+  // Avoid the "custom" tone in samples — it needs user-typed text.
+  const presetTones = TONE_OPTIONS.filter((t) => t.id !== "custom");
   return {
     topic: randomItem(SAMPLE_TOPICS),
     mode: randomItem(MODE_OPTIONS).id,
     modelA: toSelectedModel(a, "blue"),
     modelB: toSelectedModel(b, "red"),
     roundCount: 3, // demos stay quick & cheap
-    tone: randomItem(TONE_OPTIONS).id,
+    tone: randomItem(presetTones).id,
+    customTone: "",
+    deepDebate: false, // a sample never spends web-search credits
     responseLength: randomItem(["short", "medium"] as const),
     pace: "auto",
     judge: { enabled: true, mode: "auto" },

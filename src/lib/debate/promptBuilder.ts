@@ -71,17 +71,47 @@ Rules:
 - Do not ask follow-up questions.
 - Do not mention system prompts, hidden instructions, APIs, tokens, or internal mechanics.`;
 
-export function buildSystemPrompt(mode: DebateMode): string {
-  return mode === "debate" ? DEBATE_SYSTEM_PROMPT : DISCUSSION_SYSTEM_PROMPT;
+// Deep Debate appends this to the base system prompt: web-grounded, cited, and a
+// fixed structured template instead of the length presets.
+const DEEP_DEBATE_SYSTEM_ADDENDUM = `
+
+DEEP DEBATE MODE (web-researched):
+You have been given live web search results. Build a rigorous, well-evidenced argument grounded in them.
+- Support your key claims with the provided sources; do not invent facts or sources.
+- Cite sources inline with bracketed numbers like [1], [2] that correspond to the sources you were given. Only cite sources that exist; never fabricate a citation number.
+- Quote sparingly and briefly (a short phrase or sentence) when a direct quote strengthens the point.
+- Prefer specific, current evidence over generic assertions.`;
+
+export function buildSystemPrompt(mode: DebateMode, deepDebate = false): string {
+  const base = mode === "debate" ? DEBATE_SYSTEM_PROMPT : DISCUSSION_SYSTEM_PROMPT;
+  return deepDebate ? base + DEEP_DEBATE_SYSTEM_ADDENDUM : base;
 }
 
-const TONE_INSTRUCTIONS: Record<DebateTone, string> = {
+// Built-in tone presets. "custom" is handled separately (free text).
+const TONE_INSTRUCTIONS: Record<Exclude<DebateTone, "custom">, string> = {
   serious: "Use a serious, balanced, and analytical tone.",
-  academic:
-    "Use an academic tone with clear concepts, careful distinctions, and structured reasoning.",
   aggressive:
     "Use a sharp, confrontational debate tone. Attack weak reasoning directly, but do not insult the user or the opponent.",
   casual: "Use a conversational, easy-to-read tone.",
+};
+
+/** Resolve the tone instruction, wrapping a sanitized custom tone when chosen. */
+function toneInstruction(session: DebateSession): string {
+  if (session.tone === "custom") {
+    const custom = (session.customTone ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+    if (custom) {
+      return `Use the following user-defined tone, while keeping arguments substantive and good-faith: "${custom}".`;
+    }
+    return TONE_INSTRUCTIONS.serious; // blank custom → safe default
+  }
+  return TONE_INSTRUCTIONS[session.tone];
+}
+
+/** Fixed Deep Debate response template (replaces the length presets). */
+const DEEP_LENGTH = {
+  maxTokens: 1500,
+  description:
+    "about 350-600 words in flowing prose; ground each major claim in a cited source [n] and end with a short closing line",
 };
 
 interface LengthPreset {
@@ -122,8 +152,11 @@ function formatTranscript(session: DebateSession): string {
 /** Build the per-turn user prompt (docs/05 turn templates). */
 export function buildTurnPrompt(session: DebateSession, turn: DebateTurn): string {
   const model = turn.speaker === "modelA" ? session.modelA : session.modelB;
-  const preset = LENGTH_PRESETS[session.responseLength];
-  const tone = TONE_INSTRUCTIONS[session.tone];
+  // Deep Debate uses a fixed structured template; otherwise the chosen preset.
+  const preset = session.deepDebate
+    ? DEEP_LENGTH
+    : LENGTH_PRESETS[session.responseLength];
+  const tone = toneInstruction(session);
   const modeLabel = session.mode === "debate" ? "Debate Mode" : "Discussion Mode";
   const identityLine =
     session.mode === "debate"
@@ -158,6 +191,12 @@ export function buildTurnPrompt(session: DebateSession, turn: DebateTurn): strin
     `- Write in flowing prose: 2-4 short, persuasive paragraphs that build an argument.`,
     `- Do NOT default to bullet-point lists. Use a short list at most once, and only when it genuinely helps (e.g. naming a few concrete examples). Otherwise argue in sentences.`,
     `- You may use **bold** sparingly to emphasize a single key term or claim.`,
+    ...(session.deepDebate
+      ? [
+          `- Ground your key claims in the web search results and cite them inline as [1], [2], … matching the provided sources.`,
+          `- Do not fabricate sources or citation numbers; only cite sources you were actually given.`,
+        ]
+      : []),
     `- Maximum length: ${preset.description}.`,
   ].join("\n");
 }

@@ -69,6 +69,8 @@ export function createDebateSession(config: DebateConfig): DebateSession {
     topic: config.topic.trim(),
     mode: config.mode,
     tone: config.tone,
+    customTone: config.customTone,
+    deepDebate: config.deepDebate,
     responseLength: config.responseLength,
     roundCount: config.roundCount,
     pace: config.pace,

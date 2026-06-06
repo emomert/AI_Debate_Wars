@@ -63,10 +63,12 @@ export interface ToneOption {
 
 export const TONE_OPTIONS: ToneOption[] = [
   { id: "serious", label: "Serious", emoji: "🎯" },
-  { id: "academic", label: "Academic", emoji: "🎓" },
   { id: "aggressive", label: "Aggressive", emoji: "🔥" },
   { id: "casual", label: "Casual", emoji: "😎" },
+  { id: "custom", label: "Custom", emoji: "✏️" },
 ];
+
+export const CUSTOM_TONE_MAX_LENGTH = 80;
 
 export interface PaceOption {
   id: DebatePace;

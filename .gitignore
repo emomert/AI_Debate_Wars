@@ -30,3 +30,6 @@ next-env.d.ts.bak
 # editor
 .vscode/
 .idea/
+
+# Windows crash dumps
+*.stackdump

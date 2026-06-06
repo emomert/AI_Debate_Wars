@@ -25,6 +25,10 @@ export function SetupSummaryCard({
 }: SetupSummaryCardProps) {
   const roundLabel = ROUND_OPTIONS.find((r) => r.count === config.roundCount)?.label;
   const tone = TONE_OPTIONS.find((t) => t.id === config.tone);
+  const toneLabel =
+    config.tone === "custom"
+      ? `✏️ ${(config.customTone ?? "").trim() || "Custom"}`
+      : `${tone?.emoji} ${tone?.label}`;
   const errorList = Object.values(validation.errors);
 
   // Solid yellow panel: constant `night` text in both themes; inner cards stay
@@ -69,8 +73,13 @@ export function SetupSummaryCard({
             {config.mode === "debate" ? "⚔️ Debate" : "🧠 Discussion"}
           </Badge>
           <Badge color="white" size="sm">{config.roundCount} · {roundLabel}</Badge>
-          <Badge color="white" size="sm">{tone?.emoji} {tone?.label}</Badge>
-          <Badge color="white" size="sm">{config.responseLength}</Badge>
+          <Badge color="white" size="sm" className="max-w-[12rem] truncate">{toneLabel}</Badge>
+          <Badge color="white" size="sm">
+            {config.deepDebate ? "🔒 Deep template" : config.responseLength}
+          </Badge>
+          {config.deepDebate ? (
+            <Badge color="purple" size="sm">🌐 Deep Debate</Badge>
+          ) : null}
           <Badge color="blue" size="sm">
             {config.pace === "auto" ? "⚡ Fast" : "🚶 Normal"}
           </Badge>

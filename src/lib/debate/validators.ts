@@ -11,14 +11,18 @@
  */
 
 import type { DebateConfig, DebateSession } from "@/lib/debate/debateTypes";
-import { TOPIC_MAX_LENGTH, TOPIC_MIN_LENGTH } from "@/lib/constants";
-import { getModelById } from "@/lib/models/modelRegistry";
+import {
+  CUSTOM_TONE_MAX_LENGTH,
+  TOPIC_MAX_LENGTH,
+  TOPIC_MIN_LENGTH,
+} from "@/lib/constants";
+import { getModelById, modelSupportsWebSearch } from "@/lib/models/modelRegistry";
 import { ProviderError } from "@/lib/utils/errors";
 
 const VALID_MODES = ["debate", "discussion"];
 const VALID_ROUNDS = [3, 5, 7];
 const VALID_LENGTHS = ["short", "medium", "long"];
-const VALID_TONES = ["serious", "academic", "aggressive", "casual"];
+const VALID_TONES = ["serious", "aggressive", "casual", "custom"];
 
 // Generous per-message ceiling: the "long" preset allows ~1200 output tokens
 // (~5-6k chars with markdown), so 16k never clips a legitimate turn but stops a
@@ -54,8 +58,31 @@ export function assertValidSession(session: DebateSession): void {
   if (!VALID_TONES.includes(session.tone)) {
     throw new ProviderError("INVALID_REQUEST", "Invalid tone");
   }
+  // Custom tone: require non-empty text, capped (so a forged session can't
+  // inflate the prompt the server pays for).
+  if (session.tone === "custom") {
+    const custom = typeof session.customTone === "string" ? session.customTone.trim() : "";
+    if (!custom) {
+      throw new ProviderError("INVALID_REQUEST", "Custom tone is required");
+    }
+    if (custom.length > CUSTOM_TONE_MAX_LENGTH) {
+      throw new ProviderError("INVALID_REQUEST", "Custom tone too long");
+    }
+  }
   if (!session.judge || typeof session.judge.enabled !== "boolean") {
     throw new ProviderError("INVALID_REQUEST", "Invalid judge config");
+  }
+  // Deep Debate requires web-search-capable fighters (OpenRouter-routed).
+  if (session.deepDebate) {
+    if (
+      !modelSupportsWebSearch(session.modelA.modelId) ||
+      !modelSupportsWebSearch(session.modelB.modelId)
+    ) {
+      throw new ProviderError(
+        "INVALID_REQUEST",
+        "Deep Debate needs web-search-capable fighters",
+      );
+    }
   }
   if (!session.modelA?.modelId || !session.modelB?.modelId) {
     throw new ProviderError("INVALID_REQUEST", "Both fighters are required");
@@ -103,7 +130,7 @@ export function assertConsistentTranscript(session: DebateSession): void {
 
 export interface ValidationResult {
   valid: boolean;
-  errors: Partial<Record<"topic" | "models" | "judge", string>>;
+  errors: Partial<Record<"topic" | "models" | "judge" | "tone" | "deep", string>>;
 }
 
 export function validateSetup(config: DebateConfig): ValidationResult {
@@ -118,6 +145,26 @@ export function validateSetup(config: DebateConfig): ValidationResult {
 
   if (!config.modelA || !config.modelB) {
     errors.models = "Choose two fighters before starting.";
+  }
+
+  if (config.tone === "custom") {
+    const t = (config.customTone ?? "").trim();
+    if (!t) {
+      errors.tone = "Describe your custom tone.";
+    } else if (t.length > CUSTOM_TONE_MAX_LENGTH) {
+      // Mirror the server cap so Start is blocked instead of failing turn 1.
+      errors.tone = `Keep the tone under ${CUSTOM_TONE_MAX_LENGTH} characters.`;
+    }
+  }
+
+  if (
+    config.deepDebate &&
+    config.modelA &&
+    config.modelB &&
+    (!modelSupportsWebSearch(config.modelA.modelId) ||
+      !modelSupportsWebSearch(config.modelB.modelId))
+  ) {
+    errors.deep = "Deep Debate needs web-search fighters (OpenRouter brands).";
   }
 
   if (

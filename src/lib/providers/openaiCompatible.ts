@@ -6,7 +6,7 @@
 
 import "server-only";
 
-import type { TokenUsage } from "@/lib/debate/debateTypes";
+import type { Citation, TokenUsage } from "@/lib/debate/debateTypes";
 import { ProviderError, type AppErrorCode } from "@/lib/utils/errors";
 
 interface ChatCallOptions {
@@ -34,6 +34,43 @@ interface ChatCallResult {
   content: string;
   usage?: TokenUsage;
   finishReason?: string;
+  citations?: Citation[];
+}
+
+/** OpenAI/OpenRouter url_citation annotation shape (both standardize to this). */
+interface UrlCitationAnnotation {
+  type?: string;
+  url_citation?: {
+    url?: string;
+    title?: string;
+    content?: string;
+  };
+}
+
+/**
+ * Normalize message.annotations (OpenAI + OpenRouter both return the same
+ * url_citation shape) into our Citation[], de-duplicated by URL and numbered.
+ */
+function parseCitations(annotations: unknown): Citation[] | undefined {
+  if (!Array.isArray(annotations)) return undefined;
+  const out: Citation[] = [];
+  const seen = new Set<string>();
+  for (const raw of annotations as UrlCitationAnnotation[]) {
+    const c = raw?.url_citation;
+    const url = typeof c?.url === "string" ? c.url : "";
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    out.push({
+      index: out.length + 1,
+      title: (typeof c?.title === "string" && c.title.trim()) || url,
+      url,
+      quote:
+        typeof c?.content === "string" && c.content.trim()
+          ? c.content.trim().slice(0, 500)
+          : undefined,
+    });
+  }
+  return out.length > 0 ? out : undefined;
 }
 
 function mapHttpStatus(status: number): AppErrorCode {
@@ -104,7 +141,10 @@ export async function callChatCompletions(
     }
 
     const data = (await res.json()) as {
-      choices?: { message?: { content?: string }; finish_reason?: string }[];
+      choices?: {
+        message?: { content?: string; annotations?: unknown };
+        finish_reason?: string;
+      }[];
       usage?: {
         prompt_tokens?: number;
         completion_tokens?: number;
@@ -115,6 +155,7 @@ export async function callChatCompletions(
     const choice = data.choices?.[0];
     const finishReason = choice?.finish_reason;
     const content = choice?.message?.content?.trim() ?? "";
+    const citations = parseCitations(choice?.message?.annotations);
     if (!content) {
       // Empty content with finish_reason "length" means the model spent its
       // entire token budget on hidden reasoning and never emitted an answer.
@@ -134,7 +175,7 @@ export async function callChatCompletions(
         }
       : undefined;
 
-    return { content, usage, finishReason };
+    return { content, usage, finishReason, citations };
   } catch (err) {
     if (err instanceof ProviderError) throw err;
     if (err instanceof DOMException && err.name === "AbortError") {

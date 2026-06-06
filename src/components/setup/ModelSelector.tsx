@@ -19,6 +19,7 @@ import {
   COST_TIER_LABEL,
   getModelById,
   modelsForBrand,
+  modelSupportsWebSearch,
   type Backend,
   type BrandInfo,
   type ModelCatalogEntry,
@@ -51,6 +52,8 @@ interface ModelSelectorProps {
   conflictId?: string;
   /** Which backends have server-side keys. */
   availability?: ProviderAvailability | null;
+  /** Deep Debate: disable models that can't web-search. */
+  requireWebSearch?: boolean;
 }
 
 function backendReady(
@@ -68,6 +71,7 @@ export function ModelSelector({
   onSelect,
   conflictId,
   availability,
+  requireWebSearch = false,
 }: ModelSelectorProps) {
   const selected = getModelById(selectedId);
   const [activeBrand, setActiveBrand] = useState<string>(
@@ -197,19 +201,25 @@ export function ModelSelector({
           const isSelected = m.id === selectedId;
           const isConflict = !isSelected && m.id === conflictId;
           const ready = backendReady(m.providerId, availability);
+          // Deep Debate: only web-search-capable models are selectable.
+          const noWeb = requireWebSearch && !modelSupportsWebSearch(m.id);
           return (
             <button
               key={m.id}
               type="button"
               role="radio"
               aria-checked={isSelected}
+              disabled={noWeb}
+              aria-disabled={noWeb}
               onClick={() => {
+                if (noWeb) return;
                 playSound("modelSelected");
                 onSelect(m);
               }}
               className={cn(
                 "flex w-full items-center gap-3 rounded-card border-4 p-3 text-left transition",
                 "focus-visible:outline-3 focus-visible:outline-offset-2",
+                noWeb && "cursor-not-allowed opacity-45",
                 isSelected
                   ? ACCENT_SELECTED[accent]
                   : "border-ink bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
@@ -244,7 +254,11 @@ export function ModelSelector({
                   <span className="font-mono text-xs font-bold">{m.debateRating}</span>
                 </span>
 
-                {isConflict ? (
+                {noWeb ? (
+                  <span className="mt-1 block text-[10px] font-bold text-arcade-orange">
+                    No web search — not available in Deep Debate
+                  </span>
+                ) : isConflict ? (
                   <span className="mt-1 block text-[10px] font-bold text-arcade-orange">
                     Also picked for the other fighter
                   </span>

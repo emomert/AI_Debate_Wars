@@ -128,6 +128,16 @@ export function getProviderModelConfig(
   };
 }
 
+/**
+ * Whether a model can do Deep Debate web search. We route search through
+ * OpenRouter's ":online" suffix, so any OpenRouter-backed model is eligible;
+ * OpenAI/DeepSeek-direct are not (DeepSeek has no search; OpenAI search needs
+ * dedicated models we don't list).
+ */
+export function modelSupportsWebSearch(modelId: string): boolean {
+  return getModelById(modelId)?.providerId === "openrouter";
+}
+
 export const COST_TIER_LABEL: Record<CostTier, string> = {
   free: "FREE",
   low: "$",

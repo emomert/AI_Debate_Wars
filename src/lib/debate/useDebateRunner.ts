@@ -34,7 +34,7 @@ import { type AppErrorShape, type AppErrorCode, toAppError } from "@/lib/utils/e
 import {
   playKeystroke,
   playSound,
-  startDrumRoll,
+  playVerdictRoll,
   stopDrumRoll,
 } from "@/lib/audio/soundManager";
 
@@ -445,9 +445,7 @@ export function useDebateRunner(
             if (signal.aborted) return;
           }
           setState((p) => ({ ...p, phase: "judging", activeTurn: null, awaitingKind: null }));
-          // Suspense drum roll while the judge deliberates — stopped the moment
-          // the verdict is disclosed (falls back to the judgeEnter synth blip).
-          startDrumRoll();
+          playSound("judgeEnter"); // brief "the judge is in" cue
 
           // Same silent-retry resilience for the verdict.
           let verdict: DebateVerdict | undefined;
@@ -478,9 +476,11 @@ export function useDebateRunner(
             }
           }
           if (!verdict || signal.aborted) return;
-          working.verdict = verdict;
-          stopDrumRoll(); // the verdict is disclosed — cut the suspense loop
-          playSound("verdictReveal");
+          working.verdict = verdict; // computed, but NOT shown yet
+          // Drumroll → reveal: play the cue ONCE and reveal the verdict exactly
+          // as it ends (resolves instantly if sound is off / blocked / aborted).
+          await playVerdictRoll(signal);
+          if (signal.aborted) return;
           setState((p) => ({ ...p, verdict }));
         }
 

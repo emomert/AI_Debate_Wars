@@ -88,6 +88,7 @@ export function DebateTimeline({
             cost={m.cost}
             usage={m.usage}
             latencyMs={m.latencyMs}
+            citations={m.citations}
           />
         );
       })}
@@ -105,7 +106,7 @@ export function DebateTimeline({
                     : "flex justify-start"
                 }
               >
-                <ThinkingBubble name={id.title} color={id.color} />
+                <ThinkingBubble name={id.title} color={id.color} deep={session.deepDebate} />
               </div>
             );
           }

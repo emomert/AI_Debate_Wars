@@ -239,8 +239,14 @@ function ArenaInner({
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Badge color="blue" size="sm">A · {session.modelA.displayName}</Badge>
           <Badge color="red" size="sm">B · {session.modelB.displayName}</Badge>
-          <Badge color="white" size="sm">Tone: {session.tone}</Badge>
-          <Badge color="white" size="sm">{session.responseLength}</Badge>
+          <Badge color="white" size="sm" className="max-w-[12rem] truncate">
+            Tone: {session.tone === "custom" ? (session.customTone || "custom") : session.tone}
+          </Badge>
+          {session.deepDebate ? (
+            <Badge color="purple" size="sm">🌐 Deep Debate</Badge>
+          ) : (
+            <Badge color="white" size="sm">{session.responseLength}</Badge>
+          )}
         </div>
       </div>
 

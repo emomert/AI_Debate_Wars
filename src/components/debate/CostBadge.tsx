@@ -45,6 +45,9 @@ export function CostBadge({ cost, usage, latencyMs, className }: CostBadgeProps)
       >
         <span aria-hidden>💰</span>
         <span>{costBadgeText(cost.totalCost, usage.totalTokens, latencyMs)}</span>
+        {cost.searchCost ? (
+          <span className="text-arcade-purple" title="Includes web-search fee">🔎</span>
+        ) : null}
         {cost.estimated ? <span className="text-arcade-yellow">~est</span> : null}
         <span aria-hidden className="text-white/60">{open ? "▴" : "▾"}</span>
       </button>
@@ -59,6 +62,12 @@ export function CostBadge({ cost, usage, latencyMs, className }: CostBadgeProps)
           <dd className="text-right">{formatCost(cost.inputCost)}</dd>
           <dt className="text-ink/55">Output cost</dt>
           <dd className="text-right">{formatCost(cost.outputCost)}</dd>
+          {cost.searchCost ? (
+            <>
+              <dt className="text-ink/55">🔎 Web search</dt>
+              <dd className="text-right">{formatCost(cost.searchCost)}</dd>
+            </>
+          ) : null}
           <dt className="text-ink/55">Latency</dt>
           <dd className="text-right">{formatLatency(latencyMs)}</dd>
           <dt className="font-bold text-ink">Total</dt>
