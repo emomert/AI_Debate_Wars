@@ -21,6 +21,12 @@ export interface ProviderModelConfig {
   modelId: string;
   maxOutputTokens: number;
   supportsStreaming: boolean;
+  /**
+   * Cap the hidden chain-of-thought of reasoning models (OpenRouter's unified
+   * `reasoning.effort` param). Set in the model registry for free reasoning
+   * models that otherwise "think" for 30s+; non-reasoning models ignore it.
+   */
+  reasoningEffort?: "low" | "medium";
 }
 
 export interface GenerateInput {

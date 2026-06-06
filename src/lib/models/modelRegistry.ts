@@ -31,6 +31,12 @@ export interface ModelCatalogEntry {
   avatar: string;
   supportsStreaming: boolean;
   maxOutputTokens: number;
+  /**
+   * Caps the hidden thinking of reasoning models so turns arrive fast
+   * (OpenRouter `reasoning.effort`). Verified against OpenRouter's live
+   * `supported_parameters` — only set where the model accepts it.
+   */
+  reasoningEffort?: "low" | "medium";
 }
 
 export const MODEL_CATALOG: ModelCatalogEntry[] = [
@@ -55,24 +61,24 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "qwen/qwen3-coder:free", providerId: "openrouter", brand: "Qwen", displayName: "Qwen3 Coder 480B", nickname: "The Builder", color: "purple", costTier: "free", debateRating: 80, avatar: "🦅", supportsStreaming: true, maxOutputTokens: 8192 },
   { id: "meta-llama/llama-3.3-70b-instruct:free", providerId: "openrouter", brand: "Llama", displayName: "Llama 3.3 70B", nickname: "The Workhorse", color: "purple", costTier: "free", debateRating: 82, avatar: "🦙", supportsStreaming: true, maxOutputTokens: 8192 },
   { id: "meta-llama/llama-3.2-3b-instruct:free", providerId: "openrouter", brand: "Llama", displayName: "Llama 3.2 3B", nickname: "The Lightweight", color: "purple", costTier: "free", debateRating: 64, avatar: "🦙", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "moonshotai/kimi-k2.6:free", providerId: "openrouter", brand: "Kimi", displayName: "Kimi K2.6", nickname: "The Long-Context Thinker", color: "purple", costTier: "free", debateRating: 85, avatar: "🌙", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "z-ai/glm-4.5-air:free", providerId: "openrouter", brand: "GLM", displayName: "GLM 4.5 Air", nickname: "The Nimble Reasoner", color: "purple", costTier: "free", debateRating: 80, avatar: "🌀", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "google/gemma-4-31b-it:free", providerId: "openrouter", brand: "Gemma", displayName: "Gemma 4 31B", nickname: "The Scholar", color: "purple", costTier: "free", debateRating: 79, avatar: "💎", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "google/gemma-4-26b-a4b-it:free", providerId: "openrouter", brand: "Gemma", displayName: "Gemma 4 26B", nickname: "The Understudy", color: "purple", costTier: "free", debateRating: 77, avatar: "💎", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "openai/gpt-oss-120b:free", providerId: "openrouter", brand: "GPT-OSS", displayName: "GPT-OSS 120B", nickname: "The Open Challenger", color: "purple", costTier: "free", debateRating: 84, avatar: "🧠", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "openai/gpt-oss-20b:free", providerId: "openrouter", brand: "GPT-OSS", displayName: "GPT-OSS 20B", nickname: "The Open Sparring Partner", color: "purple", costTier: "free", debateRating: 76, avatar: "🧠", supportsStreaming: true, maxOutputTokens: 8192 },
+  { id: "moonshotai/kimi-k2.6:free", providerId: "openrouter", brand: "Kimi", displayName: "Kimi K2.6", nickname: "The Long-Context Thinker", color: "purple", costTier: "free", debateRating: 85, avatar: "🌙", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "z-ai/glm-4.5-air:free", providerId: "openrouter", brand: "GLM", displayName: "GLM 4.5 Air", nickname: "The Nimble Reasoner", color: "purple", costTier: "free", debateRating: 80, avatar: "🌀", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "google/gemma-4-31b-it:free", providerId: "openrouter", brand: "Gemma", displayName: "Gemma 4 31B", nickname: "The Scholar", color: "purple", costTier: "free", debateRating: 79, avatar: "💎", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "google/gemma-4-26b-a4b-it:free", providerId: "openrouter", brand: "Gemma", displayName: "Gemma 4 26B", nickname: "The Understudy", color: "purple", costTier: "free", debateRating: 77, avatar: "💎", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "openai/gpt-oss-120b:free", providerId: "openrouter", brand: "GPT-OSS", displayName: "GPT-OSS 120B", nickname: "The Open Challenger", color: "purple", costTier: "free", debateRating: 84, avatar: "🧠", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "openai/gpt-oss-20b:free", providerId: "openrouter", brand: "GPT-OSS", displayName: "GPT-OSS 20B", nickname: "The Open Sparring Partner", color: "purple", costTier: "free", debateRating: 76, avatar: "🧠", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "nousresearch/hermes-3-llama-3.1-405b:free", providerId: "openrouter", brand: "Hermes", displayName: "Hermes 3 405B", nickname: "The Colossus", color: "purple", costTier: "free", debateRating: 85, avatar: "🪽", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Ultra 550B", nickname: "The Titan", color: "purple", costTier: "free", debateRating: 86, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "nvidia/nemotron-3-super-120b-a12b:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Super 120B", nickname: "The Powerhouse", color: "purple", costTier: "free", debateRating: 83, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "nvidia/nemotron-3-nano-30b-a3b:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Nano 30B", nickname: "The Efficient", color: "purple", costTier: "free", debateRating: 77, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Nano Omni", nickname: "The Reasoner", color: "purple", costTier: "free", debateRating: 76, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "nvidia/nemotron-nano-9b-v2:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron Nano 9B", nickname: "The Scout", color: "purple", costTier: "free", debateRating: 70, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "nvidia/nemotron-nano-12b-v2-vl:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron Nano 12B VL", nickname: "The Observer", color: "purple", costTier: "free", debateRating: 70, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192 },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Ultra 550B", nickname: "The Titan", color: "purple", costTier: "free", debateRating: 86, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "nvidia/nemotron-3-super-120b-a12b:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Super 120B", nickname: "The Powerhouse", color: "purple", costTier: "free", debateRating: 83, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "nvidia/nemotron-3-nano-30b-a3b:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Nano 30B", nickname: "The Efficient", color: "purple", costTier: "free", debateRating: 77, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron 3 Nano Omni", nickname: "The Reasoner", color: "purple", costTier: "free", debateRating: 76, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "nvidia/nemotron-nano-9b-v2:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron Nano 9B", nickname: "The Scout", color: "purple", costTier: "free", debateRating: 70, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "nvidia/nemotron-nano-12b-v2-vl:free", providerId: "openrouter", brand: "Nemotron", displayName: "Nemotron Nano 12B VL", nickname: "The Observer", color: "purple", costTier: "free", debateRating: 70, avatar: "🟩", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "cognitivecomputations/dolphin-mistral-24b-venice-edition:free", providerId: "openrouter", brand: "Dolphin", displayName: "Dolphin Mistral 24B", nickname: "The Unfiltered", color: "purple", costTier: "free", debateRating: 72, avatar: "🐬", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "poolside/laguna-m.1:free", providerId: "openrouter", brand: "Poolside", displayName: "Laguna M.1", nickname: "The Newcomer", color: "purple", costTier: "free", debateRating: 70, avatar: "🏊", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "poolside/laguna-xs.2:free", providerId: "openrouter", brand: "Poolside", displayName: "Laguna XS.2", nickname: "The Minnow", color: "purple", costTier: "free", debateRating: 64, avatar: "🏊", supportsStreaming: true, maxOutputTokens: 8192 },
+  { id: "poolside/laguna-m.1:free", providerId: "openrouter", brand: "Poolside", displayName: "Laguna M.1", nickname: "The Newcomer", color: "purple", costTier: "free", debateRating: 70, avatar: "🏊", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "poolside/laguna-xs.2:free", providerId: "openrouter", brand: "Poolside", displayName: "Laguna XS.2", nickname: "The Minnow", color: "purple", costTier: "free", debateRating: 64, avatar: "🏊", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "liquid/lfm-2.5-1.2b-instruct:free", providerId: "openrouter", brand: "Liquid", displayName: "LFM2.5 1.2B", nickname: "The Featherweight", color: "purple", costTier: "free", debateRating: 58, avatar: "💧", supportsStreaming: true, maxOutputTokens: 8192 },
-  { id: "liquid/lfm-2.5-1.2b-thinking:free", providerId: "openrouter", brand: "Liquid", displayName: "LFM2.5 1.2B Thinking", nickname: "The Tiny Thinker", color: "purple", costTier: "free", debateRating: 60, avatar: "💧", supportsStreaming: true, maxOutputTokens: 8192 },
+  { id: "liquid/lfm-2.5-1.2b-thinking:free", providerId: "openrouter", brand: "Liquid", displayName: "LFM2.5 1.2B Thinking", nickname: "The Tiny Thinker", color: "purple", costTier: "free", debateRating: 60, avatar: "💧", supportsStreaming: true, maxOutputTokens: 8192, reasoningEffort: "low" },
 ];
 
 export function getModelById(id: string): ModelCatalogEntry | undefined {
@@ -110,6 +116,7 @@ export function getProviderModelConfig(
   modelId: string;
   maxOutputTokens: number;
   supportsStreaming: boolean;
+  reasoningEffort?: "low" | "medium";
 } {
   const entry = getModelById(modelId);
   return {
@@ -117,6 +124,7 @@ export function getProviderModelConfig(
     modelId,
     maxOutputTokens: entry?.maxOutputTokens ?? 4096,
     supportsStreaming: entry?.supportsStreaming ?? false,
+    reasoningEffort: entry?.reasoningEffort,
   };
 }
 

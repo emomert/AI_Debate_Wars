@@ -23,6 +23,11 @@ interface ChatCallOptions {
   tokenParam?: "max_tokens" | "max_completion_tokens";
   /** Some newer models reject a custom temperature; omit it when false. */
   includeTemperature?: boolean;
+  /**
+   * Extra vendor-specific top-level body fields (e.g. OpenRouter's `reasoning`).
+   * Spread FIRST so the explicit options above always win on collisions.
+   */
+  extraBody?: Record<string, unknown>;
 }
 
 interface ChatCallResult {
@@ -54,6 +59,7 @@ export async function callChatCompletions(
     signal,
     tokenParam = "max_tokens",
     includeTemperature = true,
+    extraBody,
   } = opts;
 
   if (!apiKey) throw new ProviderError("MISSING_API_KEY");
@@ -75,6 +81,7 @@ export async function callChatCompletions(
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
+        ...(extraBody ?? {}),
         model,
         ...(includeTemperature ? { temperature } : {}),
         [tokenParam]: maxOutputTokens,
