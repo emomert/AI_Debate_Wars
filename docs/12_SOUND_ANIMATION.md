@@ -97,13 +97,29 @@ Avoid:
 
 ## Reduced Motion
 
-Respect user preference:
+Respect user preference for **decorative** motion only. The live-typing
+experience (JS typewriter reveal, blinking caret, thinking dots, status pulse)
+is the core product and plays identically for every visitor — it is NOT gated
+on the media query. Mirror `src/styles/globals.css`:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms;
     transition-duration: 0.01ms;
+  }
+  /* Exempt the live-typing companions — they are the product experience. */
+  .animate-caret-blink {
+    animation-duration: 1.05s;
+    animation-iteration-count: infinite;
+  }
+  .animate-thinking-bounce {
+    animation-duration: 1.2s;
+    animation-iteration-count: infinite;
+  }
+  .animate-pulse {
+    animation-duration: 2s;
+    animation-iteration-count: infinite;
   }
 }
 ```
@@ -115,5 +131,6 @@ Sound and animation are acceptable if:
 - interface feels lively
 - reading remains comfortable
 - sound can be disabled
-- reduced motion is respected
+- reduced motion is respected for decorative animations (typewriter reveal,
+  caret blink, thinking dots, and status pulse intentionally still play)
 - no animation blocks core functionality

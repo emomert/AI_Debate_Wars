@@ -512,7 +512,8 @@ Requirements:
 - visible focus states
 - adequate contrast
 - no information conveyed only by color
-- reduced-motion support
+- reduced-motion support for decorative animations (the typewriter text reveal
+  and its caret/thinking-dot companions play for all visitors by design)
 - sound not required for understanding
 - readable font sizes
 - mobile-friendly hit targets

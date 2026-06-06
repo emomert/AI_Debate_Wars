@@ -97,7 +97,9 @@ function ArenaInner({
   onNewSetup,
   onResults,
 }: ArenaInnerProps) {
-  const runner = useDebateRunner(session, { onPersist, reducedMotion: reduce });
+  // Note: the runner's typewriter intentionally ignores reduced-motion so every
+  // visitor gets the same playback; `reduce` only tones down decorative motion.
+  const runner = useDebateRunner(session, { onPersist });
 
   const roles = useMemo(() => {
     const opt = MODE_OPTIONS.find((m) => m.id === session.mode)!;

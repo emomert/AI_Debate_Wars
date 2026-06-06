@@ -75,7 +75,8 @@
 
 - [ ] Mobile layout
 - [ ] Focus states
-- [ ] Reduced motion
+- [ ] Reduced motion (decorative animations only — typewriter and live-typing
+      companions are exempt by design)
 - [ ] Help tooltip
 - [ ] Sample topics
 - [ ] Final result card

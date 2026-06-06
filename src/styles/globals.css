@@ -89,4 +89,21 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* …but keep the live-typing companions (caret, thinking dots, status pulse):
+     they ARE the product experience, are small/contained, and every visitor
+     should see the same playback. Values mirror tailwind.config.ts (pulse is
+     Tailwind's built-in 2s default). */
+  .animate-caret-blink {
+    animation-duration: 1.05s !important;
+    animation-iteration-count: infinite !important;
+  }
+  .animate-thinking-bounce {
+    animation-duration: 1.2s !important;
+    animation-iteration-count: infinite !important;
+  }
+  .animate-pulse {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
 }

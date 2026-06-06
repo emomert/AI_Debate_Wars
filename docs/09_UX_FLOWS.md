@@ -189,7 +189,8 @@ Requirements:
 
 - all controls keyboard accessible
 - focus rings visible
-- reduced motion support
+- reduced motion support for decorative animations (typewriter playback is
+  identical for everyone; only bounce/scale embellishments are flattened)
 - sound can be disabled
 - contrast strong enough
 - text readable on mobile

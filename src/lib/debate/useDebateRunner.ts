@@ -107,14 +107,13 @@ interface RunnerState {
 interface RunnerOptions {
   /** Called after each locked-in turn, on stop, and on completion. */
   onPersist?: (session: DebateSession) => void;
-  reducedMotion?: boolean;
 }
 
 export function useDebateRunner(
   initialSession: DebateSession,
   options: RunnerOptions = {},
 ) {
-  const { onPersist, reducedMotion = false } = options;
+  const { onPersist } = options;
 
   const alreadyFinished =
     (initialSession.status === "complete" || initialSession.status === "stopped") &&
@@ -210,7 +209,11 @@ export function useDebateRunner(
 
     async function typewriter(content: string) {
       const total = content.length;
-      if (reducedMotion || total === 0) {
+      // Deliberately NOT gated on prefers-reduced-motion: the typewriter is the
+      // core experience and a text reveal isn't vestibular-trigger motion, so
+      // every visitor gets the same playback. Decorative bounces elsewhere still
+      // honor the OS setting.
+      if (total === 0) {
         setState((p) => ({ ...p, streamingText: content }));
         return;
       }
@@ -325,7 +328,7 @@ export function useDebateRunner(
           // Gated turns are usually already fetched, so only a brief beat. The
           // first (ungated) turn keeps a full thinking beat, which also absorbs
           // React strict-mode's mount→unmount→mount so no duplicate call fires.
-          await delay(reducedMotion ? 80 : gated ? 350 : THINKING_MS, signal);
+          await delay(gated ? 350 : THINKING_MS, signal);
 
           // Resilient generation: quietly retry several times in the background
           // (staying in the non-alarming "thinking" state) before ever showing an
@@ -385,7 +388,7 @@ export function useDebateRunner(
             activeTurn: null,
             streamingText: "",
           }));
-          await delay(reducedMotion ? 50 : 220, signal);
+          await delay(220, signal);
         }
 
         // Judge — only after all rounds complete.

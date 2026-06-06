@@ -109,7 +109,8 @@ Check:
 - keyboard navigation
 - focus states
 - contrast
-- reduced motion
+- reduced motion (decorative bounce/scale animations flatten; the typewriter,
+  caret blink, thinking dots, and status pulse must still animate)
 - sound toggle
 - readable font sizes
 
