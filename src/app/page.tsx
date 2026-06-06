@@ -15,25 +15,56 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
-import { MODE_OPTIONS, SAMPLE_TOPICS } from "@/lib/constants";
-import { useArena, toSelectedModel } from "@/lib/state/ArenaContext";
+import { MODE_OPTIONS, SAMPLE_TOPICS, TONE_OPTIONS } from "@/lib/constants";
+import {
+  useArena,
+  toSelectedModel,
+  type ProviderAvailability,
+} from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { createDebateSession } from "@/lib/debate/orchestrator";
-import { getModelById, MODEL_CATALOG } from "@/lib/models/modelRegistry";
+import {
+  getModelById,
+  MODEL_CATALOG,
+  type ModelCatalogEntry,
+} from "@/lib/models/modelRegistry";
 import type { DebateConfig } from "@/lib/debate/debateTypes";
 
-function sampleConfig(): DebateConfig {
-  // A quick cheap matchup for "Try a Sample".
-  const a = getModelById("gpt-4o-mini") ?? MODEL_CATALOG[0];
-  const b = getModelById("deepseek-v4-flash") ?? MODEL_CATALOG[1];
+function randomItem<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+/**
+ * Candidate fighters for the demo: free/low-cost models only (a sample must
+ * never burn real credits), filtered to backends that actually have keys.
+ * Until /api/health resolves, OpenRouter models are excluded to stay safe.
+ */
+function samplePool(availability: ProviderAvailability | null): ModelCatalogEntry[] {
+  return MODEL_CATALOG.filter(
+    (m) =>
+      (m.costTier === "free" || m.costTier === "low") &&
+      (availability ? availability[m.providerId] : m.providerId !== "openrouter"),
+  );
+}
+
+/** A fresh randomized matchup every click — topic, mode, tone and fighters. */
+function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
+  const pool = samplePool(availability);
+  const fallbackA = getModelById("gpt-4o-mini") ?? MODEL_CATALOG[0];
+  const fallbackB = getModelById("deepseek-v4-flash") ?? MODEL_CATALOG[1];
+
+  const a = pool.length >= 2 ? randomItem(pool) : fallbackA;
+  const rest = pool.filter((m) => m.id !== a.id);
+  const b = rest.length > 0 ? randomItem(rest) : fallbackB;
+
   return {
-    topic: "Should universities ban AI tools?",
-    mode: "debate",
+    topic: randomItem(SAMPLE_TOPICS),
+    mode: randomItem(MODE_OPTIONS).id,
     modelA: toSelectedModel(a, "blue"),
     modelB: toSelectedModel(b, "red"),
-    roundCount: 3,
-    tone: "casual",
-    responseLength: "medium",
+    roundCount: 3, // demos stay quick & cheap
+    tone: randomItem(TONE_OPTIONS).id,
+    responseLength: randomItem(["short", "medium"] as const),
     pace: "auto",
     judge: { enabled: true, mode: "auto" },
   };
@@ -59,12 +90,12 @@ const HOW_IT_WORKS: { emoji: string; title: string; body: string }[] = [
 
 export default function HomePage() {
   const router = useRouter();
-  const { setConfig, setSession } = useArena();
+  const { setConfig, setSession, availability } = useArena();
 
   const useDebator = () => router.push("/setup");
 
   const trySample = () => {
-    const sample = sampleConfig();
+    const sample = sampleConfig(availability);
     setConfig(sample);
     setSession(createDebateSession(sample));
     playSound("debateStart");
@@ -136,7 +167,8 @@ export default function HomePage() {
           </div>
           <p className="mt-3 text-center text-xs text-ink/55">
             <strong>Use Debator</strong> sets up your own match · <strong>Try a
-            Sample</strong> jumps straight into a ready-made demo debate.
+            Sample</strong> rolls a random demo match — new topic, fighters and
+            rules every time.
           </p>
         </GamePanel>
       </motion.div>
