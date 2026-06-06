@@ -363,9 +363,62 @@ class SoundManager {
       } catch {
         this.musicEnabled = true;
       }
+      this.installVisibilityHandler();
     }
     this.musicHydrated = true;
     if (this.musicEnabled) this.startMusic(); // resume after reload if it was on
+    return this.musicEnabled;
+  }
+
+  /**
+   * Pause music while the tab is hidden and resume when it's visible again. This
+   * also fixes multi-tab overlap (default-on music): only the foreground tab
+   * actually plays the background track. Toggling persists nothing — it's a pure
+   * playback gate that respects the current musicEnabled preference.
+   */
+  private visibilityHandlerInstalled = false;
+  private installVisibilityHandler(): void {
+    if (this.visibilityHandlerInstalled || typeof document === "undefined") return;
+    this.visibilityHandlerInstalled = true;
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        this.stopMusic(); // pause without clearing musicEnabled
+      } else if (this.musicEnabled) {
+        this.startMusic();
+      }
+    });
+  }
+
+  /** Re-read the persisted sound pref (cross-tab storage event). */
+  syncEnabledFromStorage(): boolean {
+    let next = false;
+    try {
+      next = window.localStorage.getItem(STORAGE_KEY) === "true";
+    } catch {
+      next = false;
+    }
+    if (next !== this.enabled) {
+      this.enabled = next;
+      if (next) this.ensureContext();
+      this.listeners.forEach((fn) => fn(next));
+    }
+    return this.enabled;
+  }
+
+  /** Re-read the persisted music pref (cross-tab storage event). */
+  syncMusicFromStorage(): boolean {
+    let next = true;
+    try {
+      next = window.localStorage.getItem(MUSIC_STORAGE_KEY) !== "false";
+    } catch {
+      next = true;
+    }
+    if (next !== this.musicEnabled) {
+      this.musicEnabled = next;
+      if (next) this.startMusic();
+      else this.stopMusic();
+      this.musicListeners.forEach((fn) => fn(next));
+    }
     return this.musicEnabled;
   }
 

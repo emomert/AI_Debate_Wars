@@ -29,6 +29,17 @@ export function ThemeToggle() {
     const isDark = document.documentElement.classList.contains("dark");
     setDark(isDark);
     syncThemeColorMeta(isDark);
+
+    // Cross-tab sync: when another tab toggles the theme, mirror it here.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== THEME_KEY) return;
+      const nextDark = e.newValue === "dark";
+      setDark(nextDark);
+      document.documentElement.classList.toggle("dark", nextDark);
+      syncThemeColorMeta(nextDark);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const toggle = () => {

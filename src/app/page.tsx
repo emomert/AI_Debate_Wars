@@ -19,12 +19,12 @@ import { MODE_OPTIONS, SAMPLE_TOPICS, TONE_OPTIONS } from "@/lib/constants";
 import {
   useArena,
   toSelectedModel,
+  defaultFighters,
   type ProviderAvailability,
 } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { createDebateSession } from "@/lib/debate/orchestrator";
 import {
-  getModelById,
   MODEL_CATALOG,
   type ModelCatalogEntry,
 } from "@/lib/models/modelRegistry";
@@ -50,12 +50,11 @@ function samplePool(availability: ProviderAvailability | null): ModelCatalogEntr
 /** A fresh randomized matchup every click — topic, mode, tone and fighters. */
 function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
   const pool = samplePool(availability);
-  const fallbackA = getModelById("gpt-4o-mini") ?? MODEL_CATALOG[0];
-  const fallbackB = getModelById("deepseek-v4-flash") ?? MODEL_CATALOG[1];
+  const fallback = defaultFighters(); // shared default pair (no duplicated ids)
 
-  const a = pool.length >= 2 ? randomItem(pool) : fallbackA;
+  const a = pool.length >= 2 ? randomItem(pool) : fallback.a;
   const rest = pool.filter((m) => m.id !== a.id);
-  const b = rest.length > 0 ? randomItem(rest) : fallbackB;
+  const b = rest.length > 0 ? randomItem(rest) : fallback.b;
 
   return {
     topic: randomItem(SAMPLE_TOPICS),

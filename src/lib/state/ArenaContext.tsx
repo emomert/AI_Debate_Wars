@@ -3,11 +3,12 @@
 /**
  * Arena state — the single source of client state for the MVP (docs/10 says
  * "MVP can use local client state"). Holds the in-progress setup config and the
- * active mock session, and persists both to sessionStorage so navigating
+ * active session, and persists both to sessionStorage so navigating
  * Home → Setup → Debate → Result (or a refresh) doesn't lose the match.
  *
  * No provider/network logic lives here — it only orchestrates local state and
- * delegates session building to the Phase 1 mock engine.
+ * delegates session building to the orchestrator; real model calls happen
+ * server-side via the debate API routes.
  */
 
 import {
@@ -16,7 +17,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -56,11 +56,21 @@ export function toSelectedModel(
   };
 }
 
+/**
+ * The default fighter pair (cheap, broadly-available). Exported so the Home
+ * "Try a Sample" fallback uses the SAME pair instead of duplicating the ids.
+ */
+export function defaultFighters(): { a: ModelCatalogEntry; b: ModelCatalogEntry } {
+  return {
+    a: getModelById("gpt-4o-mini") ?? MODEL_CATALOG[0],
+    b: getModelById("deepseek-v4-flash") ?? MODEL_CATALOG[1],
+  };
+}
+
 function defaultConfig(): DebateConfig {
   // Sensible cheap defaults; users switch fighters/brands in setup. (For a
   // key-free option, pick a free OpenRouter model with OPENROUTER_API_KEY set.)
-  const a = getModelById("gpt-4o-mini") ?? MODEL_CATALOG[0];
-  const b = getModelById("deepseek-v4-flash") ?? MODEL_CATALOG[1];
+  const { a, b } = defaultFighters();
   return {
     topic: "",
     mode: "debate",
@@ -105,7 +115,6 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [availability, setAvailability] = useState<ProviderAvailability | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const skipPersist = useRef(true);
 
   // Ask the server which backends have keys configured.
   useEffect(() => {
@@ -131,22 +140,23 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     setSoundEnabled(soundManager.hydrate());
     setMusicEnabled(soundManager.hydrateMusic());
     setHydrated(true);
-    skipPersist.current = false;
   }, []);
 
-  // Persist config.
+  // Persist config. Gated on `hydrated` STATE (not a ref) so it never runs on
+  // the pre-rehydration commit — otherwise the render-0 default config/session
+  // would briefly overwrite (and delete) the just-restored values.
   useEffect(() => {
-    if (skipPersist.current) return;
+    if (!hydrated) return;
     try {
       window.sessionStorage.setItem(CONFIG_KEY, JSON.stringify(config));
     } catch {
       /* ignore */
     }
-  }, [config]);
+  }, [config, hydrated]);
 
   // Persist session.
   useEffect(() => {
-    if (skipPersist.current) return;
+    if (!hydrated) return;
     try {
       if (session) {
         window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
@@ -156,7 +166,22 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
-  }, [session]);
+  }, [session, hydrated]);
+
+  // Cross-tab sound/music sync: mirror another tab's toggle into this tab's
+  // soundManager + local state so two open tabs don't disagree (and the music
+  // toggle stays consistent). Theme is synced separately in ThemeToggle.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "ada:sound-enabled") {
+        setSoundEnabled(soundManager.syncEnabledFromStorage());
+      } else if (e.key === "ada:music-enabled") {
+        setMusicEnabled(soundManager.syncMusicFromStorage());
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   const setConfig = useCallback((patch: Partial<DebateConfig>) => {
     setConfigState((prev) => ({ ...prev, ...patch }));
