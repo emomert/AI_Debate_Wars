@@ -5,8 +5,10 @@
  * status and the running total cost (docs/01 Feature 8, docs/08).
  */
 
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+
+import { cn } from "@/lib/utils/cn";
 
 import type {
   DebateMode,
@@ -60,12 +62,28 @@ function DebateHUDComponent({
   const status = PHASE_LABEL[phase];
   const showActive = activeModelName && (phase === "thinking" || phase === "streaming");
   const live = phase !== "done" && phase !== "stopped" && phase !== "error";
+
+  // Scroll-aware fill: at the top of the page the bar is TRANSPARENT so the
+  // dotted background shows through; once the debate content starts sliding
+  // underneath it (any scroll), it regains a solid blurred fill so text never
+  // shows through the gaps between the chips.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll(); // resume mid-page (e.g. after navigation) starts solid
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // top offset = compact header height (52px). Kept tight: this bar plus the
-  // header are sticky and were eating too much reading space. Deliberately
-  // TRANSPARENT (no fill, no blur) so the dotted page background shows through
-  // — the chips themselves are solid, so the info stays readable.
+  // header are sticky and were eating too much reading space.
   return (
-    <div className="sticky top-[52px] z-20 -mx-4 border-b-4 border-ink px-4 py-1.5">
+    <div
+      className={cn(
+        "sticky top-[52px] z-20 -mx-4 border-b-4 border-ink px-4 py-1.5 transition-colors duration-200",
+        scrolled ? "bg-paper/90 backdrop-blur" : "bg-transparent",
+      )}
+    >
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <RoundCounter
