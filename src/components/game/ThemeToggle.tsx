@@ -12,7 +12,7 @@ import { IconButton } from "@/components/game/IconButton";
 
 const THEME_KEY = "debator-theme";
 // Keep the mobile browser chrome (address bar) tinted with the active theme.
-const THEME_COLOR = { light: "#F7F7F2", dark: "#15161A" } as const;
+const THEME_COLOR = { light: "#F7F7F2", dark: "#2E261F" } as const;
 
 function syncThemeColorMeta(dark: boolean) {
   document

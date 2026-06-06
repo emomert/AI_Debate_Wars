@@ -35,18 +35,20 @@
 }
 
 /* Dark theme (class-based; toggled in the header, persisted to localStorage,
-   default stays light). Ink flips to warm off-white so the thick comic borders
-   and text keep their contrast; bright arcade colors are unchanged. */
+   default stays light). Warm "coffee & cream" palette inspired by the Obsidian
+   Primary theme's dark mode: chocolate-brown surfaces on a ~30° amber hue ramp
+   with yellowish-cream ink for text, borders and shadows. Bright arcade colors
+   are unchanged — they pop even harder on brown. */
 .dark {
-  --paper: #15161a;
-  --dot: #343640;
-  --ink: #f0efe8;
-  --c-ink: 240 239 232;
-  --c-paper: 21 22 26;
-  --c-card: 35 37 43;
-  --c-surface: 46 48 55;
-  --c-dot: 52 54 64;
-  --shadow-ink: #f0efe8; /* matches dark ink — shadow reads as a second outline */
+  --paper: #2e261f; /* page: warm chocolate (Primary --background-primary) */
+  --dot: #4a3d2e; /* grid dots: lighter warm brown, subtle */
+  --ink: #ebdac6; /* text/borders: yellowish cream (Primary heading color) */
+  --c-ink: 235 218 198;
+  --c-paper: 46 38 31;
+  --c-card: 59 48 38; /* cards: mocha, one elevation step above the page */
+  --c-surface: 70 57 43; /* chips/selectors: lighter latte brown */
+  --c-dot: 74 61 46;
+  --shadow-ink: #ebdac6; /* matches dark ink — shadow reads as a second outline */
   color-scheme: dark;
 }
 

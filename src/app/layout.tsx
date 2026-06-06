@@ -20,7 +20,7 @@ export const viewport: Viewport = {
 // light. Default is light; only an explicit "dark" choice adds the class. Also
 // retints the browser-chrome theme-color meta if it already exists (ThemeToggle
 // keeps it in sync after hydration).
-const THEME_INIT = `(function(){try{if(localStorage.getItem("debator-theme")==="dark"){document.documentElement.classList.add("dark");var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#15161A")}}catch(e){}})()`;
+const THEME_INIT = `(function(){try{if(localStorage.getItem("debator-theme")==="dark"){document.documentElement.classList.add("dark");var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content","#2E261F")}}catch(e){}})()`;
 
 export default function RootLayout({
   children,
