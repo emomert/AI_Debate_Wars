@@ -80,7 +80,9 @@ function DebateMessageCardComponent({
             {avatar}
           </span>
           <div className="min-w-0">
-            <p className="truncate font-heading text-sm font-extrabold leading-tight">
+            {/* Wraps on phones so long model names stay fully readable;
+                truncates from sm+ where the header row has room. */}
+            <p className="break-words font-heading text-sm font-extrabold leading-tight sm:truncate">
               {title}
             </p>
             {subtitle ? (
@@ -107,7 +109,7 @@ function DebateMessageCardComponent({
                 <span
                   aria-hidden
                   className={cn(
-                    "ml-1 inline-block h-[1.15em] w-[0.6em] translate-y-[2px] animate-caret-blink rounded-[3px] border-2 border-ink align-text-bottom shadow-[1.5px_1.5px_0_#050505]",
+                    "ml-1 inline-block h-[1.15em] w-[0.6em] translate-y-[2px] animate-caret-blink rounded-[3px] border-2 border-ink align-text-bottom shadow-[1.5px_1.5px_0_var(--shadow-ink)]",
                     ACCENT_BAR[color],
                   )}
                 />

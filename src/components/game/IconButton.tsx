@@ -52,10 +52,14 @@ export function IconButton({
         if (!silent) playSound("buttonClick");
         onClick?.();
       }}
-      whileHover={reduce ? undefined : { y: -2, boxShadow: "5px 5px 0 #050505" }}
-      whileTap={reduce ? undefined : { x: 2, y: 2, boxShadow: "1px 1px 0 #050505" }}
+      whileHover={
+        reduce ? undefined : { y: -2, boxShadow: "5px 5px 0 var(--shadow-ink)" }
+      }
+      whileTap={
+        reduce ? undefined : { x: 2, y: 2, boxShadow: "1px 1px 0 var(--shadow-ink)" }
+      }
       transition={{ duration: 0.12, ease: "easeOut" }}
-      style={{ boxShadow: "3px 3px 0 #050505" }}
+      style={{ boxShadow: "3px 3px 0 var(--shadow-ink)" }}
       className={cn(
         "grid h-9 w-9 place-items-center rounded-btn border-3 border-ink text-lg",
         COLOR_CLASSES[color],

@@ -22,6 +22,9 @@
   --c-card: 255 255 255;
   --c-surface: 255 255 255;
   --c-dot: 201 201 201;
+  /* Hard offset shadows are "ink" — they flip with the theme so the chunky
+     neo-brutalist depth cue stays visible on the dark paper too. */
+  --shadow-ink: #050505;
   color-scheme: light;
 
   /* Display / hero, chunky heading, readable body, monospace numbers. */
@@ -43,6 +46,7 @@
   --c-card: 35 37 43;
   --c-surface: 46 48 55;
   --c-dot: 52 54 64;
+  --shadow-ink: #f0efe8; /* matches dark ink — shadow reads as a second outline */
   color-scheme: dark;
 }
 

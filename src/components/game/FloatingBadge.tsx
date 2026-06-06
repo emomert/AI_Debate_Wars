@@ -36,7 +36,7 @@ export function FloatingBadge({
       initial={{ rotate }}
       animate={reduce ? { rotate } : { y: [0, -4, 0], rotate }}
       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      style={{ boxShadow: "3px 3px 0 #050505" }}
+      style={{ boxShadow: "3px 3px 0 var(--shadow-ink)" }}
       className={cn(
         "inline-block rounded-badge border-3 border-ink px-3 py-1 font-heading text-xs font-extrabold uppercase tracking-wider",
         COLOR[color],

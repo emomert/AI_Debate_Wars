@@ -66,9 +66,11 @@ export function ArcadeButton({
 }: ArcadeButtonProps) {
   const reduce = useReducedMotion();
 
-  const restShadow = "6px 6px 0 #050505";
-  const hoverShadow = "8px 8px 0 #050505";
-  const pressShadow = "2px 2px 0 #050505";
+  // var(--shadow-ink) flips with the theme; framer still tweens the offsets
+  // (the non-numeric template is identical across states).
+  const restShadow = "6px 6px 0 var(--shadow-ink)";
+  const hoverShadow = "8px 8px 0 var(--shadow-ink)";
+  const pressShadow = "2px 2px 0 var(--shadow-ink)";
 
   return (
     <motion.button

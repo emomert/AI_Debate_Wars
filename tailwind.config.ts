@@ -55,10 +55,12 @@ const config: Config = {
         modal: "28px",
       },
       boxShadow: {
-        hard: "6px 6px 0 #050505",
-        "hard-sm": "3px 3px 0 #050505",
-        "hard-lg": "8px 8px 0 #050505",
-        "hard-pressed": "2px 2px 0 #050505",
+        // Ink shadows route through a CSS var so they flip with the theme
+        // (light: #050505, dark: #f0efe8 — see globals.css).
+        hard: "6px 6px 0 var(--shadow-ink)",
+        "hard-sm": "3px 3px 0 var(--shadow-ink)",
+        "hard-lg": "8px 8px 0 var(--shadow-ink)",
+        "hard-pressed": "2px 2px 0 var(--shadow-ink)",
         "hard-blue": "6px 6px 0 #1d4ed8",
         "hard-red": "6px 6px 0 #c81e1e",
         "hard-purple": "6px 6px 0 #6d28d9",
