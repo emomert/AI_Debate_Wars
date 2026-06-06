@@ -6,7 +6,7 @@
  *   1. validates the incoming session,
  *   2. picks the model for the (app-chosen) turn,
  *   3. builds the prompt (promptBuilder),
- *   4. calls the provider via the registry (mock / openai / deepseek),
+ *   4. calls the provider via the registry (openai / deepseek / openrouter),
  *   5. computes cost from the configurable pricing table,
  *   6. returns one DebateMessage.
  * It never advances the debate or runs more than one turn.
@@ -36,6 +36,7 @@ import {
 } from "@/lib/debate/promptBuilder";
 import { generateWithRetry, getProvider } from "@/lib/providers/providerRegistry";
 import { getProviderModelConfig } from "@/lib/models/modelRegistry";
+import { readJsonBody } from "@/lib/api/serverBody";
 import {
   buildUsage,
   calculateCost,
@@ -57,7 +58,10 @@ export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const body = (await req.json()) as GenerateTurnRequest;
+    // Keep total work under Vercel's maxDuration=60 (return a clean JSON error
+    // before the platform kills the function with an opaque 502/504).
+    const deadlineMs = Date.now() + 55_000;
+    const body = await readJsonBody<GenerateTurnRequest>(req);
     const session = body?.session;
     assertValidSession(session);
     assertConsistentTranscript(session);
@@ -86,16 +90,25 @@ export async function POST(req: Request): Promise<NextResponse> {
     const preset = lengthPreset(session.responseLength);
     const maxOutputTokens = Math.min(preset.maxTokens, modelConfig.maxOutputTokens);
 
-    const result = await generateWithRetry(provider, {
-      model: modelConfig,
-      systemPrompt,
-      userPrompt,
-      temperature: 0.8,
-      maxOutputTokens,
-      kind: "turn",
-      // Generous: DeepSeek/OpenRouter reasoning can take 20s+ on a cold first call.
-      timeoutMs: 90_000,
-    });
+    const result = await generateWithRetry(
+      provider,
+      {
+        model: modelConfig,
+        systemPrompt,
+        userPrompt,
+        temperature: 0.8,
+        maxOutputTokens,
+        kind: "turn",
+        // Per-attempt cap; generateWithRetry further clamps it to the remaining
+        // deadline budget so the whole call finishes before maxDuration.
+        timeoutMs: 50_000,
+        // Abort the upstream provider call if the client disconnects (Stop /
+        // navigation), so we don't keep billing a turn nobody is waiting for.
+        signal: req.signal,
+      },
+      3,
+      deadlineMs,
+    );
 
     const estimated = !result.usage;
     const usage =

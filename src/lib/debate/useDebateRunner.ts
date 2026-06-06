@@ -30,7 +30,7 @@ import {
   summarizeSessionCost,
 } from "@/lib/cost/calculateCost";
 import { generateTurn, generateVerdict } from "@/lib/api/debateClient";
-import { type AppErrorShape, toAppError } from "@/lib/utils/errors";
+import { type AppErrorShape, type AppErrorCode, toAppError } from "@/lib/utils/errors";
 import {
   playKeystroke,
   playSound,
@@ -69,18 +69,37 @@ const RETRY_BASE_MS = 600;
 const RETRY_MAX_MS = 3000;
 const CLIENT_RETRY_BUDGET_MS = 120_000; // overall ceiling so we never loop forever
 
+// Only these (network blip / provider hiccup / transient rate-limit) are worth a
+// silent client retry. Deterministic failures — bad key, invalid model, token
+// ceiling, out of credits, bad request — fail fast to the error UI instead of
+// being retried several times pointlessly.
+const CLIENT_TRANSIENT: ReadonlySet<AppErrorCode> = new Set<AppErrorCode>([
+  "PROVIDER_ERROR",
+  "PROVIDER_TIMEOUT",
+  "RATE_LIMITED",
+  "UNKNOWN_ERROR",
+]);
+
+function isTransient(err: unknown): boolean {
+  return CLIENT_TRANSIENT.has(toAppError(err).code);
+}
+
 function delay(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) return reject(new DOMException("aborted", "AbortError"));
-    const id = setTimeout(resolve, ms);
-    signal.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(id);
-        reject(new DOMException("aborted", "AbortError"));
-      },
-      { once: true },
-    );
+    let id: ReturnType<typeof setTimeout>;
+    // Named handler so it can be detached on resolve — otherwise every frame of
+    // the typewriter (thousands per debate) leaks an abort listener on the
+    // long-lived run signal.
+    const onAbort = () => {
+      clearTimeout(id);
+      reject(new DOMException("aborted", "AbortError"));
+    };
+    id = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal.addEventListener("abort", onAbort, { once: true });
   });
 }
 
@@ -95,6 +114,12 @@ function snapshot(s: DebateSession, status: SessionStatus): DebateSession {
     status,
     turns: s.turns.map((t) => ({ ...t })),
     messages: [...s.messages],
+    // Always recompute from the actual messages (+ verdict) so EVERY persisted
+    // snapshot — running, STOPPED, complete — carries an accurate total. (A
+    // stopped match used to keep the zeroed initial summary, so Results showed
+    // $0.00 next to a real per-fighter split.) recomputeCostSummary no-ops the
+    // verdict branch when there's no verdict.
+    costSummary: recomputeCostSummary(s),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -154,6 +179,10 @@ export function useDebateRunner(
   const [pace, setPaceState] = useState<DebatePace>(initialSession.pace);
 
   const [runToken, setRunToken] = useState(0);
+  // Set by retry() so the re-run skips the manual gate for the single retried
+  // turn (otherwise "Retry turn" in Normal pacing bounces to the "Your move"
+  // gate instead of actually retrying).
+  const retryRef = useRef(false);
 
   const stop = useCallback(() => {
     controllerRef.current?.abort();
@@ -172,6 +201,7 @@ export function useDebateRunner(
   }, []);
 
   const retry = useCallback(() => {
+    retryRef.current = true; // skip the gate for the turn we're retrying
     setState((prev) => ({ ...prev, error: null, phase: "thinking" }));
     setRunToken((t) => t + 1);
   }, []);
@@ -304,8 +334,13 @@ export function useDebateRunner(
           if (signal.aborted) return;
 
           // Normal (manual) pacing gates every turn except the very first of the
-          // match. Fast (auto) pacing skips the gate.
-          const gated = paceRef.current === "manual" && working.messages.length > 0;
+          // match. Fast (auto) pacing skips the gate. A retried turn also skips
+          // the gate so "Retry turn" regenerates immediately (consume the flag
+          // on this first processed pending turn).
+          const retryFirst = retryRef.current;
+          retryRef.current = false;
+          const gated =
+            !retryFirst && paceRef.current === "manual" && working.messages.length > 0;
 
           // PREFETCH: for a gated turn, start generating NOW so the answer is
           // ready while the user reads the previous turn — pressing "Next" then
@@ -358,7 +393,8 @@ export function useDebateRunner(
                 attempt += 1;
                 if (
                   attempt >= MAX_CLIENT_ATTEMPTS ||
-                  Date.now() - startedAt > CLIENT_RETRY_BUDGET_MS
+                  Date.now() - startedAt > CLIENT_RETRY_BUDGET_MS ||
+                  !isTransient(err) // deterministic failure — don't retry blindly
                 ) {
                   throw err; // exhausted — let the catch show the error UI
                 }
@@ -431,7 +467,8 @@ export function useDebateRunner(
                 attempt += 1;
                 if (
                   attempt >= MAX_CLIENT_ATTEMPTS ||
-                  Date.now() - startedAt > CLIENT_RETRY_BUDGET_MS
+                  Date.now() - startedAt > CLIENT_RETRY_BUDGET_MS ||
+                  !isTransient(err)
                 ) {
                   throw err;
                 }

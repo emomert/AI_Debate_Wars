@@ -33,6 +33,7 @@ import {
   getModelById,
   getProviderModelConfig,
 } from "@/lib/models/modelRegistry";
+import { readJsonBody } from "@/lib/api/serverBody";
 import {
   buildUsage,
   calculateCost,
@@ -51,30 +52,35 @@ export const dynamic = "force-dynamic";
 // The judge can be a slow reasoning model; same Vercel duration note as /turn.
 export const maxDuration = 60;
 
-/** Resolve which provider+model acts as judge. */
-function resolveJudgeRef(session: DebateSession): { providerId: string; modelId: string } {
+/**
+ * Resolve which model acts as judge. Only the modelId is load-bearing — the
+ * real backend is derived from the catalog by getProviderModelConfig — so we
+ * return just the id (no provider-id type laundering / `as never`).
+ */
+function resolveJudgeModelId(session: DebateSession): string {
   const { judge } = session;
   switch (judge.mode) {
     case "modelA":
-      return { providerId: session.modelA.providerId, modelId: session.modelA.modelId };
+      return session.modelA.modelId;
     case "modelB":
-      return { providerId: session.modelB.providerId, modelId: session.modelB.modelId };
+      return session.modelB.modelId;
     case "thirdModel": {
       if (!judge.model) throw new ProviderError("INVALID_REQUEST", "No judge model chosen");
       if (!getModelById(judge.model.modelId)) {
         throw new ProviderError("INVALID_MODEL", "Unknown judge model");
       }
-      return { providerId: judge.model.providerId, modelId: judge.model.modelId };
+      return judge.model.modelId;
     }
     case "auto":
     default:
-      return resolveAutoJudge();
+      return resolveAutoJudge(session).modelId;
   }
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const body = (await req.json()) as GenerateVerdictRequest;
+    const deadlineMs = Date.now() + 55_000; // stay under Vercel maxDuration=60
+    const body = await readJsonBody<GenerateVerdictRequest>(req);
     const session = body?.session;
     assertValidSession(session);
     assertConsistentTranscript(session);
@@ -92,25 +98,36 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw new ProviderError("INVALID_REQUEST", "Debate transcript is empty");
     }
 
-    const judgeRef = resolveJudgeRef(session);
-    const modelConfig = getProviderModelConfig(judgeRef.modelId, judgeRef.providerId as never);
+    const judgeModelId = resolveJudgeModelId(session);
+    const modelConfig = getProviderModelConfig(judgeModelId);
     const provider = getProvider(modelConfig.providerId);
 
     const systemPrompt = JUDGE_SYSTEM_PROMPT;
     const userPrompt = buildJudgePrompt(session);
     const maxOutputTokens = Math.min(1000, modelConfig.maxOutputTokens);
 
-    const result = await generateWithRetry(provider, {
-      model: modelConfig,
-      systemPrompt,
-      userPrompt,
-      temperature: 0.4,
-      maxOutputTokens,
-      kind: "judge",
-      timeoutMs: 120_000,
-    });
+    const result = await generateWithRetry(
+      provider,
+      {
+        model: modelConfig,
+        systemPrompt,
+        userPrompt,
+        temperature: 0.4,
+        maxOutputTokens,
+        kind: "judge",
+        timeoutMs: 50_000,
+        signal: req.signal,
+      },
+      3,
+      deadlineMs,
+    );
 
-    const parsed = parseVerdict(result.content, session.mode);
+    const parsed = parseVerdict(
+      result.content,
+      session.mode,
+      session.modelA.displayName,
+      session.modelB.displayName,
+    );
     const estimated = !result.usage;
     const usage =
       result.usage ??
@@ -118,12 +135,12 @@ export async function POST(req: Request): Promise<NextResponse> {
         estimateTokensFromText(systemPrompt + userPrompt),
         estimateTokensFromText(result.content),
       );
-    const cost = calculateCost(modelConfig.providerId, judgeRef.modelId, usage, estimated);
+    const cost = calculateCost(modelConfig.providerId, judgeModelId, usage, estimated);
 
     const verdict: DebateVerdict = {
       id: createId("verdict"),
       sessionId: session.id,
-      judgeModelId: judgeRef.modelId,
+      judgeModelId,
       content: formatVerdictText(parsed, session.modelA.displayName, session.modelB.displayName),
       winner: parsed.winner,
       summary: parsed.summary,
