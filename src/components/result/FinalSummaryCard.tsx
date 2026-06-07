@@ -30,7 +30,11 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
   }, [session.messages]);
 
   const cost = session.costSummary;
-  const judgeCost = session.verdict?.cost?.totalCost ?? 0;
+  // Includes verdicts replaced by a re-judge — they were paid for too, and the
+  // split below must keep reconciling with the Total.
+  const judgeCost =
+    (session.verdict?.cost?.totalCost ?? 0) +
+    (session.pastVerdicts ?? []).reduce((sum, v) => sum + (v.cost?.totalCost ?? 0), 0);
   const roundLabel = ROUND_OPTIONS.find((r) => r.count === session.roundCount)?.label;
 
   return (

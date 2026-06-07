@@ -15,13 +15,15 @@ import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
 import { VerdictCard } from "@/components/debate/VerdictCard";
 import { FinalSummaryCard } from "@/components/result/FinalSummaryCard";
+import { RejudgePanel } from "@/components/result/RejudgePanel";
 import { SharePanel } from "@/components/result/SharePanel";
 import { SourcesList, mergeCitations } from "@/components/debate/SourcesList";
+import { isDebateComplete } from "@/lib/debate/orchestrator";
 import { useArena } from "@/lib/state/ArenaContext";
 
 export default function ResultPage() {
   const router = useRouter();
-  const { session, startMatch, hydrated } = useArena();
+  const { session, setSession, startMatch, availability, hydrated } = useArena();
 
   if (!session) {
     return (
@@ -89,11 +91,22 @@ export default function ResultPage() {
           <GamePanel className="text-center">
             <p className="font-heading text-lg font-extrabold">No judge this round</p>
             <p className="mt-1 text-sm text-ink/60">
-              The debate ended after the final round. Enable Judge Mode in setup
-              for a final verdict.
+              {isDebateComplete(session)
+                ? "The debate ended after the final round — but you can still bring in a judge below."
+                : "The match was stopped before the final round, so there is nothing to judge yet."}
             </p>
           </GamePanel>
         )}
+
+        {/* Re-judge: only a COMPLETE transcript can be (re-)scored — the server
+            rejects partial matches, so a stopped session hides the panel. */}
+        {isDebateComplete(session) ? (
+          <RejudgePanel
+            session={session}
+            availability={availability}
+            onSession={setSession}
+          />
+        ) : null}
 
         <FinalSummaryCard session={session} />
 

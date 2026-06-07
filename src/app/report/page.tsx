@@ -113,18 +113,20 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 // Realistic stand-ins so the deep-mode prompt preview shows the EXACT block
 // shape the server injects (the real ones come from Brave at request time).
+// Real authoritative pages so the now-clickable citation chips lead somewhere
+// meaningful rather than to placeholder URLs.
 const SAMPLE_SOURCES: Citation[] = [
   {
     index: 1,
-    title: "Age Verification Laws and Youth Online Safety: Overview",
-    url: "https://example.org/age-verification-overview",
+    title: "Ofcom — Online safety and protecting children",
+    url: "https://www.ofcom.org.uk/online-safety/",
     quote:
       "New efforts to mandate age verification for social media platforms could reshape how minors access online services.",
   },
   {
     index: 2,
-    title: "The State of Age Verification in Social Media",
-    url: "https://example.org/state-of-age-verification",
+    title: "GDPR.eu — Children's data and parental consent",
+    url: "https://gdpr.eu/",
     quote:
       "In the EU, the GDPR prohibits the online processing of children's data without parental consent.",
   },
@@ -504,20 +506,28 @@ export default function ReportPage() {
               top results into numbered sources: title, URL, snippet. Engine, result count and
               per-query fee are configuration, not code.
             </Step>
-            <Step n={2} title="Ground">
+            <Step n={2} title="Rank">
+              A 20-result pool is re-ranked before the model sees it: academic and
+              institutional sources (journals, .edu/.gov/.ac domains, official statistics)
+              float to the top, community content and encyclopedias (Wikipedia, Reddit, …)
+              sink to the bottom. Topics with no academic coverage gracefully keep the
+              engine&apos;s own ranking.
+            </Step>
+            <Step n={3} title="Ground">
               The sources are injected into the turn prompt as the model&apos;s evidence base,
               explicitly marked as <em>untrusted data, never instructions</em>. The model must
               cite inline as [1], [2] and may not invent sources.
             </Step>
-            <Step n={3} title="Verify">
+            <Step n={4} title="Verify">
               After generation the server strips any [n] marker that doesn&apos;t map to a real
               source, then narrows the attached source list to only what the model actually
               cited — so &quot;Sources · 4&quot; on a card always means four genuinely cited
               pages.
             </Step>
-            <Step n={4} title="Disclose">
-              Each card shows a collapsible source list with links and quotes; the result page
-              merges every cited source of the match into one de-duplicated reference list.
+            <Step n={5} title="Disclose">
+              Inline [n] chips link straight to their source. Each card shows a collapsible
+              source list with links and quotes; the result page merges every cited source of
+              the match into one de-duplicated reference list.
             </Step>
           </ol>
         </GamePanel>
@@ -543,14 +553,14 @@ export default function ReportPage() {
             citations={SAMPLE_SOURCES.concat([
               {
                 index: 3,
-                title: "Age-verification requirements spark new privacy debates",
-                url: "https://example.org/age-verification-privacy",
+                title: "ICO — Age assurance and the Children's Code",
+                url: "https://ico.org.uk/",
                 quote: "A token confirming someone's age can be supplied when requesting access.",
               },
               {
                 index: 4,
-                title: "10 (Not So) Hidden Dangers of Age Verification",
-                url: "https://example.org/dangers-of-age-verification",
+                title: "EFF — The dangers of mandatory age verification",
+                url: "https://www.eff.org/",
                 quote: "Age-verification systems inevitably block some adults from lawful speech.",
               },
             ])}

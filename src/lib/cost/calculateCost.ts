@@ -82,14 +82,19 @@ export const EMPTY_COST_SUMMARY: SessionCostSummary = {
   currency: "USD",
 };
 
-/** Session cost summary including the optional judge verdict's usage/cost. */
+/**
+ * Session cost summary including the judge verdict's usage/cost — and any
+ * verdicts replaced by a post-match re-judge, since those were paid for too.
+ */
 export function recomputeCostSummary(session: DebateSession): SessionCostSummary {
   const base = summarizeSessionCost(session.messages);
-  if (session.verdict?.usage && session.verdict.cost) {
-    base.totalInputTokens += session.verdict.usage.inputTokens;
-    base.totalOutputTokens += session.verdict.usage.outputTokens;
-    base.totalTokens += session.verdict.usage.totalTokens;
-    base.totalCost += session.verdict.cost.totalCost;
+  for (const verdict of [...(session.pastVerdicts ?? []), session.verdict]) {
+    if (verdict?.usage && verdict.cost) {
+      base.totalInputTokens += verdict.usage.inputTokens;
+      base.totalOutputTokens += verdict.usage.outputTokens;
+      base.totalTokens += verdict.usage.totalTokens;
+      base.totalCost += verdict.cost.totalCost;
+    }
   }
   return base;
 }

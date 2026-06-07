@@ -172,6 +172,11 @@ export interface DebateSession {
   turns: DebateTurn[];
   messages: DebateMessage[];
   verdict?: DebateVerdict;
+  /**
+   * Verdicts replaced by a post-match re-judge ("change the judge"). Kept so
+   * the cost summary stays honest — every judge call was really paid for.
+   */
+  pastVerdicts?: DebateVerdict[];
   costSummary: SessionCostSummary;
   status: SessionStatus;
   createdAt: string;
