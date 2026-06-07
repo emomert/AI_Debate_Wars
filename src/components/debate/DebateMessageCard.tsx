@@ -22,7 +22,20 @@ import { Badge } from "@/components/game/Badge";
 import { CostBadge } from "@/components/debate/CostBadge";
 import { MarkdownText } from "@/components/debate/MarkdownText";
 import { SourcesList } from "@/components/debate/SourcesList";
+import { WRITING_LINES, useRotatingLine } from "@/components/debate/waitingMessages";
 import { cn } from "@/lib/utils/cn";
+
+/**
+ * Rotating playful caption shown WHILE a fighter's answer types out, in any
+ * mode. Its own component so the timer only runs on the single streaming card
+ * (mounted only while streaming), not on every completed message card.
+ */
+function WritingCaption({ name }: { name: string }) {
+  const line = useRotatingLine(WRITING_LINES, name);
+  return (
+    <p className="truncate text-[11px] italic text-ink/55">✍️ {line}…</p>
+  );
+}
 
 interface DebateMessageCardProps {
   speaker: Speaker;
@@ -92,7 +105,9 @@ function DebateMessageCardComponent({
             <p className="break-words font-heading text-sm font-extrabold leading-tight sm:truncate">
               {title}
             </p>
-            {subtitle ? (
+            {streaming && !isJudge ? (
+              <WritingCaption name={title} />
+            ) : subtitle ? (
               <p className="truncate text-[11px] text-ink/50">{subtitle}</p>
             ) : null}
           </div>
