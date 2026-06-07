@@ -17,8 +17,11 @@ import type { Citation } from "@/lib/debate/debateTypes";
 import { useCitationViewer } from "@/components/debate/CitationViewer";
 import { cn } from "@/lib/utils/cn";
 
+// Self-contained raised citation chip. NOT wrapped in <sup> — sup would shrink
+// (~0.83em) on top of text-[0.72em], double-shrinking it to an unreadable ~0.6em
+// and misaligning the baseline. align-[0.3em] gives the superscript lift instead.
 const CHIP_CLASS =
-  "rounded-[4px] border border-ink bg-arcade-purple/20 px-1 font-mono text-[0.7em] font-bold text-ink no-underline transition hover:bg-arcade-purple hover:text-white focus-visible:outline-2 focus-visible:outline-offset-1";
+  "mx-0.5 inline-flex items-center rounded-[4px] border border-ink bg-arcade-purple/20 px-1 align-[0.3em] font-mono text-[0.72em] font-bold leading-none text-ink no-underline transition hover:bg-arcade-purple hover:text-white focus-visible:outline-2 focus-visible:outline-offset-1";
 
 /**
  * Parse inline markdown within a line: [text](url) links, [n] citation chips
@@ -69,41 +72,36 @@ function renderInline(
       const source = citations.find((c) => c.index === n);
       if (source && onCite) {
         nodes.push(
-          <sup key={key} className="mx-0.5">
-            <button
-              type="button"
-              onClick={() => onCite(source)}
-              title={source.title}
-              aria-label={`Source ${n}: ${source.title}. Open details.`}
-              className={cn(CHIP_CLASS, "cursor-pointer")}
-            >
-              {n}
-            </button>
-          </sup>,
+          <button
+            key={key}
+            type="button"
+            onClick={() => onCite(source)}
+            title={source.title}
+            aria-label={`Source ${n}: ${source.title}. Open details.`}
+            className={cn(CHIP_CLASS, "cursor-pointer")}
+          >
+            {n}
+          </button>,
         );
       } else if (source && /^https?:\/\//i.test(source.url)) {
         nodes.push(
-          <sup key={key} className="mx-0.5">
-            <a
-              href={source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={source.title}
-              aria-label={`Source ${n}: ${source.title}`}
-              className={CHIP_CLASS}
-            >
-              {n}
-            </a>
-          </sup>,
+          <a
+            key={key}
+            href={source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={source.title}
+            aria-label={`Source ${n}: ${source.title}`}
+            className={CHIP_CLASS}
+          >
+            {n}
+          </a>,
         );
       } else if (source) {
         nodes.push(
-          <sup
-            key={key}
-            className="mx-0.5 rounded-[4px] border border-ink bg-arcade-purple/20 px-1 font-mono text-[0.7em] font-bold text-ink"
-          >
+          <span key={key} className={CHIP_CLASS}>
             {n}
-          </sup>,
+          </span>,
         );
       } else {
         nodes.push(m[4]);
