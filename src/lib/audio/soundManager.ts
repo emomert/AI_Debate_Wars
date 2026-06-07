@@ -47,7 +47,8 @@ const DRUM_ROLL_VOLUME = 0.5;
 const SFX_ASSETS: Partial<Record<SoundKey, string>> = {
   roundStart: "/music/round_start.mp3",
 };
-const SFX_FILE_VOLUME = 0.5;
+// roundStart is the only file SFX; lowered 30% (0.5 → 0.35) per feedback.
+const SFX_FILE_VOLUME = 0.35;
 
 // Generative fallback — a chill lo-fi loop: Dm7 → G7 → Cmaj7 → Am7 (ii–V–I–vi in
 // C), with a soft pad, a walking bass, and a sparse pentatonic melody motif that
@@ -102,8 +103,8 @@ const PATTERNS: Record<SoundKey, Note[]> = {
     { freq: 784, start: 0.2, dur: 0.16, type: "square", gain: 0.16 },
   ],
   roundStart: [
-    { freq: 330, start: 0, dur: 0.08, type: "triangle", gain: 0.16 },
-    { freq: 494, start: 0.09, dur: 0.12, type: "triangle", gain: 0.16 },
+    { freq: 330, start: 0, dur: 0.08, type: "triangle", gain: 0.11 },
+    { freq: 494, start: 0.09, dur: 0.12, type: "triangle", gain: 0.11 },
   ],
   typingStart: [{ freq: 240, start: 0, dur: 0.05, type: "sine", gain: 0.07 }],
   turnComplete: [
@@ -484,15 +485,28 @@ class SoundManager {
     }
     this.musicAudio
       .play()
-      .then(() => this.stopSynth()) // real file playing → don't also run synth
+      .then(() => {
+        // If music was switched off while play() was resolving (rapid toggle),
+        // don't leave the file playing.
+        if (!this.musicEnabled) {
+          this.musicAudio?.pause();
+          return;
+        }
+        this.stopSynth(); // real file playing → don't also run synth
+      })
       .catch((err: unknown) => {
-        // Autoplay policy (no user gesture yet — music is on by default): retry
-        // on the first interaction instead of falling back to the synth, which
-        // would be equally blocked.
+        // Switched off meanwhile → start nothing (prevents a phantom synth track
+        // when toggling music off/on rapidly).
+        if (!this.musicEnabled) return;
         if (err instanceof DOMException && err.name === "NotAllowedError") {
+          // Autoplay policy (no gesture yet): retry on first interaction rather
+          // than falling back to the synth, which would be equally blocked.
           this.armMusicGestureRetry();
+        } else if (err instanceof DOMException && err.name === "AbortError") {
+          // play() interrupted by a pause() (rapid toggle) — NOT a real failure,
+          // so do NOT start the synth fallback. This was the multi-track bug.
         } else {
-          this.startSynth(); // no file (or it failed) → synth
+          this.startSynth(); // genuinely no file (or it failed) → synth
         }
       });
   }
