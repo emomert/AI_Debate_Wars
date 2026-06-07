@@ -7,6 +7,7 @@
  */
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
@@ -14,6 +15,15 @@ import { DottedBackground } from "@/components/game/DottedBackground";
 import { SoundToggle } from "@/components/game/SoundToggle";
 import { MusicToggle } from "@/components/game/MusicToggle";
 import { HelpButton } from "@/components/game/HelpButton";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+
+// Code-split the auth widget so the Supabase SDK stays OFF every page's initial
+// bundle (incl. the debate page) and never loads on deployments without auth.
+const AuthButton = dynamic(
+  () => import("@/components/game/AuthButton").then((m) => m.AuthButton),
+  { ssr: false },
+);
+const authEnabled = isSupabaseConfigured();
 
 interface GameShellProps {
   children: ReactNode;
@@ -91,6 +101,7 @@ export function GameShell({
           </div>
           <div className="flex items-center gap-2">
             {headerExtras}
+            {authEnabled ? <AuthButton /> : null}
             <MusicToggle />
             <SoundToggle />
             <HelpButton />
