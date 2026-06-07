@@ -192,27 +192,34 @@ export async function renderVerdictImage(
   ctx.fillStyle = "rgba(5,5,5,0.55)";
   ctx.fillText("AI vs AI", padX + innerW, pillY + 60);
 
-  // Winner headline.
+  // Winner headline (one line).
   ctx.textAlign = "left";
   ctx.fillStyle = C.ink;
-  ctx.font = `800 54px ${FONT_HEADING}`;
-  const winY = pillY + pillH + 78;
-  const wLines = wrapLines(ctx, winnerLine(session), innerW, 2);
-  wLines.forEach((line, i) => ctx.fillText(line, padX, winY + i * 58));
-  let cursorY = winY + (wLines.length - 1) * 58;
+  ctx.font = `800 50px ${FONT_HEADING}`;
+  const winY = pillY + pillH + 70;
+  ctx.fillText(wrapLines(ctx, winnerLine(session), innerW, 1)[0] ?? "", padX, winY);
+  let cursorY = winY;
 
-  // Verdict summary (optional, 2 lines).
-  if (session.verdict?.summary) {
-    ctx.font = `500 24px ${FONT_BODY}`;
-    ctx.fillStyle = "rgba(5,5,5,0.7)";
-    const sLines = wrapLines(ctx, session.verdict.summary, innerW, 2);
-    cursorY += 44;
-    sLines.forEach((line, i) => ctx.fillText(line, padX, cursorY + i * 32));
-    cursorY += (sLines.length - 1) * 32;
+  const v = session.verdict;
+  // The winning argument (one line).
+  if (v?.winnerArgument) {
+    cursorY += 34;
+    ctx.font = `700 22px ${FONT_BODY}`;
+    ctx.fillStyle = C.ink;
+    ctx.fillText(wrapLines(ctx, `💥 ${v.winnerArgument}`, innerW, 1)[0] ?? "", padX, cursorY);
+  }
+  // Why the judge decided (2 lines; strip ** markdown — canvas has no bold run).
+  if (v?.summary) {
+    cursorY += 34;
+    ctx.font = `500 22px ${FONT_BODY}`;
+    ctx.fillStyle = "rgba(5,5,5,0.72)";
+    const rLines = wrapLines(ctx, v.summary.replace(/\*\*/g, ""), innerW, 2);
+    rLines.forEach((line, i) => ctx.fillText(line, padX, cursorY + i * 30));
+    cursorY += (rLines.length - 1) * 30;
   }
 
   // Fighter score boxes.
-  const boxY = cursorY + 40;
+  const boxY = cursorY + 36;
   const boxH = 96;
   const gap = 24;
   const boxW = (innerW - gap) / 2;

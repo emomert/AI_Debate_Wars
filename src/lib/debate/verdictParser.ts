@@ -10,7 +10,10 @@
 import type { DebateMode, VerdictWinner } from "@/lib/debate/debateTypes";
 
 export interface ParsedVerdict {
+  /** Winner-leaning reasoning (may contain **bold**); was the neutral "summary". */
   summary: string;
+  /** The winning side's single most decisive argument (empty for tie/discussion). */
+  winnerArgument: string;
   strongestModelA: string;
   strongestModelB: string;
   weakestModelA: string;
@@ -19,7 +22,6 @@ export interface ParsedVerdict {
   /** Undefined in Discussion mode (no contest), else two ints summing to 100. */
   scoreModelA?: number;
   scoreModelB?: number;
-  practicalConclusion: string;
 }
 
 function clamp(n: number, lo: number, hi: number): number {
@@ -135,7 +137,13 @@ export function parseVerdict(
   }
 
   return {
-    summary: str(obj.summary, raw.trim().slice(0, 280) || "Verdict delivered."),
+    // "reasoning" is the new key; fall back to the legacy "summary" for safety.
+    summary: str(obj.reasoning ?? obj.summary, raw.trim().slice(0, 280) || "Verdict delivered."),
+    // Only a concrete fighter winner has a "winning argument" — clear it for a
+    // tie / discussion so it can never sit under an "It's a draw" headline
+    // (mirrors how scores are reconciled to the winner above).
+    winnerArgument:
+      winner === "modelA" || winner === "modelB" ? str(obj.winnerArgument, "") : "",
     strongestModelA: str(obj.strongestModelA),
     strongestModelB: str(obj.strongestModelB),
     weakestModelA: str(obj.weakestModelA),
@@ -144,7 +152,6 @@ export function parseVerdict(
     // No "score" in Discussion mode — it isn't a contest.
     scoreModelA: mode === "discussion" ? undefined : a,
     scoreModelB: mode === "discussion" ? undefined : b,
-    practicalConclusion: str(obj.practicalConclusion, ""),
   };
 }
 
@@ -154,7 +161,9 @@ export function formatVerdictText(
   modelBName: string,
 ): string {
   const lines = [
-    `Verdict: ${p.summary}`,
+    // Plain text — strip the **bold** markers the reasoning may contain.
+    `Verdict: ${p.summary.replace(/\*\*/g, "")}`,
+    ...(p.winnerArgument ? [``, `Winning argument: ${p.winnerArgument}`] : []),
     ``,
     `Strongest arguments:`,
     `- ${modelAName}: ${p.strongestModelA}`,
@@ -164,8 +173,5 @@ export function formatVerdictText(
     `- ${modelAName}: ${p.weakestModelA}`,
     `- ${modelBName}: ${p.weakestModelB}`,
   ];
-  if (p.practicalConclusion) {
-    lines.push(``, `Practical conclusion: ${p.practicalConclusion}`);
-  }
   return lines.join("\n");
 }

@@ -11,6 +11,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { DebateVerdict, SelectedModel } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
 import { CostBadge } from "@/components/debate/CostBadge";
+import { MarkdownText } from "@/components/debate/MarkdownText";
 import { ScoreBreakdown } from "@/components/result/ScoreBreakdown";
 import { getModelById } from "@/lib/models/modelRegistry";
 
@@ -89,7 +90,21 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
         <p className="mt-4 font-heading text-xl font-extrabold sm:text-2xl">
           {winnerLabel(verdict, modelA, modelB)}
         </p>
-        <p className="mt-1 text-sm text-ink/70 sm:text-base">{verdict.summary}</p>
+        {verdict.winnerArgument ? (
+          <p className="mt-1 text-sm text-ink/80 sm:text-base">
+            <span className="font-bold">💥 Winning argument: </span>
+            {verdict.winnerArgument}
+          </p>
+        ) : null}
+
+        {/* Why the judge decided this way (leans to the winner; **bold** the
+            decisive points). */}
+        <div className="mt-3 rounded-card border-3 border-ink bg-surface p-3">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-ink/45">
+            ⚖️ Why this verdict
+          </p>
+          <MarkdownText content={verdict.summary} />
+        </div>
 
         {verdict.scoreModelA !== undefined ? (
           <div className="mt-4">
@@ -108,15 +123,6 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
           <Insight label={`${modelA.displayName} weakest`} value={verdict.weakestModelA} tone="risk" />
           <Insight label={`${modelB.displayName} weakest`} value={verdict.weakestModelB} tone="risk" />
         </ul>
-
-        {verdict.practicalConclusion ? (
-          <div className="mt-4 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-              🎯 Practical conclusion
-            </p>
-            <p className="mt-0.5 text-sm">{verdict.practicalConclusion}</p>
-          </div>
-        ) : null}
 
         <div className="mt-4">
           <CostBadge cost={verdict.cost} usage={verdict.usage} latencyMs={verdict.latencyMs} />

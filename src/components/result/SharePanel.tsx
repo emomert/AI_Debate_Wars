@@ -41,7 +41,9 @@ function buildRecap(session: DebateSession): string {
     `Topic: ${session.topic}`,
     `Mode: ${session.mode} · ${session.roundCount} rounds`,
     `Fighters: ${session.modelA.displayName} (A) vs ${session.modelB.displayName} (B)`,
-    v ? `Verdict: ${v.summary}` : `No judge — ended after the final round.`,
+    // Strip the **bold** markers the reasoning carries (plain-text clipboard).
+    v ? `Verdict: ${v.summary.replace(/\*\*/g, "")}` : `No judge — ended after the final round.`,
+    ...(v?.winnerArgument ? [`Winning argument: ${v.winnerArgument}`] : []),
     `Total cost: ${formatCost(session.costSummary.totalCost)}`,
   ].join("\n");
 }

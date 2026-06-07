@@ -144,11 +144,15 @@ export interface DebateVerdict {
   judgeModelId: string;
   content: string;
   winner?: VerdictWinner;
+  /** Winner-leaning reasoning (may contain **bold**). */
   summary: string;
+  /** The winning side's single most decisive argument (empty for tie/discussion). */
+  winnerArgument?: string;
   strongestModelA?: string;
   strongestModelB?: string;
   weakestModelA?: string;
   weakestModelB?: string;
+  /** @deprecated removed from the verdict UI; kept optional for old stored matches. */
   practicalConclusion?: string;
   scoreModelA?: number;
   scoreModelB?: number;
