@@ -58,9 +58,15 @@ function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
 
   // Avoid the "custom" tone in samples — it needs user-typed text.
   const presetTones = TONE_OPTIONS.filter((t) => t.id !== "custom");
+  // A flat thesis ("Sauron is not…") shines in Debate Mode (attack/defend);
+  // a question or an open prompt ("Evaluate my idea:") works in either, so
+  // those get a random mode.
+  const topic = randomItem(SAMPLE_TOPICS);
+  const t = topic.trim();
+  const isThesis = !t.endsWith("?") && !t.includes(":");
   return {
-    topic: randomItem(SAMPLE_TOPICS),
-    mode: randomItem(MODE_OPTIONS).id,
+    topic,
+    mode: isThesis ? "debate" : randomItem(MODE_OPTIONS).id,
     modelA: toSelectedModel(a, "blue"),
     modelB: toSelectedModel(b, "red"),
     roundCount: 3, // demos stay quick & cheap

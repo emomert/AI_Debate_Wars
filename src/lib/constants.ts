@@ -118,14 +118,32 @@ export const JUDGE_MODE_OPTIONS: JudgeModeOption[] = [
   },
 ];
 
-/** Example topics shown on Home and Setup to lower the blank-page friction. */
+/**
+ * Example topics shown on Home and Setup to lower the blank-page friction.
+ * A deliberate mix of QUESTIONS (great for either mode) and bold direct THESES
+ * (a flat claim like "Sauron is not the real villain…" that a fighter can be
+ * told to attack or defend — ideal for Debate Mode).
+ */
 export const SAMPLE_TOPICS: string[] = [
+  // Questions
   "Should universities ban AI tools?",
   "Is remote work better than office work?",
-  "Should Turkey invest more in nuclear energy?",
-  "Evaluate my startup idea: a food-waste marketplace for restaurants.",
   "Does AI regulation slow down innovation?",
   "Is a 4-day work week good for the economy?",
+  "Should Turkey invest more in nuclear energy?",
+  "Should social media have a minimum age limit?",
+  // Bold theses (a flat claim to attack or defend — best in Debate Mode)
+  "Sauron is not the real villain of The Lord of the Rings.",
+  "Pineapple absolutely belongs on pizza.",
+  "Social media has done more harm than good.",
+  "Batman would beat Iron Man in a fair fight.",
+  "Humans will live on Mars within 50 years.",
+  "Tabs are better than spaces.",
+  "Money can buy happiness.",
+  "Cereal is a soup.",
+  "A hot dog is a sandwich.",
+  // Idea / discussion
+  "Evaluate my startup idea: a food-waste marketplace for restaurants.",
 ];
 
 export const TOPIC_MIN_LENGTH = 8;
