@@ -108,6 +108,27 @@ export const RESEARCH_LINES = [
   "🔎 {name} is following the footnotes",
   "🔎 {name} is cross-examining sources",
   "🔎 {name} is hunting for receipts",
+  "🔎 {name} is opening 47 browser tabs",
+  "🔎 {name} is reading the fine print",
+  "🔎 {name} is consulting the primary sources",
+  "🔎 {name} is triangulating the facts",
+  "🔎 {name} is separating signal from noise",
+  "🔎 {name} is checking who said what",
+  "🔎 {name} is pulling up the studies",
+  "🔎 {name} is verifying before vibing",
+  "🔎 {name} is sniffing out the real numbers",
+  "🔎 {name} is cross-referencing the universe",
+  "🔎 {name} is digging for the source behind the claim",
+  "🔎 {name} is grilling the search results",
+  "🔎 {name} is collecting receipts to cite",
+  "🔎 {name} is weighing the evidence",
+  "🔎 {name} is double-checking the date on that",
+  "🔎 {name} is connecting suspicious dots",
+  "🔎 {name} is building an evidence-backed case",
+  "🔎 {name} is loading citations, not vibes",
+  "🔎 {name} is doing actual homework",
+  "🔎 {name} is hunting for a smoking gun",
+  "🔎 {name} is reading past the headline",
 ] as const;
 
 export const JUDGE_LINES = [
@@ -133,7 +154,7 @@ export const WRITING_LINES = [
   "{name} is laying it all out",
 ] as const;
 
-const ROTATE_MS = 2400;
+const ROTATE_MS = 7400;
 
 /**
  * Returns a randomized line from `pool` (with `{name}` filled in) that rotates
