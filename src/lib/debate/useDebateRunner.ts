@@ -128,6 +128,12 @@ interface RunnerState {
   phase: RunnerPhase;
   messages: DebateMessage[];
   activeTurn: DebateTurn | null;
+  /**
+   * The locked-in message being revealed by the typewriter. Exposed so the
+   * streaming card already knows its citations — [n] markers render as live
+   * chips DURING typing instead of flipping from plain text at the end.
+   */
+  activeMessage: DebateMessage | null;
   streamingText: string;
   verdict: DebateVerdict | null;
   error: AppErrorShape | null;
@@ -153,6 +159,7 @@ export function useDebateRunner(
     phase: alreadyFinished ? "done" : "thinking",
     messages: initialSession.messages,
     activeTurn: null,
+    activeMessage: null,
     streamingText: "",
     verdict: initialSession.verdict ?? null,
     error: null,
@@ -195,6 +202,7 @@ export function useDebateRunner(
       ...prev,
       phase: "stopped",
       activeTurn: null,
+      activeMessage: null,
       streamingText: "",
       messages: w ? w.messages : prev.messages,
     }));
@@ -302,6 +310,7 @@ export function useDebateRunner(
           phase: "awaiting",
           awaitingKind: kind,
           activeTurn: null,
+          activeMessage: null,
           streamingText: "",
         }));
         gateRef.current = () => resolve();
@@ -420,7 +429,15 @@ export function useDebateRunner(
 
           // Animate the already-locked content (kept out of `messages` until the
           // animation ends so the streaming card isn't duplicated in the list).
-          setState((p) => ({ ...p, phase: "streaming", activeTurn: turn, streamingText: "" }));
+          // `activeMessage` rides along so the card knows its citations and the
+          // [n] chips are live links from the first typed character.
+          setState((p) => ({
+            ...p,
+            phase: "streaming",
+            activeTurn: turn,
+            activeMessage: message,
+            streamingText: "",
+          }));
           await typewriter(message.content);
           if (signal.aborted) return;
 
@@ -428,6 +445,7 @@ export function useDebateRunner(
             ...p,
             messages: working.messages,
             activeTurn: null,
+            activeMessage: null,
             streamingText: "",
           }));
           await delay(220, signal);
@@ -503,6 +521,7 @@ export function useDebateRunner(
           ...p,
           phase: "error",
           activeTurn: null,
+          activeMessage: null,
           streamingText: "",
           error: toAppError(err),
         }));
@@ -520,17 +539,20 @@ export function useDebateRunner(
 
   const costSummary = useMemo(() => {
     const base = summarizeSessionCost(state.messages);
-    if (state.verdict?.cost) {
-      const u = state.verdict.usage;
+    // Replaced verdicts from a post-match re-judge were paid for too.
+    const verdicts = [...(initialSession.pastVerdicts ?? []), state.verdict];
+    for (const verdict of verdicts) {
+      if (!verdict?.cost) continue;
+      const u = verdict.usage;
       if (u) {
         base.totalInputTokens += u.inputTokens;
         base.totalOutputTokens += u.outputTokens;
         base.totalTokens += u.totalTokens;
       }
-      base.totalCost += state.verdict.cost.totalCost;
+      base.totalCost += verdict.cost.totalCost;
     }
     return base;
-  }, [state.messages, state.verdict]);
+  }, [state.messages, state.verdict, initialSession.pastVerdicts]);
 
   const totalRounds = initialSession.roundCount;
   const currentRound =
@@ -542,6 +564,7 @@ export function useDebateRunner(
     phase: state.phase,
     messages: state.messages,
     activeTurn: state.activeTurn,
+    activeMessage: state.activeMessage,
     streamingText: state.streamingText,
     verdict: state.verdict,
     error: state.error,

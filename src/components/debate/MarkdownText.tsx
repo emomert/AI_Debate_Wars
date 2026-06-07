@@ -11,6 +11,7 @@
 
 import type { ReactNode } from "react";
 
+import type { Citation } from "@/lib/debate/debateTypes";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -20,7 +21,7 @@ import { cn } from "@/lib/utils/cn";
 function renderInline(
   text: string,
   keyBase: string,
-  citationCount = 0,
+  citations: readonly Citation[] = [],
 ): ReactNode[] {
   const nodes: ReactNode[] = [];
   const re =
@@ -50,10 +51,27 @@ function renderInline(
         nodes.push(m[0]);
       }
     } else if (m[5] !== undefined) {
-      // Bare [n] citation marker → small superscript chip (the Sources list
-      // below carries the actual links). Only chip valid in-range markers.
+      // Bare [n] citation marker → small superscript chip. When the source is
+      // known it's a LINK straight to it (feedback: chips "should be clickable,
+      // showing the source"); only markers matching a real source get chipped.
       const n = Number(m[5]);
-      if (citationCount > 0 && n >= 1 && n <= citationCount) {
+      const source = citations.find((c) => c.index === n);
+      if (source && /^https?:\/\//i.test(source.url)) {
+        nodes.push(
+          <sup key={key} className="mx-0.5">
+            <a
+              href={source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={source.title}
+              aria-label={`Source ${n}: ${source.title}`}
+              className="rounded-[4px] border border-ink bg-arcade-purple/20 px-1 font-mono text-[0.7em] font-bold text-ink no-underline transition hover:bg-arcade-purple hover:text-white focus-visible:outline-2 focus-visible:outline-offset-1"
+            >
+              {n}
+            </a>
+          </sup>,
+        );
+      } else if (source) {
         nodes.push(
           <sup
             key={key}
@@ -110,15 +128,15 @@ export function MarkdownText({
   className,
   streaming,
   cursor,
-  citationCount = 0,
+  citations = [],
 }: {
   content: string;
   className?: string;
   streaming?: boolean;
   /** Inline node appended right after the final character (e.g. a typing caret). */
   cursor?: ReactNode;
-  /** Deep Debate: number of sources, so [n] markers render as citation chips. */
-  citationCount?: number;
+  /** Deep Debate sources, so [n] markers render as clickable citation chips. */
+  citations?: readonly Citation[];
 }) {
   const source = streaming ? stripIncompleteMarkdown(content) : content;
   const blocks = source.split(/\n\s*\n/);
@@ -149,7 +167,7 @@ export function MarkdownText({
         if (heading) {
           return (
             <p key={bi} className="font-heading text-base font-extrabold text-ink">
-              {renderInline(heading[2], `h-${bi}`, citationCount)}
+              {renderInline(heading[2], `h-${bi}`, citations)}
               {tail}
             </p>
           );
@@ -164,7 +182,7 @@ export function MarkdownText({
                     ▸
                   </span>
                   <span>
-                    {renderInline(l.match(BULLET_RE)![1], `b-${bi}-${li}`, citationCount)}
+                    {renderInline(l.match(BULLET_RE)![1], `b-${bi}-${li}`, citations)}
                     {li === lines.length - 1 ? tail : null}
                   </span>
                 </li>
@@ -185,7 +203,7 @@ export function MarkdownText({
                     {li + 1}.
                   </span>
                   <span>
-                    {renderInline(l.match(NUMBERED_RE)![1], `o-${bi}-${li}`, citationCount)}
+                    {renderInline(l.match(NUMBERED_RE)![1], `o-${bi}-${li}`, citations)}
                     {li === lines.length - 1 ? tail : null}
                   </span>
                 </li>
@@ -196,7 +214,7 @@ export function MarkdownText({
 
         return (
           <p key={bi}>
-            {renderInline(lines.join(" "), `p-${bi}`, citationCount)}
+            {renderInline(lines.join(" "), `p-${bi}`, citations)}
             {tail}
           </p>
         );

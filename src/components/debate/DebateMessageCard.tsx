@@ -108,7 +108,7 @@ function DebateMessageCardComponent({
           <MarkdownText
             content={content}
             streaming={streaming}
-            citationCount={citations?.length ?? 0}
+            citations={citations}
             cursor={
               streaming ? (
                 <span

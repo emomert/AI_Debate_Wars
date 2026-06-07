@@ -48,6 +48,8 @@ interface DebateTimelineProps {
   session: DebateSession;
   messages: DebateMessage[];
   activeTurn: DebateTurn | null;
+  /** The locked-in message being typed out — carries the citations so [n] chips are live mid-stream. */
+  activeMessage: DebateMessage | null;
   streamingText: string;
   phase: RunnerPhase;
 }
@@ -56,6 +58,7 @@ export function DebateTimeline({
   session,
   messages,
   activeTurn,
+  activeMessage,
   streamingText,
   phase,
 }: DebateTimelineProps) {
@@ -121,6 +124,7 @@ export function DebateTimeline({
               stance={activeTurn.stance}
               content={streamingText}
               streaming
+              citations={activeMessage?.citations}
             />
           );
         })()

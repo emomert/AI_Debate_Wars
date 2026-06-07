@@ -267,6 +267,7 @@ function ArenaInner({
             session={session}
             messages={runner.messages}
             activeTurn={runner.activeTurn}
+            activeMessage={runner.activeMessage}
             streamingText={runner.streamingText}
             phase={runner.phase}
           />
