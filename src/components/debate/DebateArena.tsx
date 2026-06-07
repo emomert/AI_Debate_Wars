@@ -10,6 +10,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
@@ -30,6 +31,15 @@ import { DebateControls } from "@/components/debate/DebateControls";
 import { VerdictCard } from "@/components/debate/VerdictCard";
 import { RejudgePanel } from "@/components/result/RejudgePanel";
 import { SharePanel } from "@/components/result/SharePanel";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+
+// Lazy + config-gated so the Supabase SDK stays off the /debate bundle when
+// auth is off, and otherwise loads only after hydration.
+const MatchSaver = dynamic(
+  () => import("@/components/result/MatchSaver").then((m) => m.MatchSaver),
+  { ssr: false },
+);
+const arenaAuthEnabled = isSupabaseConfigured();
 
 export function DebateArena() {
   const router = useRouter();
@@ -311,6 +321,10 @@ function ArenaInner({
 
           {runner.phase === "done" && (isDebateComplete(session) || session.verdict) ? (
             <SharePanel session={session} />
+          ) : null}
+
+          {runner.phase === "done" && isDebateComplete(session) && arenaAuthEnabled ? (
+            <MatchSaver session={session} />
           ) : null}
 
           {runner.phase === "stopped" ||

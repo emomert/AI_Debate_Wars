@@ -61,13 +61,20 @@ function LoginForm() {
     );
   }
 
+  // Return the user to where they came from (e.g. the match they wanted to
+  // save). The callback sanitizes `next` to a same-origin path.
+  const nextParam = params.get("next");
+  const callbackUrl = `${window.location.origin}/auth/callback${
+    nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""
+  }`;
+
   const sendMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy("magic");
     setError(null);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: callbackUrl },
     });
     setBusy(null);
     if (error) setError(error.message);
@@ -79,7 +86,7 @@ function LoginForm() {
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     });
     if (error) {
       setBusy(null);

@@ -36,10 +36,12 @@ export function ReopenButton({ matchId }: { matchId: string }) {
     }
     if (data?.session) {
       const session = data.session as DebateSession;
-      // It's already in history — don't let /result re-upsert it.
+      // It's already in history — don't let the saver re-upsert it.
       markMatchPersisted(session);
       setSession(session);
-      router.push("/result");
+      // The arena (done state) renders the full debate transcript + verdict;
+      // /result only shows the verdict, so go to /debate to read the real text.
+      router.push("/debate");
     }
   };
 

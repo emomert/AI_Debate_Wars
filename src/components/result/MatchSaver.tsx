@@ -1,26 +1,24 @@
 "use client";
 
 /**
- * MatchSaver (docs/19 Phase 2). When a COMPLETE match is on screen and the user
- * is signed in, upsert it to their Supabase history (idempotent on the session
- * id, so a re-judge — which bumps updatedAt — saves an update, while merely
- * REOPENING a saved match does not re-write the heavy blob). Renders a small
- * confirmation, a quiet failure note, or nothing (auth off / signed out). RLS
- * guarantees a user only writes their own rows.
+ * MatchSaver (docs/19 Phase 2). A explicit "Save to my history" button for a
+ * completed match (feedback: saving should be a button, not automatic). Signed
+ * out → a sign-in nudge; auth off → nothing. RLS guarantees a user only writes
+ * their own rows; idempotent on the session id (a re-judge bumps updatedAt).
  */
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import type { DebateSession } from "@/lib/debate/debateTypes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toMatchRow } from "@/lib/supabase/matches";
+import { ArcadeButton } from "@/components/game/ArcadeButton";
 
-// Generous client-side cap so a giant transcript can't be pushed to the DB
-// (the migration also enforces a hard cap server-side).
 const MAX_ROW_BYTES = 500_000;
 
-// app_session_id|updatedAt already written this tab — so reopening a saved match
-// (which lands a complete session on /result) doesn't re-upsert it or re-toast.
+// app_session_id|updatedAt already written this tab — so a reopened match shows
+// as already-saved and isn't re-written.
 const persisted = new Set<string>();
 const keyOf = (s: DebateSession) => `${s.id}|${s.updatedAt}`;
 
@@ -29,56 +27,94 @@ export function markMatchPersisted(session: DebateSession): void {
   persisted.add(keyOf(session));
 }
 
-export function MatchSaver({ session }: { session: DebateSession }) {
-  const [saved, setSaved] = useState(false);
-  const [failed, setFailed] = useState(false);
+type SaveState = "idle" | "saving" | "saved" | "error";
 
+export function MatchSaver({ session }: { session: DebateSession }) {
+  const supabase = getSupabaseBrowserClient();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [checked, setChecked] = useState(false);
+  const [nextPath, setNextPath] = useState("");
+  const [state, setState] = useState<SaveState>("idle");
+
+  // Reset the saved/idle state whenever the session changes (a re-judge bumps
+  // updatedAt, so keyOf changes and the match becomes re-savable).
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase || session.status !== "complete") return;
-    setSaved(false);
-    setFailed(false);
-    const key = keyOf(session);
-    if (persisted.has(key)) return; // reopened from history — nothing new to save
-    let active = true;
-    (async () => {
-      // getSession reads the (middleware-refreshed) cookie locally — no network.
-      const { data } = await supabase.auth.getSession();
-      const userId = data.session?.user?.id;
-      if (!userId || !active) return;
-      const row = toMatchRow(session, userId);
-      if (JSON.stringify(row).length > MAX_ROW_BYTES) {
-        console.warn("[MatchSaver] match too large to save");
-        return;
-      }
-      const { error } = await supabase
-        .from("matches")
-        .upsert(row, { onConflict: "user_id,app_session_id" });
-      if (!active) return;
-      if (error) {
-        console.warn("[MatchSaver] save failed:", error.message);
-        setFailed(true);
-        return;
-      }
-      persisted.add(key);
-      setSaved(true);
-    })();
-    return () => {
-      active = false;
-    };
+    setState(persisted.has(keyOf(session)) ? "saved" : "idle");
   }, [session]);
 
-  if (failed) {
+  // After sign-in, come back to this exact page to finish saving.
+  useEffect(() => {
+    setNextPath(window.location.pathname + window.location.search);
+  }, []);
+
+  // Live auth state (mirrors AuthButton): onAuthStateChange emits INITIAL_SESSION
+  // on subscribe and keeps userId fresh across sign-in/out (incl. other tabs),
+  // and `checked` suppresses the sign-in nudge flash for already-signed-in users.
+  useEffect(() => {
+    if (!supabase) {
+      setChecked(true);
+      return;
+    }
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      setUserId(s?.user?.id ?? null);
+      setChecked(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [supabase]);
+
+  if (!supabase || session.status !== "complete") return null;
+
+  const save = async () => {
+    if (!userId) return;
+    setState("saving");
+    const row = toMatchRow(session, userId);
+    if (JSON.stringify(row).length > MAX_ROW_BYTES) {
+      console.warn("[MatchSaver] match too large to save");
+      setState("error");
+      return;
+    }
+    const { error } = await supabase
+      .from("matches")
+      .upsert(row, { onConflict: "user_id,app_session_id" });
+    if (error) {
+      console.warn("[MatchSaver] save failed:", error.message);
+      setState("error");
+      return;
+    }
+    persisted.add(keyOf(session));
+    setState("saved");
+  };
+
+  if (state === "saved") {
     return (
-      <p className="text-center text-xs font-semibold text-arcade-red">
-        Couldn&apos;t save to your profile.
+      <p className="text-center text-xs font-semibold text-arcade-green">
+        ✓ Saved to your profile
       </p>
     );
   }
-  if (!saved) return null;
+
+  if (!userId) {
+    if (!checked) return null; // don't flash the nudge before auth resolves
+    const href = nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login";
+    return (
+      <p className="text-center text-xs text-ink/55">
+        <Link href={href} className="font-bold underline">
+          Sign in
+        </Link>{" "}
+        to save this match to your history.
+      </p>
+    );
+  }
+
   return (
-    <p className="text-center text-xs font-semibold text-arcade-green">
-      ✓ Saved to your profile
-    </p>
+    <div className="flex justify-center">
+      <ArcadeButton variant="neutral-white" size="sm" onClick={save} disabled={state === "saving"}>
+        {state === "saving"
+          ? "Saving…"
+          : state === "error"
+            ? "↻ Couldn't save — retry"
+            : "💾 Save to my history"}
+      </ArcadeButton>
+    </div>
   );
 }
