@@ -132,6 +132,11 @@ const SAMPLE_SOURCES: Citation[] = [
   },
 ];
 
+/** Show 2 decimals, but up to 3 so sub-cent rates (e.g. $0.435) aren't rounded. */
+function priceText(n: number): string {
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+}
+
 /* ---------------------------------- page ---------------------------------- */
 
 export default function ReportPage() {
@@ -525,9 +530,9 @@ export default function ReportPage() {
               pages.
             </Step>
             <Step n={5} title="Disclose">
-              Inline [n] chips link straight to their source. Each card shows a collapsible
-              source list with links and quotes; the result page merges every cited source of
-              the match into one de-duplicated reference list.
+              Clicking an inline [n] chip opens a popup with that source&apos;s title, domain,
+              quote and a link out. Each card also shows a collapsible source list, and the
+              result page merges every cited source of the match into one de-duplicated list.
             </Step>
           </ol>
         </GamePanel>
@@ -590,8 +595,8 @@ export default function ReportPage() {
                 {Object.entries(modelPricing).map(([key, p]) => (
                   <tr key={key} className="border-b border-ink/10">
                     <td className="py-1.5 pr-3 font-mono text-xs">{key}</td>
-                    <td className="py-1.5 pr-3 font-mono text-xs">${p.inputCostPer1M.toFixed(2)}</td>
-                    <td className="py-1.5 font-mono text-xs">${p.outputCostPer1M.toFixed(2)}</td>
+                    <td className="py-1.5 pr-3 font-mono text-xs">${priceText(p.inputCostPer1M)}</td>
+                    <td className="py-1.5 font-mono text-xs">${priceText(p.outputCostPer1M)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -608,7 +613,16 @@ export default function ReportPage() {
               native search adds ~${DEEP_SEARCH_COST_USD.toFixed(3)}/turn, shown as a 🔎 line in
               the cost breakdown.
             </li>
-            <li>· Newer-generation prices are estimates until verified against provider pricing pages.</li>
+            <li>
+              · Prices verified against the providers&apos; official pages (June 2026).
+              gpt-5.3-chat-latest has no separate published rate and is priced at its
+              nearest confirmed neighbor.
+            </li>
+            <li>
+              · Input is billed at the uncached rate, so the HUD slightly OVER-estimates
+              when prompt caching applies (repeated system prompt + transcript across
+              rounds) — the real bill is never higher than shown.
+            </li>
           </ul>
         </GamePanel>
 

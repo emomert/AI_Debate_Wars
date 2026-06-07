@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import "../styles/globals.css";
 import { ArenaProvider } from "@/lib/state/ArenaContext";
+import { CitationViewerProvider } from "@/components/debate/CitationViewer";
 
 export const metadata: Metadata = {
   title: "Debator — Make AIs Fight Your Ideas",
@@ -31,7 +32,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
       </head>
       <body className="font-body antialiased">
-        <ArenaProvider>{children}</ArenaProvider>
+        <ArenaProvider>
+          <CitationViewerProvider>{children}</CitationViewerProvider>
+        </ArenaProvider>
       </body>
     </html>
   );

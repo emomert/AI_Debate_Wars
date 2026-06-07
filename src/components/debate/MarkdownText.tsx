@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * MarkdownText — a small, dependency-free markdown renderer for debate turns and
  * the verdict. Handles what LLM debate text actually uses: paragraphs, **bold**,
@@ -12,16 +14,24 @@
 import type { ReactNode } from "react";
 
 import type { Citation } from "@/lib/debate/debateTypes";
+import { useCitationViewer } from "@/components/debate/CitationViewer";
 import { cn } from "@/lib/utils/cn";
+
+const CHIP_CLASS =
+  "rounded-[4px] border border-ink bg-arcade-purple/20 px-1 font-mono text-[0.7em] font-bold text-ink no-underline transition hover:bg-arcade-purple hover:text-white focus-visible:outline-2 focus-visible:outline-offset-1";
 
 /**
  * Parse inline markdown within a line: [text](url) links, [n] citation chips
  * (Deep Debate), **bold**, *italic*, `code`.
+ *
+ * `onCite` (when provided) makes [n] chips open the in-app citation popup; with
+ * no opener they fall back to a plain link to the source.
  */
 function renderInline(
   text: string,
   keyBase: string,
   citations: readonly Citation[] = [],
+  onCite?: (citation: Citation) => void,
 ): ReactNode[] {
   const nodes: ReactNode[] = [];
   const re =
@@ -51,12 +61,27 @@ function renderInline(
         nodes.push(m[0]);
       }
     } else if (m[5] !== undefined) {
-      // Bare [n] citation marker → small superscript chip. When the source is
-      // known it's a LINK straight to it (feedback: chips "should be clickable,
-      // showing the source"); only markers matching a real source get chipped.
+      // Bare [n] citation marker → small superscript chip. Clicking it opens the
+      // in-app citation popup (feedback: a chip should show a popup with the link
+      // inside, not jump straight to the source). Only markers matching a real
+      // source get chipped; with no opener available it falls back to a link.
       const n = Number(m[5]);
       const source = citations.find((c) => c.index === n);
-      if (source && /^https?:\/\//i.test(source.url)) {
+      if (source && onCite) {
+        nodes.push(
+          <sup key={key} className="mx-0.5">
+            <button
+              type="button"
+              onClick={() => onCite(source)}
+              title={source.title}
+              aria-label={`Source ${n}: ${source.title}. Open details.`}
+              className={cn(CHIP_CLASS, "cursor-pointer")}
+            >
+              {n}
+            </button>
+          </sup>,
+        );
+      } else if (source && /^https?:\/\//i.test(source.url)) {
         nodes.push(
           <sup key={key} className="mx-0.5">
             <a
@@ -65,7 +90,7 @@ function renderInline(
               rel="noopener noreferrer"
               title={source.title}
               aria-label={`Source ${n}: ${source.title}`}
-              className="rounded-[4px] border border-ink bg-arcade-purple/20 px-1 font-mono text-[0.7em] font-bold text-ink no-underline transition hover:bg-arcade-purple hover:text-white focus-visible:outline-2 focus-visible:outline-offset-1"
+              className={CHIP_CLASS}
             >
               {n}
             </a>
@@ -138,6 +163,10 @@ export function MarkdownText({
   /** Deep Debate sources, so [n] markers render as clickable citation chips. */
   citations?: readonly Citation[];
 }) {
+  // When a viewer is mounted (it is, app-wide), [n] chips open the popup; the
+  // opener is stable, so this doesn't churn the memoized message cards.
+  const viewer = useCitationViewer();
+  const onCite = viewer && citations.length > 0 ? viewer.open : undefined;
   const source = streaming ? stripIncompleteMarkdown(content) : content;
   const blocks = source.split(/\n\s*\n/);
   const lineGroups = blocks.map((b) => b.split("\n").filter((l) => l.trim() !== ""));
@@ -167,7 +196,7 @@ export function MarkdownText({
         if (heading) {
           return (
             <p key={bi} className="font-heading text-base font-extrabold text-ink">
-              {renderInline(heading[2], `h-${bi}`, citations)}
+              {renderInline(heading[2], `h-${bi}`, citations, onCite)}
               {tail}
             </p>
           );
@@ -182,7 +211,7 @@ export function MarkdownText({
                     ▸
                   </span>
                   <span>
-                    {renderInline(l.match(BULLET_RE)![1], `b-${bi}-${li}`, citations)}
+                    {renderInline(l.match(BULLET_RE)![1], `b-${bi}-${li}`, citations, onCite)}
                     {li === lines.length - 1 ? tail : null}
                   </span>
                 </li>
@@ -203,7 +232,7 @@ export function MarkdownText({
                     {li + 1}.
                   </span>
                   <span>
-                    {renderInline(l.match(NUMBERED_RE)![1], `o-${bi}-${li}`, citations)}
+                    {renderInline(l.match(NUMBERED_RE)![1], `o-${bi}-${li}`, citations, onCite)}
                     {li === lines.length - 1 ? tail : null}
                   </span>
                 </li>
@@ -214,7 +243,7 @@ export function MarkdownText({
 
         return (
           <p key={bi}>
-            {renderInline(lines.join(" "), `p-${bi}`, citations)}
+            {renderInline(lines.join(" "), `p-${bi}`, citations, onCite)}
             {tail}
           </p>
         );

@@ -30,6 +30,16 @@ export function HelpButton() {
   // Portal target only exists on the client.
   useEffect(() => setMounted(true), []);
 
+  // Lock background scroll while the modal is open (restore the prior value).
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   // While open: focus the dialog, trap Tab inside it, close on Escape, and
   // restore focus to the trigger on close (modal a11y).
   useEffect(() => {
