@@ -15,6 +15,7 @@ import type { DebateSession } from "@/lib/debate/debateTypes";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { renderVerdictBlob } from "@/lib/share/verdictImage";
+import { encodeSharePayload, sharePayloadFromSession } from "@/lib/share/shareLink";
 import { formatCost } from "@/lib/utils/format";
 
 function headline(session: DebateSession): string {
@@ -124,6 +125,7 @@ export function SharePanel({ session }: { session: DebateSession }) {
         files: [file],
         title: "Debator verdict",
         text: buildShareText(session),
+        url: shareUrl(),
       });
     } catch {
       /* user dismissed or share failed — no-op */
@@ -139,9 +141,13 @@ export function SharePanel({ session }: { session: DebateSession }) {
     }
   };
 
+  // Per-match share URL whose OG preview IS the verdict (auto-unfurls on social).
+  const shareUrl = () =>
+    `${window.location.origin}/s?d=${encodeSharePayload(sharePayloadFromSession(session))}`;
+
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.origin);
+      await navigator.clipboard.writeText(shareUrl());
       ping("link");
     } catch {
       /* ignore */
@@ -149,7 +155,7 @@ export function SharePanel({ session }: { session: DebateSession }) {
   };
 
   const openShare = (kind: "x" | "whatsapp" | "reddit" | "linkedin") => {
-    const url = window.location.origin;
+    const url = shareUrl();
     const text = buildShareText(session);
     const e = encodeURIComponent;
     const targets: Record<typeof kind, string> = {
