@@ -108,6 +108,7 @@ export default function ResultPage() {
           </GamePanel>
         )}
 
+        {/* Order (feedback #8): Verdict → Change the judge → Share → Summary. */}
         {/* Re-judge: only a COMPLETE transcript can be (re-)scored — the server
             rejects partial matches, so a stopped session hides the panel. */}
         {isDebateComplete(session) ? (
@@ -118,11 +119,9 @@ export default function ResultPage() {
           />
         ) : null}
 
-        <FinalSummaryCard session={session} />
+        <SharePanel session={session} />
 
-        {/* Persist the finished match to the signed-in user's history (no-op
-            when auth is off / signed out). */}
-        {authEnabled ? <MatchSaver session={session} /> : null}
+        <FinalSummaryCard session={session} />
 
         {allSources.length > 0 ? (
           <GamePanel title={`📚 Sources used (${allSources.length})`}>
@@ -133,7 +132,9 @@ export default function ResultPage() {
           </GamePanel>
         ) : null}
 
-        <SharePanel session={session} />
+        {/* Persist the finished match to the signed-in user's history (no-op
+            when auth is off / signed out). Invisible — placement doesn't matter. */}
+        {authEnabled ? <MatchSaver session={session} /> : null}
       </div>
 
       {/* Actions */}

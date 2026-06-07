@@ -17,6 +17,7 @@ import { useArena } from "@/lib/state/ArenaContext";
 import { useDebateRunner } from "@/lib/debate/useDebateRunner";
 import type { DebateSession } from "@/lib/debate/debateTypes";
 import { MODE_OPTIONS } from "@/lib/constants";
+import { isDebateComplete } from "@/lib/debate/orchestrator";
 import { friendlyMessage } from "@/lib/utils/errors";
 
 import { GamePanel } from "@/components/game/GamePanel";
@@ -27,6 +28,8 @@ import { DebateHUD } from "@/components/debate/DebateHUD";
 import { DebateTimeline } from "@/components/debate/DebateTimeline";
 import { DebateControls } from "@/components/debate/DebateControls";
 import { VerdictCard } from "@/components/debate/VerdictCard";
+import { RejudgePanel } from "@/components/result/RejudgePanel";
+import { SharePanel } from "@/components/result/SharePanel";
 
 export function DebateArena() {
   const router = useRouter();
@@ -100,6 +103,15 @@ function ArenaInner({
   // Note: the runner's typewriter intentionally ignores reduced-motion so every
   // visitor gets the same playback; `reduce` only tones down decorative motion.
   const runner = useDebateRunner(session, { onPersist });
+  // For the end-of-match Rejudge/Share panels: availability + a way to swap in a
+  // re-judged session. `session` already carries the persisted verdict once the
+  // match completes, and a re-judge updates it via setSession.
+  const { availability, setSession } = useArena();
+  const doneVerdict = session.verdict ?? runner.verdict;
+  // When the match is done, the persisted session cost is authoritative (an
+  // in-arena re-judge updates it but not the runner's frozen internal verdict).
+  const doneCostSummary =
+    runner.phase === "done" ? session.costSummary : runner.costSummary;
 
   const roles = useMemo(() => {
     const opt = MODE_OPTIONS.find((m) => m.id === session.mode)!;
@@ -220,7 +232,7 @@ function ArenaInner({
         currentRound={runner.currentRound}
         totalRounds={runner.totalRounds}
         roundLabel={runner.activeTurn?.roundLabel ?? runner.messages.at(-1)?.roundLabel}
-        costSummary={runner.costSummary}
+        costSummary={doneCostSummary}
         phase={runner.phase}
         messageCount={runner.messages.length}
         activeModelName={activeModelName}
@@ -272,21 +284,37 @@ function ArenaInner({
             phase={runner.phase}
           />
 
-          {runner.phase === "done" && runner.verdict ? (
+          {runner.phase === "done" && doneVerdict ? (
             <VerdictCard
-              verdict={runner.verdict}
+              verdict={doneVerdict}
               modelA={session.modelA}
               modelB={session.modelB}
             />
           ) : null}
 
-          {runner.phase === "done" && !session.judge.enabled ? (
+          {runner.phase === "done" && isDebateComplete(session) && !session.judge.enabled ? (
             <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-4 text-center text-sm text-ink/65">
               No judge this round — the debate ended after the final round.
             </div>
           ) : null}
 
-          {runner.phase === "stopped" ? (
+          {/* Change the judge + share, right here at the arena end (feedback
+              #3/#9) — not only on the results page. Gated on a genuinely complete
+              match so a resumed STOPPED session doesn't show them. */}
+          {runner.phase === "done" && isDebateComplete(session) ? (
+            <RejudgePanel
+              session={session}
+              availability={availability}
+              onSession={setSession}
+            />
+          ) : null}
+
+          {runner.phase === "done" && (isDebateComplete(session) || session.verdict) ? (
+            <SharePanel session={session} />
+          ) : null}
+
+          {runner.phase === "stopped" ||
+          (runner.phase === "done" && session.status === "stopped") ? (
             <div className="rounded-card border-3 border-arcade-red bg-arcade-red/10 p-4 text-center">
               <p className="font-heading font-extrabold">Match stopped</p>
               <p className="mt-1 text-sm text-ink/65">
