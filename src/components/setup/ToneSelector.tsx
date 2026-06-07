@@ -16,6 +16,8 @@ interface ToneSelectorProps {
   customTone: string;
   onCustomToneChange: (value: string) => void;
   error?: string;
+  /** Deep Debate locks the tone — render read-only. */
+  disabled?: boolean;
 }
 
 export function ToneSelector({
@@ -24,6 +26,7 @@ export function ToneSelector({
   customTone,
   onCustomToneChange,
   error,
+  disabled = false,
 }: ToneSelectorProps) {
   return (
     <div>
@@ -40,16 +43,21 @@ export function ToneSelector({
               type="button"
               role="radio"
               aria-checked={selected}
+              disabled={disabled}
+              aria-disabled={disabled}
               onClick={() => {
+                if (disabled) return;
                 playSound("buttonClick");
                 onChange(opt.id);
               }}
               className={cn(
                 "flex items-center gap-1.5 rounded-btn border-3 border-ink px-2.5 py-2 text-sm font-bold transition",
                 "focus-visible:outline-3 focus-visible:outline-offset-2",
+                disabled && !selected && "cursor-not-allowed opacity-50",
+                disabled && selected && "cursor-not-allowed",
                 selected
                   ? "bg-arcade-pink text-night shadow-hard-sm"
-                  : "bg-surface hover:bg-arcade-yellow hover:text-night",
+                  : cn("bg-surface", !disabled && "hover:bg-arcade-yellow hover:text-night"),
               )}
             >
               <span aria-hidden>{opt.emoji}</span>

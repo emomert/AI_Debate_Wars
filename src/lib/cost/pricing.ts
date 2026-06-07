@@ -18,6 +18,13 @@ export interface ModelPrice {
 // the providers' current pricing pages before relying on them for billing.
 export const modelPricing: Record<string, ModelPrice> = {
   // OpenAI
+  // gpt-5.3/5.4/5.5 mirror the 5.x flagship/mini/nano price points that have
+  // held steady since gpt-5 — ESTIMATES; verify on openai.com/api/pricing.
+  "openai:gpt-5.5": { inputCostPer1M: 1.25, outputCostPer1M: 10.0 },
+  "openai:gpt-5.4": { inputCostPer1M: 1.25, outputCostPer1M: 10.0 },
+  "openai:gpt-5.4-mini": { inputCostPer1M: 0.25, outputCostPer1M: 2.0 },
+  "openai:gpt-5.4-nano": { inputCostPer1M: 0.05, outputCostPer1M: 0.4 },
+  "openai:gpt-5.3-chat-latest": { inputCostPer1M: 1.25, outputCostPer1M: 10.0 },
   "openai:gpt-5.2-chat-latest": { inputCostPer1M: 1.25, outputCostPer1M: 10.0 },
   "openai:gpt-5.1-chat-latest": { inputCostPer1M: 1.25, outputCostPer1M: 10.0 },
   "openai:gpt-5-mini": { inputCostPer1M: 0.25, outputCostPer1M: 2.0 },

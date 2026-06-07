@@ -74,7 +74,22 @@ export function GameShell({
             wide ? "max-w-7xl" : "max-w-5xl",
           )}
         >
-          <Logo />
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Logo />
+            <Link
+              href="/report"
+              className="hidden items-center gap-1 rounded-btn border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2 sm:inline-flex"
+            >
+              📊 Tech Report
+            </Link>
+            <Link
+              href="/report"
+              aria-label="Technical report"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-btn border-3 border-ink bg-surface text-sm transition hover:bg-arcade-yellow focus-visible:outline-3 focus-visible:outline-offset-2 sm:hidden"
+            >
+              📊
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             {headerExtras}
             <ThemeToggle />

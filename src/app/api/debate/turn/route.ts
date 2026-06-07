@@ -22,6 +22,7 @@ import type {
 import type { Citation, DebateMessage } from "@/lib/debate/debateTypes";
 import {
   assertConsistentTranscript,
+  assertDeepTurnAllowed,
   assertValidSession,
 } from "@/lib/debate/validators";
 import {
@@ -76,6 +77,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const body = await readJsonBody<GenerateTurnRequest>(req);
     const session = body?.session;
     assertValidSession(session);
+    assertDeepTurnAllowed(session);
     assertConsistentTranscript(session);
 
     const turn = getTurnById(session, body.turnId);

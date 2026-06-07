@@ -15,7 +15,7 @@ const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v
  * NOTE: the `*-chat-latest` variants are NOT reasoning models — they accept a
  * custom temperature and don't burn hidden reasoning tokens. So we split the two
  * concerns: `isNewStyleModel` (param name) vs `isReasoningStyle` (drop
- * temperature + add headroom), so our two flagship chat models keep their tuned
+ * temperature + add headroom), so the `-chat-latest` flagships keep their tuned
  * temperature (0.8 turns / 0.4 judge).
  */
 function isNewStyleModel(modelId: string): boolean {

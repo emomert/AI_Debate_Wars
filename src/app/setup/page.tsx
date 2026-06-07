@@ -6,7 +6,7 @@
  * disabled until the config validates.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { GameShell } from "@/components/game/GameShell";
@@ -34,10 +34,6 @@ export default function SetupPage() {
   const { config, setConfig, startMatch, availability } = useArena();
   const [attempted, setAttempted] = useState(false);
 
-  const liveMode = Boolean(
-    availability?.openai || availability?.deepseek || availability?.openrouter,
-  );
-
   // Whether the server can run app-side web search (Deep Debate for
   // OpenAI/DeepSeek fighters); null until /api/health resolves → optimistic.
   const injectedSearchReady = availability ? availability.webSearch : null;
@@ -51,6 +47,16 @@ export default function SetupPage() {
   const fightersEligibleForDeep =
     modelSupportsWebSearch(config.modelA.modelId, injectedSearchReady !== false) &&
     modelSupportsWebSearch(config.modelB.modelId, injectedSearchReady !== false);
+
+  // Deep Debate fixes the format: 3 rounds, standard serious tone (and the
+  // auto length, handled below). Normalize here too so a config persisted
+  // before these limits existed can't smuggle 5 rounds into a deep session.
+  useEffect(() => {
+    if (config.deepDebate && (config.roundCount !== 3 || config.tone !== "serious")) {
+      setConfig({ roundCount: 3, tone: "serious" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.deepDebate, config.roundCount, config.tone]);
 
   const handleStart = () => {
     setAttempted(true);
@@ -91,17 +97,18 @@ export default function SetupPage() {
               <DeepDebateToggle
                 value={config.deepDebate}
                 fightersEligible={fightersEligibleForDeep}
-                onChange={(deepDebate) => setConfig({ deepDebate })}
+                onChange={(deepDebate) =>
+                  setConfig(
+                    deepDebate
+                      ? { deepDebate, roundCount: 3, tone: "serious" }
+                      : { deepDebate },
+                  )
+                }
               />
             </div>
           </GamePanel>
 
           <GamePanel title="3 · Choose Your Fighters">
-            <p className="mb-3 rounded-card border-3 border-dashed border-ink/40 bg-paper p-2.5 text-xs text-ink/65">
-              {liveMode
-                ? "🟢 Models marked “ready” will make real API calls. OpenRouter brands (Qwen, Llama, …) are free with an OPENROUTER_API_KEY."
-                : "🔑 No API keys detected. Add OPENAI_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY (free models!) to your .env.local to run a debate."}
-            </p>
             <div className="grid gap-5 sm:grid-cols-2">
               <ModelSelector
                 label="Fighter A"
@@ -131,17 +138,28 @@ export default function SetupPage() {
           <GamePanel title="4 · Match Rules">
             <div className="space-y-5">
               <div>
-                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
+                <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
                   Rounds
+                  {config.deepDebate ? (
+                    <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
+                      🔒 3 in Deep Debate
+                    </span>
+                  ) : null}
                 </p>
                 <RoundSelector
                   value={config.roundCount}
                   onChange={(roundCount) => setConfig({ roundCount })}
+                  disabled={config.deepDebate}
                 />
               </div>
               <div>
-                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
+                <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
                   Tone
+                  {config.deepDebate ? (
+                    <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
+                      🔒 Standard
+                    </span>
+                  ) : null}
                 </p>
                 <ToneSelector
                   value={config.tone}
@@ -149,6 +167,7 @@ export default function SetupPage() {
                   customTone={config.customTone ?? ""}
                   onCustomToneChange={(customTone) => setConfig({ customTone })}
                   error={attempted ? validation.errors.tone : undefined}
+                  disabled={config.deepDebate}
                 />
               </div>
               <div>

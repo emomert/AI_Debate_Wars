@@ -111,7 +111,7 @@ export default function HomePage() {
       <section className="relative pt-2 text-center">
         <div className="mb-4 flex justify-center">
           <FloatingBadge color="pink" rotate={-4}>
-            🕹️ v0 · Arcade Beta
+            🕹️ AI vs AI
           </FloatingBadge>
         </div>
 

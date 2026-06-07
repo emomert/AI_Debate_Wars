@@ -33,8 +33,8 @@ const MUSIC_STORAGE_KEY = "ada:music-enabled";
 // (See public/music/README.md.)
 const MUSIC_ASSET = "/music/background.mp3";
 // The raw track is mastered loud — keep it WAY under the SFX so it reads as a
-// faint ambience (user feedback: "only a slight sound" is ideal).
-const MUSIC_FILE_VOLUME = 0.06;
+// faint ambience (user feedback, twice: barely-there is ideal).
+const MUSIC_FILE_VOLUME = 0.03;
 
 // Dedicated verdict suspense cue: loops while the judge deliberates and is
 // stopped the moment the verdict is disclosed (falls back to the judgeEnter

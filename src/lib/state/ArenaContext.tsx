@@ -207,7 +207,13 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startMatch = useCallback(() => {
-    const next = createDebateSession(config);
+    // Single choke point for the Deep Debate format (3 rounds, standard tone):
+    // Rematch buttons call startMatch without passing through the setup page's
+    // normalization, so a stale persisted config must be clamped here too.
+    const effective: DebateConfig = config.deepDebate
+      ? { ...config, roundCount: 3, tone: "serious" }
+      : config;
+    const next = createDebateSession(effective);
     setSessionState(next);
     return next;
   }, [config]);

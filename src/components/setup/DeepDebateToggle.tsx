@@ -67,7 +67,7 @@ export function DeepDebateToggle({
           <p className="flex items-center gap-2 text-ink/75">✅ Live web search every turn</p>
           <p className="flex items-center gap-2 text-ink/75">✅ Quoted &amp; cited sources (in a collapsible list)</p>
           <p className="flex items-center gap-2 text-ink/75">⏱ Longer turns — about 30–90s each</p>
-          <p className="flex items-center gap-2 text-ink/75">🔒 Length is set automatically (template)</p>
+          <p className="flex items-center gap-2 text-ink/75">🔒 Fixed format: 3 rounds · standard tone · auto length</p>
           <p className="flex items-center gap-2 font-semibold text-ink/60">
             💰 Search fees (if any) show up on each turn&apos;s cost badge.
           </p>

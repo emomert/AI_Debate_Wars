@@ -2,10 +2,9 @@
 
 /**
  * TopicInput — large playful topic box with sample chips, a live character
- * count, and an inline error/empty state.
+ * count, and an inline error state.
  */
 
-import { Badge } from "@/components/game/Badge";
 import { SAMPLE_TOPICS, TOPIC_MAX_LENGTH } from "@/lib/constants";
 import { cn } from "@/lib/utils/cn";
 
@@ -72,13 +71,6 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
         </div>
       </div>
 
-      {!error && value.trim().length === 0 ? (
-        <p className="mt-3">
-          <Badge color="white" size="sm">
-            Empty arena — drop a topic in first
-          </Badge>
-        </p>
-      ) : null}
     </div>
   );
 }

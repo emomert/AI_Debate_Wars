@@ -12,9 +12,11 @@ import { playSound } from "@/lib/audio/soundManager";
 interface RoundSelectorProps {
   value: RoundCount;
   onChange: (count: RoundCount) => void;
+  /** Deep Debate locks the round count — render read-only. */
+  disabled?: boolean;
 }
 
-export function RoundSelector({ value, onChange }: RoundSelectorProps) {
+export function RoundSelector({ value, onChange, disabled = false }: RoundSelectorProps) {
   return (
     <div
       role="radiogroup"
@@ -29,16 +31,24 @@ export function RoundSelector({ value, onChange }: RoundSelectorProps) {
             type="button"
             role="radio"
             aria-checked={selected}
+            disabled={disabled}
+            aria-disabled={disabled}
             onClick={() => {
+              if (disabled) return;
               playSound("buttonClick");
               onChange(opt.count);
             }}
             className={cn(
               "rounded-card border-4 border-ink p-3 text-center transition",
               "focus-visible:outline-3 focus-visible:outline-offset-2",
+              disabled && "cursor-not-allowed",
+              disabled && !selected && "opacity-50",
               selected
-                ? "-translate-y-0.5 bg-arcade-green text-night shadow-hard"
-                : "bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
+                ? cn("bg-arcade-green text-night shadow-hard", !disabled && "-translate-y-0.5")
+                : cn(
+                    "bg-surface shadow-hard-sm",
+                    !disabled && "hover:-translate-y-0.5 hover:shadow-hard",
+                  ),
             )}
           >
             <div className="font-display text-3xl leading-none sm:text-4xl">

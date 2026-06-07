@@ -72,11 +72,12 @@ export function assertValidSession(session: DebateSession): void {
   if (!session.judge || typeof session.judge.enabled !== "boolean") {
     throw new ProviderError("INVALID_REQUEST", "Invalid judge config");
   }
-  // NOTE: Deep Debate search readiness is deliberately NOT validated here —
-  // this validator also runs for /api/debate/verdict, and the judge never
-  // searches (a finished deep debate must still get its verdict after a search
-  // key rotation). The turn route guards search readiness itself with a clear
-  // MISSING_API_KEY error before doing any work.
+  // NOTE: Deep Debate format & search readiness are deliberately NOT validated
+  // here — this validator also runs for /api/debate/verdict, and a finished
+  // deep debate must still get its verdict after a search-key rotation or a
+  // format-rule change (sessions persisted before the 3-round/standard-tone
+  // limits existed would otherwise be bricked). The TURN route enforces both
+  // via assertDeepTurnAllowed + its MISSING_API_KEY search guard.
   if (!session.modelA?.modelId || !session.modelB?.modelId) {
     throw new ProviderError("INVALID_REQUEST", "Both fighters are required");
   }
@@ -89,6 +90,23 @@ export function assertValidSession(session: DebateSession): void {
   if (session.turns.length > 14) {
     // 7 rounds × 2 speakers is the hard ceiling (docs/11 max rounds).
     throw new ProviderError("INVALID_REQUEST", "Too many turns");
+  }
+}
+
+/**
+ * Deep Debate fixed-format guard for NEW turn generation only (3 rounds —
+ * deep turns are long and burn search quota — and the standard serious tone).
+ * Lives outside assertValidSession so the verdict route never runs it: a
+ * finished deep debate from before these limits existed must still get its
+ * verdict, but no further deep turns may be generated for it.
+ */
+export function assertDeepTurnAllowed(session: DebateSession): void {
+  if (!session.deepDebate) return;
+  if (session.roundCount !== 3) {
+    throw new ProviderError("INVALID_REQUEST", "Deep Debate is limited to 3 rounds");
+  }
+  if (session.tone !== "serious") {
+    throw new ProviderError("INVALID_REQUEST", "Deep Debate uses the standard tone");
   }
 }
 
@@ -169,6 +187,11 @@ export function validateSetup(
       !modelSupportsWebSearch(config.modelB.modelId, injectedReady))
   ) {
     errors.deep = "Deep Debate needs the server's web-search key.";
+  }
+  // Mirror the server's fixed Deep Debate format (the UI normally locks these;
+  // this catches stale persisted configs reaching Start via other paths).
+  if (config.deepDebate && (config.roundCount !== 3 || config.tone !== "serious")) {
+    errors.deep = "Deep Debate runs as 3 rounds with the standard tone.";
   }
 
   if (
