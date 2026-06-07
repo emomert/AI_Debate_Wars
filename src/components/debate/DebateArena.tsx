@@ -126,7 +126,7 @@ function ArenaInner({
     : undefined;
   const announcement =
     runner.phase === "thinking"
-      ? `${activeModelName ?? "A fighter"} is thinking. Round ${runner.currentRound} of ${runner.totalRounds}.`
+      ? `${activeModelName ?? "A fighter"} is ${session.deepDebate ? "researching the web" : "thinking"}. Round ${runner.currentRound} of ${runner.totalRounds}.`
       : runner.phase === "streaming"
         ? `${activeModelName ?? "A fighter"} is responding. Round ${runner.currentRound} of ${runner.totalRounds}.`
         : runner.phase === "judging"

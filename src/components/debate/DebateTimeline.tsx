@@ -132,7 +132,7 @@ export function DebateTimeline({
 
       {phase === "judging" ? (
         <div className="flex justify-center">
-          <ThinkingBubble name="The Judge" color="purple" />
+          <ThinkingBubble name="The Judge" color="purple" kind="judge" />
         </div>
       ) : null}
     </div>
