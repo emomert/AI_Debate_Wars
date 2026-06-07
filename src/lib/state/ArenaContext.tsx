@@ -181,7 +181,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
 
   // Cross-tab sound/music sync: mirror another tab's toggle into this tab's
   // soundManager + local state so two open tabs don't disagree (and the music
-  // toggle stays consistent). Theme is synced separately in ThemeToggle.
+  // toggle stays consistent).
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === "ada:sound-enabled") {

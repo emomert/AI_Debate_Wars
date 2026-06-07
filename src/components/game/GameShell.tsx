@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils/cn";
 import { DottedBackground } from "@/components/game/DottedBackground";
 import { SoundToggle } from "@/components/game/SoundToggle";
 import { MusicToggle } from "@/components/game/MusicToggle";
-import { ThemeToggle } from "@/components/game/ThemeToggle";
 import { HelpButton } from "@/components/game/HelpButton";
 
 interface GameShellProps {
@@ -92,7 +91,6 @@ export function GameShell({
           </div>
           <div className="flex items-center gap-2">
             {headerExtras}
-            <ThemeToggle />
             <MusicToggle />
             <SoundToggle />
             <HelpButton />
