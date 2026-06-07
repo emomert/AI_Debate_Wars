@@ -35,6 +35,13 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
   const judgeCost =
     (session.verdict?.cost?.totalCost ?? 0) +
     (session.pastVerdicts ?? []).reduce((sum, v) => sum + (v.cost?.totalCost ?? 0), 0);
+
+  // Costs are the real provider-reported bill unless some turn fell back to a
+  // text-length estimate (no usage returned) — only then is it "Estimated".
+  const anyEstimated =
+    session.messages.some((m) => m.cost?.estimated) ||
+    Boolean(session.verdict?.cost?.estimated) ||
+    (session.pastVerdicts ?? []).some((v) => v.cost?.estimated);
   const roundLabel = ROUND_OPTIONS.find((r) => r.count === session.roundCount)?.label;
 
   return (
@@ -93,7 +100,7 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
       </div>
 
       <p className="mt-3 text-center text-[11px] text-ink/50">
-        Estimated · pricing is configurable in{" "}
+        {anyEstimated ? "Estimated · " : ""}Pricing is configurable in{" "}
         <code className="font-mono">lib/cost/pricing.ts</code>
       </p>
     </GamePanel>

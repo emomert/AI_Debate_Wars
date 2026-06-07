@@ -48,6 +48,14 @@ export function CostBadge({ cost, usage, latencyMs, className }: CostBadgeProps)
         {cost.searchCost ? (
           <span className="text-arcade-purple" title="Includes web-search fee">🔎</span>
         ) : null}
+        {cost.cachedSavings ? (
+          <span
+            className="text-arcade-green"
+            title={`Saved ${formatCost(cost.cachedSavings)} — some input was served from the prompt cache`}
+          >
+            ♻️
+          </span>
+        ) : null}
         {cost.estimated ? <span className="text-arcade-yellow">~est</span> : null}
         <span aria-hidden className="text-white/60">{open ? "▴" : "▾"}</span>
       </button>
@@ -56,6 +64,14 @@ export function CostBadge({ cost, usage, latencyMs, className }: CostBadgeProps)
         <dl className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1 rounded-card border-3 border-ink bg-surface p-2.5 font-mono text-[11px]">
           <dt className="text-ink/55">Input</dt>
           <dd className="text-right">{formatTokens(usage.inputTokens)}</dd>
+          {usage.cachedInputTokens && cost.cachedSavings ? (
+            <>
+              <dt className="text-ink/55">♻️ Cached input</dt>
+              <dd className="text-right text-arcade-green">
+                {formatTokens(usage.cachedInputTokens)} (−{formatCost(cost.cachedSavings)})
+              </dd>
+            </>
+          ) : null}
           <dt className="text-ink/55">Output</dt>
           <dd className="text-right">{formatTokens(usage.outputTokens)}</dd>
           <dt className="text-ink/55">Input cost</dt>

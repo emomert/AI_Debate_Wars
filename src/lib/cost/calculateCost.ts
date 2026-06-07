@@ -27,14 +27,27 @@ export function calculateCost(
   estimated = false,
 ): CostBreakdown {
   const price = getModelPrice(providerId, modelId);
-  const inputCost = (usage.inputTokens / 1_000_000) * price.inputCostPer1M;
+  // Cache-aware: the cache-hit portion of input bills at the discounted rate, so
+  // the displayed cost matches what the provider actually charged. Falls back to
+  // the standard input rate when a model has no published cached rate.
+  const cachedRate = price.cachedInputCostPer1M ?? price.inputCostPer1M;
+  const cachedInput = Math.min(Math.max(usage.cachedInputTokens ?? 0, 0), usage.inputTokens);
+  const uncachedInput = usage.inputTokens - cachedInput;
+  const inputCost =
+    (uncachedInput / 1_000_000) * price.inputCostPer1M +
+    (cachedInput / 1_000_000) * cachedRate;
   const outputCost = (usage.outputTokens / 1_000_000) * price.outputCostPer1M;
+  // What the cache discount actually saved (vs billing the cached tokens at the
+  // full rate). 0 for models priced without a cached rate, so the UI only shows
+  // a "saved" marker when a discount was genuinely applied.
+  const cachedSavings = (cachedInput / 1_000_000) * (price.inputCostPer1M - cachedRate);
   return {
     inputCost,
     outputCost,
     totalCost: inputCost + outputCost,
     currency: "USD",
     estimated,
+    ...(cachedSavings > 0 ? { cachedSavings } : {}),
   };
 }
 
@@ -42,11 +55,13 @@ export function calculateCost(
 export function buildUsage(
   inputTokens: number,
   outputTokens: number,
+  cachedInputTokens = 0,
 ): TokenUsage {
   return {
     inputTokens,
     outputTokens,
     totalTokens: inputTokens + outputTokens,
+    ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),
   };
 }
 

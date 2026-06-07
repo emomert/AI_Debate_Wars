@@ -149,6 +149,10 @@ export async function callChatCompletions(
         prompt_tokens?: number;
         completion_tokens?: number;
         total_tokens?: number;
+        // OpenAI / OpenRouter expose cache-hit input tokens nested here…
+        prompt_tokens_details?: { cached_tokens?: number };
+        // …while DeepSeek's native endpoint puts them at the top level.
+        prompt_cache_hit_tokens?: number;
       };
     };
 
@@ -165,13 +169,23 @@ export async function callChatCompletions(
       throw new ProviderError("PROVIDER_ERROR");
     }
 
+    const inputTokens = data.usage?.prompt_tokens ?? 0;
+    // Cache-hit input tokens: OpenAI/OpenRouter nest it, DeepSeek tops it.
+    // Clamp to inputTokens so a malformed payload can't make cached > input.
+    const cachedInputTokens = Math.min(
+      inputTokens,
+      data.usage?.prompt_tokens_details?.cached_tokens ??
+        data.usage?.prompt_cache_hit_tokens ??
+        0,
+    );
     const usage: TokenUsage | undefined = data.usage
       ? {
-          inputTokens: data.usage.prompt_tokens ?? 0,
+          inputTokens,
           outputTokens: data.usage.completion_tokens ?? 0,
           totalTokens:
             data.usage.total_tokens ??
-            (data.usage.prompt_tokens ?? 0) + (data.usage.completion_tokens ?? 0),
+            inputTokens + (data.usage.completion_tokens ?? 0),
+          ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),
         }
       : undefined;
 

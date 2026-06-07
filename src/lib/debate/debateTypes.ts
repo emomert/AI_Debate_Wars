@@ -56,6 +56,12 @@ export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  /**
+   * Subset of inputTokens served from the provider's prompt cache (OpenAI
+   * `cached_tokens` / DeepSeek `prompt_cache_hit_tokens`). Billed at the model's
+   * discounted cached rate, so the displayed cost reflects what was really paid.
+   */
+  cachedInputTokens?: number;
 }
 
 export interface CostBreakdown {
@@ -63,6 +69,12 @@ export interface CostBreakdown {
   outputCost: number;
   /** Web-search add-on fee for Deep Debate turns (OpenRouter bills per search). */
   searchCost?: number;
+  /**
+   * USD saved on this turn because some input was served from the prompt cache
+   * at the discounted rate. Only set (and >0) when a real discount applied — so
+   * the UI never claims a discount for models priced without a cached rate.
+   */
+  cachedSavings?: number;
   totalCost: number;
   currency: "USD";
   /** True when usage was estimated from text length rather than reported. */

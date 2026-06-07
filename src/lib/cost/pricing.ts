@@ -11,35 +11,44 @@
 
 export interface ModelPrice {
   inputCostPer1M: number;
+  /**
+   * Cache-HIT input rate (USD per 1M). Providers bill input tokens served from
+   * the prompt cache at a steep discount; defaults to inputCostPer1M when unset
+   * (no phantom discount for models with no published cached rate).
+   */
+  cachedInputCostPer1M?: number;
   outputCostPer1M: number;
 }
 
-// USD per 1M tokens for the cost HUD. Verified against the providers' official
-// pricing pages in June 2026 (openai.com/api/pricing, api-docs.deepseek.com).
-// We bill input at the UNCACHED rate, so the HUD is a slight OVER-estimate when
-// prompt caching kicks in (repeated system prompt + transcript across rounds) —
-// i.e. the real bill is never higher than shown. See getModelPrice notes.
+// USD per 1M tokens for the cost HUD. Standard, CACHED and output rates verified
+// against the providers' official pricing pages in June 2026
+// (openai.com/api/pricing, api-docs.deepseek.com). The cost engine bills the
+// cache-hit portion of input at cachedInputCostPer1M, so the HUD reflects the
+// real bill rather than an over-estimate. (OpenAI GPT-5 family ≈90% off cached,
+// GPT-4.1 ≈75% off, GPT-4o ≈50% off.)
 export const modelPricing: Record<string, ModelPrice> = {
   // OpenAI — verified June 2026.
-  "openai:gpt-5.5": { inputCostPer1M: 5.0, outputCostPer1M: 30.0 },
-  "openai:gpt-5.4": { inputCostPer1M: 2.5, outputCostPer1M: 15.0 },
-  "openai:gpt-5.4-mini": { inputCostPer1M: 0.75, outputCostPer1M: 4.5 },
-  "openai:gpt-5.4-nano": { inputCostPer1M: 0.2, outputCostPer1M: 1.25 },
+  "openai:gpt-5.5": { inputCostPer1M: 5.0, cachedInputCostPer1M: 0.5, outputCostPer1M: 30.0 },
+  "openai:gpt-5.4": { inputCostPer1M: 2.5, cachedInputCostPer1M: 0.25, outputCostPer1M: 15.0 },
+  "openai:gpt-5.4-mini": { inputCostPer1M: 0.75, cachedInputCostPer1M: 0.075, outputCostPer1M: 4.5 },
+  "openai:gpt-5.4-nano": { inputCostPer1M: 0.2, cachedInputCostPer1M: 0.02, outputCostPer1M: 1.25 },
   // gpt-5.3-chat-latest: no separate published rate; priced at its nearest
-  // confirmed neighbor (gpt-5.2 / gpt-5.3-codex tier). ESTIMATE.
+  // confirmed neighbor (gpt-5.2 / gpt-5.3-codex tier). ESTIMATE — and we do NOT
+  // assume a cached discount for it (cached = standard) since the base is itself
+  // an estimate.
   "openai:gpt-5.3-chat-latest": { inputCostPer1M: 1.75, outputCostPer1M: 14.0 },
-  "openai:gpt-5.2-chat-latest": { inputCostPer1M: 1.75, outputCostPer1M: 14.0 },
-  "openai:gpt-5.1-chat-latest": { inputCostPer1M: 1.25, outputCostPer1M: 10.0 },
-  "openai:gpt-5-mini": { inputCostPer1M: 0.25, outputCostPer1M: 2.0 },
-  "openai:gpt-5-nano": { inputCostPer1M: 0.05, outputCostPer1M: 0.4 },
-  "openai:gpt-4.1": { inputCostPer1M: 2.0, outputCostPer1M: 8.0 },
-  "openai:gpt-4.1-mini": { inputCostPer1M: 0.4, outputCostPer1M: 1.6 },
-  "openai:gpt-4.1-nano": { inputCostPer1M: 0.1, outputCostPer1M: 0.4 },
-  "openai:gpt-4o": { inputCostPer1M: 2.5, outputCostPer1M: 10.0 },
-  "openai:gpt-4o-mini": { inputCostPer1M: 0.15, outputCostPer1M: 0.6 },
-  // DeepSeek — verified June 2026 (cache-miss input rate; output rate).
-  "deepseek:deepseek-v4-pro": { inputCostPer1M: 0.435, outputCostPer1M: 0.87 },
-  "deepseek:deepseek-v4-flash": { inputCostPer1M: 0.14, outputCostPer1M: 0.28 },
+  "openai:gpt-5.2-chat-latest": { inputCostPer1M: 1.75, cachedInputCostPer1M: 0.175, outputCostPer1M: 14.0 },
+  "openai:gpt-5.1-chat-latest": { inputCostPer1M: 1.25, cachedInputCostPer1M: 0.125, outputCostPer1M: 10.0 },
+  "openai:gpt-5-mini": { inputCostPer1M: 0.25, cachedInputCostPer1M: 0.025, outputCostPer1M: 2.0 },
+  "openai:gpt-5-nano": { inputCostPer1M: 0.05, cachedInputCostPer1M: 0.005, outputCostPer1M: 0.4 },
+  "openai:gpt-4.1": { inputCostPer1M: 2.0, cachedInputCostPer1M: 0.5, outputCostPer1M: 8.0 },
+  "openai:gpt-4.1-mini": { inputCostPer1M: 0.4, cachedInputCostPer1M: 0.1, outputCostPer1M: 1.6 },
+  "openai:gpt-4.1-nano": { inputCostPer1M: 0.1, cachedInputCostPer1M: 0.025, outputCostPer1M: 0.4 },
+  "openai:gpt-4o": { inputCostPer1M: 2.5, cachedInputCostPer1M: 1.25, outputCostPer1M: 10.0 },
+  "openai:gpt-4o-mini": { inputCostPer1M: 0.15, cachedInputCostPer1M: 0.075, outputCostPer1M: 0.6 },
+  // DeepSeek — verified June 2026 (cache-miss / cache-hit input; output).
+  "deepseek:deepseek-v4-pro": { inputCostPer1M: 0.435, cachedInputCostPer1M: 0.003625, outputCostPer1M: 0.87 },
+  "deepseek:deepseek-v4-flash": { inputCostPer1M: 0.14, cachedInputCostPer1M: 0.0028, outputCostPer1M: 0.28 },
   // OpenRouter — these are FREE models, so $0.00 (the HUD shows $0).
   "openrouter:qwen/qwen3-next-80b-a3b-instruct:free": { inputCostPer1M: 0, outputCostPer1M: 0 },
   "openrouter:meta-llama/llama-3.3-70b-instruct:free": { inputCostPer1M: 0, outputCostPer1M: 0 },

@@ -189,6 +189,15 @@ function formatWebSources(sources: Citation[]): string {
 /**
  * Build the per-turn user prompt (docs/05 turn templates).
  *
+ * PROMPT ORDER IS LOAD-BEARING FOR COST (docs/08): the constant header (topic,
+ * mode) and the append-only transcript come FIRST so they form the longest
+ * possible IDENTICAL prefix across the turns of a debate — which is exactly what
+ * OpenAI/DeepSeek prompt caching reuses (the system message is constant too).
+ * Every per-turn-VARYING piece (identity, stance, round, task, web sources,
+ * response requirements) is kept LAST so it can't break that cached prefix.
+ * Putting the alternating identity/round/task up front (as before) collapsed the
+ * shared prefix to a tiny header and the expensive transcript was never cached.
+ *
  * `webSources` is only passed for Deep Debate turns on the injected-search
  * path; OpenRouter ":online" turns get their results attached by the provider
  * itself, so the prompt stays unchanged there.
@@ -214,10 +223,15 @@ export function buildTurnPrompt(
       : `Your assigned role: ${turn.role}`;
 
   return [
+    // --- Cacheable prefix: constant header + append-only transcript FIRST. ---
     `Topic or idea:\n${session.topic}`,
     ``,
     `Mode:\n${modeLabel}`,
     ``,
+    `Previous messages:\n${formatTranscript(session)}`,
+    ``,
+    // --- Per-turn instructions LAST (vary each turn; kept here so the prefix
+    //     above stays identical across turns and the cache can reuse it). ---
     `Your identity:\n${model.displayName} — ${turn.role}`,
     ``,
     identityLine,
@@ -241,8 +255,6 @@ export function buildTurnPrompt(
             ``,
           ]
         : []),
-    `Previous messages:\n${formatTranscript(session)}`,
-    ``,
     `Response requirements:`,
     `- Write only your own turn.`,
     `- Do not write the other participant's turn.`,

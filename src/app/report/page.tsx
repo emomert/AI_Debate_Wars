@@ -580,14 +580,17 @@ export default function ReportPage() {
           <p className="mb-3 text-sm text-ink/70">
             Every message carries its own bill: provider-reported token usage × the per-model
             price below (estimated from text length only when a provider doesn&apos;t report
-            usage — flagged with a ~). Prices live in one configurable table, never in UI code.
+            usage — flagged with a ~). Input served from the provider&apos;s prompt cache is
+            billed at the discounted <span className="font-semibold">cached</span> rate, so the
+            number is the real bill. Prices live in one configurable table, never in UI code.
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[480px] border-collapse text-sm">
+            <table className="w-full min-w-[520px] border-collapse text-sm">
               <thead>
                 <tr className="border-b-3 border-ink text-left font-heading text-xs uppercase tracking-wide text-ink/60">
                   <th className="py-2 pr-3">Model</th>
                   <th className="py-2 pr-3">$ / 1M input</th>
+                  <th className="py-2 pr-3">$ / 1M cached</th>
                   <th className="py-2">$ / 1M output</th>
                 </tr>
               </thead>
@@ -596,6 +599,9 @@ export default function ReportPage() {
                   <tr key={key} className="border-b border-ink/10">
                     <td className="py-1.5 pr-3 font-mono text-xs">{key}</td>
                     <td className="py-1.5 pr-3 font-mono text-xs">${priceText(p.inputCostPer1M)}</td>
+                    <td className="py-1.5 pr-3 font-mono text-xs text-arcade-green">
+                      ${priceText(p.cachedInputCostPer1M ?? p.inputCostPer1M)}
+                    </td>
                     <td className="py-1.5 font-mono text-xs">${priceText(p.outputCostPer1M)}</td>
                   </tr>
                 ))}
@@ -614,14 +620,14 @@ export default function ReportPage() {
               the cost breakdown.
             </li>
             <li>
-              · Prices verified against the providers&apos; official pages (June 2026).
-              gpt-5.3-chat-latest has no separate published rate and is priced at its
-              nearest confirmed neighbor.
+              · Standard, cached and output rates verified against the providers&apos;
+              official pages (June 2026). gpt-5.3-chat-latest has no published rate and is
+              priced at its nearest confirmed neighbor (no cache discount assumed).
             </li>
             <li>
-              · Input is billed at the uncached rate, so the HUD slightly OVER-estimates
-              when prompt caching applies (repeated system prompt + transcript across
-              rounds) — the real bill is never higher than shown.
+              · Cache-aware: when the provider reports cache-hit input tokens (a ♻️ on the
+              cost badge), they bill at the cached rate above — so the cost is the real bill,
+              not an over-estimate.
             </li>
           </ul>
         </GamePanel>
@@ -635,7 +641,7 @@ export default function ReportPage() {
               </p>
               <ul className="space-y-1 text-sm text-ink/75">
                 <li>· Next.js 15 App Router + TypeScript (strict), deployed on Vercel</li>
-                <li>· Tailwind CSS theme tokens — one palette drives light &amp; warm-dark mode</li>
+                <li>· Tailwind CSS theme tokens — one palette drives the whole arcade UI</li>
                 <li>· Framer Motion micro-animations; WebAudio synth SFX + file overrides</li>
                 <li>· Layered server code: routes → orchestrator → prompt builder → provider registry → pricing</li>
                 <li>· Per-turn deadline budget keeps every call inside the platform&apos;s 60s limit</li>
