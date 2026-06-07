@@ -63,8 +63,11 @@ function DebateMessageCardComponent({
   citations,
 }: DebateMessageCardProps) {
   const isJudge = speaker === "judge";
-  const align =
-    speaker === "modelB" ? "sm:ml-auto sm:mr-0" : isJudge ? "sm:mx-auto" : "sm:mr-auto sm:ml-0";
+  const isModelB = speaker === "modelB";
+  const align = isModelB ? "sm:ml-auto sm:mr-0" : isJudge ? "sm:mx-auto" : "sm:mr-auto sm:ml-0";
+  // Model B (red) leans right, so its accent bar sits on the RIGHT edge to match
+  // its side of the arena; Model A and the judge keep the bar on the left.
+  const barSide = isModelB ? "right-0" : "left-0";
 
   return (
     <motion.article
@@ -76,9 +79,9 @@ function DebateMessageCardComponent({
         align,
       )}
     >
-      <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1.5", ACCENT_BAR[color])} />
+      <span aria-hidden className={cn("absolute inset-y-0 w-1.5", barSide, ACCENT_BAR[color])} />
 
-      <div className="p-3 pl-4 sm:p-4 sm:pl-5">
+      <div className={cn("p-3 sm:p-4", isModelB ? "pr-4 sm:pr-5" : "pl-4 sm:pl-5")}>
         <header className="mb-2 flex flex-wrap items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-paper text-lg">
             {avatar}
