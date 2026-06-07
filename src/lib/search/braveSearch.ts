@@ -12,11 +12,15 @@
 
 import type { Citation } from "@/lib/debate/debateTypes";
 import type { SearchOptions, SearchProvider } from "@/lib/search/types";
+import { rankCitations } from "@/lib/search/sourceRanking";
 import { ProviderError } from "@/lib/utils/errors";
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const DEFAULT_COUNT = 5;
 const DEFAULT_TIMEOUT_MS = 10_000;
+// Always request Brave's maximum page (one query costs the same regardless of
+// size) so rankCitations has a deep pool to surface academic sources from.
+const POOL_COUNT = 20;
 // Mirror parseCitations' cap so injected and native sources render alike.
 const MAX_QUOTE_LENGTH = 500;
 
@@ -84,7 +88,7 @@ export const braveSearchProvider: SearchProvider = {
     const count = Math.min(Math.max(opts.count ?? DEFAULT_COUNT, 1), 10);
     const params = new URLSearchParams({
       q: toSearchQuery(query),
-      count: String(count),
+      count: String(POOL_COUNT),
       // Plain-text snippets (no <strong> highlight markup to strip later).
       text_decorations: "0",
     });
@@ -127,7 +131,10 @@ export const braveSearchProvider: SearchProvider = {
       }
 
       const data = (await res.json()) as { web?: { results?: BraveWebResult[] } };
-      return mapResults(data.web?.results ?? [], count);
+      // Map the FULL pool, then prefer academic/authoritative sources and trim
+      // to the requested count (re-indexed 1..count for the inline [n] markers).
+      const pool = mapResults(data.web?.results ?? [], POOL_COUNT);
+      return rankCitations(pool, count);
     } catch (err) {
       if (err instanceof ProviderError) throw err;
       if (err instanceof DOMException && err.name === "AbortError") {
