@@ -18,6 +18,7 @@ import { deepseekProvider } from "@/lib/providers/deepseekProvider";
 import { openRouterProvider } from "@/lib/providers/openRouterProvider";
 import { ProviderError, type AppErrorCode } from "@/lib/utils/errors";
 import { MODEL_CATALOG, type Backend } from "@/lib/models/modelRegistry";
+import { isInjectedSearchConfigured } from "@/lib/search/searchRegistry";
 import type { DebateSession } from "@/lib/debate/debateTypes";
 
 const registry: Partial<Record<ProviderId, Provider>> = {
@@ -89,6 +90,8 @@ export function providerAvailability() {
     openai: Boolean(process.env.OPENAI_API_KEY),
     deepseek: Boolean(process.env.DEEPSEEK_API_KEY),
     openrouter: Boolean(process.env.OPENROUTER_API_KEY),
+    // App-run web search — gates Deep Debate for OpenAI/DeepSeek fighters.
+    webSearch: isInjectedSearchConfigured(),
   };
 }
 

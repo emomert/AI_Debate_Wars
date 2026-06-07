@@ -201,8 +201,12 @@ export function ModelSelector({
           const isSelected = m.id === selectedId;
           const isConflict = !isSelected && m.id === conflictId;
           const ready = backendReady(m.providerId, availability);
-          // Deep Debate: only web-search-capable models are selectable.
-          const noWeb = requireWebSearch && !modelSupportsWebSearch(m.id);
+          // Deep Debate: OpenRouter models search natively; OpenAI/DeepSeek need
+          // the server's search key (reported by /api/health — optimistic until
+          // it resolves so eligible models don't flash disabled).
+          const noWeb =
+            requireWebSearch &&
+            !modelSupportsWebSearch(m.id, availability ? availability.webSearch : true);
           return (
             <button
               key={m.id}
@@ -256,7 +260,7 @@ export function ModelSelector({
 
                 {noWeb ? (
                   <span className="mt-1 block text-[10px] font-bold text-arcade-orange">
-                    No web search — not available in Deep Debate
+                    Needs the server&apos;s web-search key for Deep Debate
                   </span>
                 ) : isConflict ? (
                   <span className="mt-1 block text-[10px] font-bold text-arcade-orange">

@@ -38,19 +38,23 @@ export default function SetupPage() {
     availability?.openai || availability?.deepseek || availability?.openrouter,
   );
 
-  const validation = validateSetup(config);
+  // Whether the server can run app-side web search (Deep Debate for
+  // OpenAI/DeepSeek fighters); null until /api/health resolves → optimistic.
+  const injectedSearchReady = availability ? availability.webSearch : null;
+
+  const validation = validateSetup(config, { injectedSearchReady });
 
   const topicTooLong = config.topic.trim().length > TOPIC_MAX_LENGTH;
   const topicError =
     attempted || topicTooLong ? validation.errors.topic : undefined;
 
   const fightersEligibleForDeep =
-    modelSupportsWebSearch(config.modelA.modelId) &&
-    modelSupportsWebSearch(config.modelB.modelId);
+    modelSupportsWebSearch(config.modelA.modelId, injectedSearchReady !== false) &&
+    modelSupportsWebSearch(config.modelB.modelId, injectedSearchReady !== false);
 
   const handleStart = () => {
     setAttempted(true);
-    if (!validateSetup(config).valid) return;
+    if (!validateSetup(config, { injectedSearchReady }).valid) return;
     playSound("debateStart");
     startMatch();
     router.push("/debate");

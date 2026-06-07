@@ -14,7 +14,7 @@ import { playSound } from "@/lib/audio/soundManager";
 interface DeepDebateToggleProps {
   value: boolean;
   onChange: (value: boolean) => void;
-  /** True when both fighters can web-search (OpenRouter-routed). */
+  /** True when both fighters can deep-search (natively or via the app's search engine). */
   fightersEligible: boolean;
 }
 
@@ -69,12 +69,12 @@ export function DeepDebateToggle({
           <p className="flex items-center gap-2 text-ink/75">⏱ Longer turns — about 30–90s each</p>
           <p className="flex items-center gap-2 text-ink/75">🔒 Length is set automatically (template)</p>
           <p className="flex items-center gap-2 font-semibold text-ink/60">
-            💰 Web search adds a small fee per turn, even on free models.
+            💰 Search fees (if any) show up on each turn&apos;s cost badge.
           </p>
           {!fightersEligible ? (
             <p className="mt-1">
               <Badge color="orange" size="sm">
-                ⚠️ Pick web-search fighters (OpenRouter brands)
+                ⚠️ Server needs a web-search key for these fighters
               </Badge>
             </p>
           ) : null}

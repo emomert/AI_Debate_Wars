@@ -124,7 +124,16 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     fetchHealth(controller.signal)
       .then((h) => setAvailability(h.providers))
       .catch(() =>
-        setAvailability({ openai: false, deepseek: false, openrouter: false }),
+        setAvailability({
+          openai: false,
+          deepseek: false,
+          openrouter: false,
+          // A failed health fetch says nothing about server config. The
+          // provider booleans above are advisory hints, but webSearch HARD
+          // gates Deep Debate — stay optimistic and let the authoritative
+          // server validator reject cleanly if search is truly unconfigured.
+          webSearch: true,
+        }),
       );
     return () => controller.abort();
   }, []);

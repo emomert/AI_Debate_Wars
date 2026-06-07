@@ -63,7 +63,7 @@ export function friendlyMessage(code: AppErrorCode): { title: string; body: stri
     case "MISSING_API_KEY":
       return {
         title: "The arena has no power source",
-        body: "This fighter needs an API key on the server. Add OPENAI_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY to your .env.local, or pick a fighter whose key you have.",
+        body: "A server-side API key is missing or rejected. Fighters need OPENAI_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY; Deep Debate also needs a valid BRAVE_SEARCH_API_KEY for web search.",
       };
     case "PROVIDER_TIMEOUT":
       return {

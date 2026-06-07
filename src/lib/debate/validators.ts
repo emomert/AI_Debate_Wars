@@ -72,18 +72,11 @@ export function assertValidSession(session: DebateSession): void {
   if (!session.judge || typeof session.judge.enabled !== "boolean") {
     throw new ProviderError("INVALID_REQUEST", "Invalid judge config");
   }
-  // Deep Debate requires web-search-capable fighters (OpenRouter-routed).
-  if (session.deepDebate) {
-    if (
-      !modelSupportsWebSearch(session.modelA.modelId) ||
-      !modelSupportsWebSearch(session.modelB.modelId)
-    ) {
-      throw new ProviderError(
-        "INVALID_REQUEST",
-        "Deep Debate needs web-search-capable fighters",
-      );
-    }
-  }
+  // NOTE: Deep Debate search readiness is deliberately NOT validated here —
+  // this validator also runs for /api/debate/verdict, and the judge never
+  // searches (a finished deep debate must still get its verdict after a search
+  // key rotation). The turn route guards search readiness itself with a clear
+  // MISSING_API_KEY error before doing any work.
   if (!session.modelA?.modelId || !session.modelB?.modelId) {
     throw new ProviderError("INVALID_REQUEST", "Both fighters are required");
   }
@@ -133,7 +126,17 @@ export interface ValidationResult {
   errors: Partial<Record<"topic" | "models" | "judge" | "tone" | "deep", string>>;
 }
 
-export function validateSetup(config: DebateConfig): ValidationResult {
+export function validateSetup(
+  config: DebateConfig,
+  opts?: {
+    /**
+     * Whether the server's injected search engine is configured, as reported
+     * by /api/health (`null` while unknown). Unknown stays optimistic — the
+     * server validator is the authority and rejects cleanly if it's missing.
+     */
+    injectedSearchReady?: boolean | null;
+  },
+): ValidationResult {
   const errors: ValidationResult["errors"] = {};
 
   const topic = config.topic.trim();
@@ -157,14 +160,15 @@ export function validateSetup(config: DebateConfig): ValidationResult {
     }
   }
 
+  const injectedReady = opts?.injectedSearchReady !== false; // unknown → optimistic
   if (
     config.deepDebate &&
     config.modelA &&
     config.modelB &&
-    (!modelSupportsWebSearch(config.modelA.modelId) ||
-      !modelSupportsWebSearch(config.modelB.modelId))
+    (!modelSupportsWebSearch(config.modelA.modelId, injectedReady) ||
+      !modelSupportsWebSearch(config.modelB.modelId, injectedReady))
   ) {
-    errors.deep = "Deep Debate needs web-search fighters (OpenRouter brands).";
+    errors.deep = "Deep Debate needs the server's web-search key.";
   }
 
   if (

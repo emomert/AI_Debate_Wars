@@ -38,6 +38,8 @@ export interface HealthResponse {
     openai: boolean;
     deepseek: boolean;
     openrouter: boolean;
+    /** App-run web search (Deep Debate for OpenAI/DeepSeek fighters). */
+    webSearch: boolean;
   };
   timestamp: string;
 }

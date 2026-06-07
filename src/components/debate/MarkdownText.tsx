@@ -32,17 +32,23 @@ function renderInline(
     if (m.index > last) nodes.push(text.slice(last, m.index));
     const key = `${keyBase}-${i++}`;
     if (m[2] !== undefined && m[3] !== undefined) {
-      nodes.push(
-        <a
-          key={key}
-          href={m[3]}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-semibold text-arcade-blue underline decoration-2 underline-offset-2 hover:text-arcade-purple"
-        >
-          {m[2]}
-        </a>,
-      );
+      // Only linkify http(s) URLs — model output can be steered by web content
+      // (Deep Debate), and javascript:/data: hrefs must never become clickable.
+      if (/^https?:\/\//i.test(m[3])) {
+        nodes.push(
+          <a
+            key={key}
+            href={m[3]}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-arcade-blue underline decoration-2 underline-offset-2 hover:text-arcade-purple"
+          >
+            {m[2]}
+          </a>,
+        );
+      } else {
+        nodes.push(m[0]);
+      }
     } else if (m[5] !== undefined) {
       // Bare [n] citation marker → small superscript chip (the Sources list
       // below carries the actual links). Only chip valid in-range markers.

@@ -129,13 +129,37 @@ export function getProviderModelConfig(
 }
 
 /**
- * Whether a model can do Deep Debate web search. We route search through
- * OpenRouter's ":online" suffix, so any OpenRouter-backed model is eligible;
- * OpenAI/DeepSeek-direct are not (DeepSeek has no search; OpenAI search needs
- * dedicated models we don't list).
+ * How a Deep Debate turn gets its web results for this model:
+ *  - "injected" — the app runs the search itself (search registry, e.g. Brave)
+ *    and injects the numbered sources into the prompt.
+ *  - "native"   — OpenRouter-backed only: the ":online" suffix makes OpenRouter
+ *    run the search and return cited sources itself (~$0.005/turn).
+ *
+ * UNIFIED by default: every deep turn uses the app-run engine, so citations
+ * look identical across brands and free fighters add no search fee. Set
+ * DEEP_SEARCH_MODE=hybrid to route OpenRouter fighters natively instead —
+ * a no-deploy escape hatch if the search quota runs dry. (Client bundles see
+ * no env var → "unified", matching the server default.)
  */
-export function modelSupportsWebSearch(modelId: string): boolean {
-  return getModelById(modelId)?.providerId === "openrouter";
+export type DeepSearchStrategy = "native" | "injected";
+
+export function deepSearchStrategy(modelId: string): DeepSearchStrategy {
+  if (process.env.DEEP_SEARCH_MODE === "hybrid") {
+    return getModelById(modelId)?.providerId === "openrouter" ? "native" : "injected";
+  }
+  return "injected";
+}
+
+/**
+ * Whether a model can fight in Deep Debate. Native-search models always can;
+ * injected models need the app's search engine to be configured — callers pass
+ * that flag (client: from /api/health; server: from the search registry).
+ */
+export function modelSupportsWebSearch(
+  modelId: string,
+  injectedSearchReady = true,
+): boolean {
+  return deepSearchStrategy(modelId) === "native" || injectedSearchReady;
 }
 
 export const COST_TIER_LABEL: Record<CostTier, string> = {

@@ -19,7 +19,7 @@ import type {
   GenerateTurnRequest,
   GenerateTurnResponse,
 } from "@/lib/api/contracts";
-import type { DebateMessage } from "@/lib/debate/debateTypes";
+import type { Citation, DebateMessage } from "@/lib/debate/debateTypes";
 import {
   assertConsistentTranscript,
   assertValidSession,
@@ -36,12 +36,17 @@ import {
 } from "@/lib/debate/promptBuilder";
 import { generateWithRetry, getProvider } from "@/lib/providers/providerRegistry";
 import {
+  deepSearchStrategy,
   getProviderModelConfig,
-  modelSupportsWebSearch,
 } from "@/lib/models/modelRegistry";
+import {
+  getSearchProvider,
+  injectedSearchCostUsd,
+} from "@/lib/search/searchRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
 import {
   DEEP_SEARCH_COST_USD,
+  narrowCitationsToCited,
   stripOrphanCitationMarkers,
 } from "@/lib/debate/citations";
 import {
@@ -92,13 +97,37 @@ export async function POST(req: Request): Promise<NextResponse> {
     const modelConfig = getProviderModelConfig(model.modelId);
     const provider = getProvider(modelConfig.providerId);
 
-    // Deep Debate: web search + fixed longer template. Only run search on a
-    // search-capable fighter (validated already, but guard anyway).
+    // Deep Debate: web search + fixed longer template. By default every turn
+    // uses the app-run search (search registry, e.g. Brave) injected into the
+    // prompt; DEEP_SEARCH_MODE=hybrid routes OpenRouter fighters through their
+    // native ":online" search instead.
     const deep = session.deepDebate;
-    const webSearch = deep && modelSupportsWebSearch(model.modelId);
+    const searchMode = deep ? deepSearchStrategy(model.modelId) : null;
+    const nativeSearch = searchMode === "native";
 
-    const systemPrompt = buildSystemPrompt(session.mode, deep);
-    const userPrompt = buildTurnPrompt(session, turn);
+    let injectedSources: Citation[] | undefined;
+    if (searchMode === "injected") {
+      const search = getSearchProvider();
+      if (!search.isConfigured()) {
+        // Validated already, but guard anyway.
+        throw new ProviderError(
+          "MISSING_API_KEY",
+          "Web search is not configured on the server (BRAVE_SEARCH_API_KEY)",
+        );
+      }
+      injectedSources = await search.search(session.topic, {
+        count: 5,
+        timeoutMs: 10_000,
+        signal: req.signal,
+      });
+    }
+
+    // Native search presumes sources (the provider attaches them itself); the
+    // injected path knows: an empty result set switches the prompts to the
+    // no-sources variant so the model isn't told to cite what it doesn't have.
+    const deepSourcesAvailable = !injectedSources || injectedSources.length > 0;
+    const systemPrompt = buildSystemPrompt(session.mode, deep, deepSourcesAvailable);
+    const userPrompt = buildTurnPrompt(session, turn, injectedSources);
     const maxTokensTarget = deep ? 1500 : lengthPreset(session.responseLength).maxTokens;
     const maxOutputTokens = Math.min(maxTokensTarget, modelConfig.maxOutputTokens);
 
@@ -111,7 +140,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         temperature: 0.8,
         maxOutputTokens,
         kind: "turn",
-        webSearch,
+        webSearch: nativeSearch,
         // Per-attempt cap; generateWithRetry further clamps it to the remaining
         // deadline budget so the whole call finishes before maxDuration. Deep
         // turns get the near-full budget in ONE attempt (search + long answer).
@@ -135,13 +164,30 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     // Deep Debate: keep sources, strip any hallucinated [n] markers, and add the
     // web-search fee so the cost display reflects what was actually billed.
-    const citations = webSearch ? result.citations : undefined;
-    const content = webSearch
+    // (Injected search with zero results → no citations, and the orphan strip
+    // with count 0 removes every [n] marker, matching the prompt instruction.)
+    let citations = nativeSearch
+      ? result.citations
+      : injectedSources && injectedSources.length > 0
+        ? injectedSources
+        : undefined;
+    let content = deep
       ? stripOrphanCitationMarkers(result.content, citations)
       : result.content;
-    if (webSearch) {
+    if (searchMode === "injected" && citations) {
+      // Only claim the sources the model actually cited (native annotations
+      // already carry that meaning; the injected list is what we PROVIDED).
+      ({ content, citations } = narrowCitationsToCited(content, citations));
+    }
+    if (nativeSearch) {
       cost.searchCost = DEEP_SEARCH_COST_USD;
       cost.totalCost += DEEP_SEARCH_COST_USD;
+    } else if (searchMode === "injected") {
+      const fee = injectedSearchCostUsd();
+      if (fee > 0) {
+        cost.searchCost = fee;
+        cost.totalCost += fee;
+      }
     }
 
     const message: DebateMessage = {
