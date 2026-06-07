@@ -13,7 +13,6 @@ import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { TopicInput } from "@/components/setup/TopicInput";
-import { ModeSelector } from "@/components/setup/ModeSelector";
 import { ModelSelector } from "@/components/setup/ModelSelector";
 import { RoundSelector } from "@/components/setup/RoundSelector";
 import { ToneSelector } from "@/components/setup/ToneSelector";
@@ -58,6 +57,22 @@ export default function SetupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.deepDebate, config.roundCount, config.tone]);
 
+  // Discussion mode is removed for now — keep every new match in debate mode
+  // (a persisted/stale config could still carry "discussion").
+  useEffect(() => {
+    if (config.mode !== "debate") setConfig({ mode: "debate" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.mode]);
+
+  // Swap which fighter is A vs B (keep slot colors: A blue, B red).
+  const swapFighters = () => {
+    playSound("buttonClick");
+    setConfig({
+      modelA: { ...config.modelB, color: "blue" },
+      modelB: { ...config.modelA, color: "red" },
+    });
+  };
+
   const handleStart = () => {
     setAttempted(true);
     if (!validateSetup(config, { injectedSearchReady }).valid) return;
@@ -88,24 +103,18 @@ export default function SetupPage() {
             />
           </GamePanel>
 
-          <GamePanel title="2 · Mode">
-            <ModeSelector
-              value={config.mode}
-              onChange={(mode) => setConfig({ mode })}
+          <GamePanel title="2 · Deep Debate">
+            <DeepDebateToggle
+              value={config.deepDebate}
+              fightersEligible={fightersEligibleForDeep}
+              onChange={(deepDebate) =>
+                setConfig(
+                  deepDebate
+                    ? { deepDebate, roundCount: 3, tone: "serious" }
+                    : { deepDebate },
+                )
+              }
             />
-            <div className="mt-4 border-t-3 border-dashed border-ink/20 pt-4">
-              <DeepDebateToggle
-                value={config.deepDebate}
-                fightersEligible={fightersEligibleForDeep}
-                onChange={(deepDebate) =>
-                  setConfig(
-                    deepDebate
-                      ? { deepDebate, roundCount: 3, tone: "serious" }
-                      : { deepDebate },
-                  )
-                }
-              />
-            </div>
           </GamePanel>
 
           <GamePanel title="3 · Choose Your Fighters">
@@ -132,6 +141,11 @@ export default function SetupPage() {
                   setConfig({ modelB: toSelectedModel(entry, "red") })
                 }
               />
+            </div>
+            <div className="mt-3 flex justify-center">
+              <ArcadeButton variant="neutral-white" size="sm" onClick={swapFighters}>
+                ⇄ Swap A ↔ B
+              </ArcadeButton>
             </div>
           </GamePanel>
 

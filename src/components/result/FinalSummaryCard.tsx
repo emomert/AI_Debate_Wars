@@ -99,6 +99,23 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
         ) : null}
       </div>
 
+      {/* Which fighter was cheaper, and by how much (skipped when the gap rounds
+          to zero; A/B-prefixed so a same-model match isn't ambiguous). */}
+      {(() => {
+        const diff = Math.abs(split.a - split.b);
+        if (formatCost(diff) === formatCost(0)) return null;
+        const aCheaper = split.a < split.b;
+        const cheaper = aCheaper ? `A · ${session.modelA.displayName}` : `B · ${session.modelB.displayName}`;
+        const pricier = aCheaper ? `B · ${session.modelB.displayName}` : `A · ${session.modelA.displayName}`;
+        return (
+          <p className="mt-2 text-center text-xs text-ink/60">
+            {cheaper} cost{" "}
+            <span className="font-bold text-arcade-green">{formatCost(diff)}</span> less than{" "}
+            {pricier}.
+          </p>
+        );
+      })()}
+
       <p className="mt-3 text-center text-[11px] text-ink/50">
         {anyEstimated ? "Estimated · " : ""}Pricing is configurable in{" "}
         <code className="font-mono">lib/cost/pricing.ts</code>

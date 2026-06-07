@@ -15,7 +15,7 @@ import { Badge } from "@/components/game/Badge";
 
 const STEPS: { emoji: string; title: string; body: string }[] = [
   { emoji: "📝", title: "Drop a topic", body: "Any question, claim, or idea you want stress-tested." },
-  { emoji: "⚔️", title: "Pick a mode", body: "Debate Mode for opposing sides, Discussion Mode to improve an idea." },
+  { emoji: "🔍", title: "Go deep (optional)", body: "Flip on Deep Debate to let eligible fighters research with live web sources." },
   { emoji: "🤖", title: "Choose two fighters", body: "Select Model A and Model B like arcade characters." },
   { emoji: "🎚️", title: "Set the rules", body: "3, 5 or 7 rounds, a tone, and an optional judge." },
   { emoji: "🏆", title: "Watch & judge", body: "The arena runs the rounds and reveals a final verdict." },

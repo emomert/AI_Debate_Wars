@@ -8,14 +8,14 @@
  */
 
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
-import { MODE_OPTIONS, SAMPLE_TOPICS, TONE_OPTIONS } from "@/lib/constants";
+import { SAMPLE_TOPICS, TONE_OPTIONS } from "@/lib/constants";
 import {
   useArena,
   toSelectedModel,
@@ -47,7 +47,7 @@ function samplePool(availability: ProviderAvailability | null): ModelCatalogEntr
   );
 }
 
-/** A fresh randomized matchup every click — topic, mode, tone and fighters. */
+/** A fresh randomized matchup every click — topic, tone and fighters. */
 function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
   const pool = samplePool(availability);
   const fallback = defaultFighters(); // shared default pair (no duplicated ids)
@@ -58,15 +58,9 @@ function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
 
   // Avoid the "custom" tone in samples — it needs user-typed text.
   const presetTones = TONE_OPTIONS.filter((t) => t.id !== "custom");
-  // A flat thesis ("Sauron is not…") shines in Debate Mode (attack/defend);
-  // a question or an open prompt ("Evaluate my idea:") works in either, so
-  // those get a random mode.
-  const topic = randomItem(SAMPLE_TOPICS);
-  const t = topic.trim();
-  const isThesis = !t.endsWith("?") && !t.includes(":");
   return {
-    topic,
-    mode: isThesis ? "debate" : randomItem(MODE_OPTIONS).id,
+    topic: randomItem(SAMPLE_TOPICS),
+    mode: "debate",
     modelA: toSelectedModel(a, "blue"),
     modelB: toSelectedModel(b, "red"),
     roundCount: 3, // demos stay quick & cheap
@@ -88,7 +82,7 @@ const HOW_IT_WORKS: { emoji: string; title: string; body: string }[] = [
   {
     emoji: "🎚️",
     title: "Set the rules",
-    body: "Debate or Discussion, 3 / 5 / 7 rounds, a tone, and an optional AI judge.",
+    body: "3 / 5 / 7 rounds, a tone, optional Deep Debate, and an optional AI judge.",
   },
   {
     emoji: "🍿",
@@ -99,7 +93,15 @@ const HOW_IT_WORKS: { emoji: string; title: string; body: string }[] = [
 
 export default function HomePage() {
   const router = useRouter();
+  const reduce = useReducedMotion();
   const { setConfig, setSession, availability } = useArena();
+
+  // Consistent staggered fade-up so every section animates in on load.
+  const fade = (delay: number) => ({
+    initial: reduce ? { opacity: 0 } : { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4, delay, ease: "easeOut" as const },
+  });
 
   const useDebator = () => router.push("/setup");
 
@@ -115,16 +117,14 @@ export default function HomePage() {
     <GameShell>
       {/* Hero */}
       <section className="relative pt-2 text-center">
-        <div className="mb-4 flex justify-center">
+        <motion.div {...fade(0)} className="mb-4 flex justify-center">
           <FloatingBadge color="pink" rotate={-4}>
             🕹️ AI vs AI
           </FloatingBadge>
-        </div>
+        </motion.div>
 
         <motion.h1
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
+          {...fade(0.06)}
           className="mx-auto max-w-3xl font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl"
         >
           Make AIs Fight
@@ -132,28 +132,25 @@ export default function HomePage() {
           <span className="text-arcade-purple">Your Ideas</span>
         </motion.h1>
 
-        <p className="mx-auto mt-4 max-w-2xl text-base text-ink/70 sm:text-lg">
+        <motion.p
+          {...fade(0.12)}
+          className="mx-auto mt-4 max-w-2xl text-base text-ink/70 sm:text-lg"
+        >
           Debator is a browser arcade where <strong>two AI models argue your
-          topic</strong> in structured rounds — debate with opposing sides, or a
-          discussion that stress-tests an idea. An optional AI judge scores the
+          topic</strong> in structured rounds. An optional AI judge scores the
           match, and every token spent is counted live.
-        </p>
+        </motion.p>
 
-        <div className="mt-3 flex flex-wrap justify-center gap-1.5">
-          <Badge color="yellow" size="sm">⚔️ Debate or 🧠 Discussion</Badge>
+        <motion.div {...fade(0.18)} className="mt-3 flex flex-wrap justify-center gap-1.5">
+          <Badge color="yellow" size="sm">⚔️ Two AI fighters</Badge>
           <Badge color="green" size="sm">3 / 5 / 7 rounds</Badge>
           <Badge color="purple" size="sm">⚖️ Optional judge</Badge>
           <Badge color="white" size="sm">💰 Live cost tracking</Badge>
-        </div>
+        </motion.div>
       </section>
 
       {/* Primary CTAs */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.1, ease: "easeOut" }}
-        className="mx-auto mt-8 max-w-2xl"
-      >
+      <motion.div {...fade(0.24)} className="mx-auto mt-8 max-w-2xl">
         <GamePanel padding="lg">
           <div className="flex flex-col gap-2 sm:flex-row">
             <ArcadeButton
@@ -183,7 +180,7 @@ export default function HomePage() {
       </motion.div>
 
       {/* How it works */}
-      <section className="mx-auto mt-10 max-w-4xl">
+      <motion.section {...fade(0.3)} className="mx-auto mt-10 max-w-4xl">
         <h2 className="mb-3 text-center font-heading text-xl font-extrabold">
           How it works
         </h2>
@@ -203,10 +200,10 @@ export default function HomePage() {
             </GamePanel>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Example topics — display only; the topic is written on the Setup screen */}
-      <section className="mx-auto mt-10 max-w-3xl text-center">
+      <motion.section {...fade(0.36)} className="mx-auto mt-10 max-w-3xl text-center">
         <h2 className="mb-1 font-heading text-xl font-extrabold">
           What can you throw in the arena?
         </h2>
@@ -223,30 +220,7 @@ export default function HomePage() {
             </span>
           ))}
         </div>
-      </section>
-
-      {/* Mode preview */}
-      <section className="mx-auto mt-10 max-w-3xl">
-        <h2 className="mb-3 text-center font-heading text-xl font-extrabold">
-          Two ways to play
-        </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {MODE_OPTIONS.map((opt) => (
-            <GamePanel key={opt.id} padding="md">
-              <p className="font-heading text-lg font-extrabold">
-                <span aria-hidden className="mr-1.5 text-2xl">{opt.emoji}</span>
-                {opt.title}
-              </p>
-              <p className="mt-1 text-sm font-semibold text-ink/70">{opt.tagline}</p>
-              <p className="mt-2 text-sm text-ink/60">{opt.description}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <Badge color="blue" size="sm">A · {opt.modelARole}</Badge>
-                <Badge color="red" size="sm">B · {opt.modelBRole}</Badge>
-              </div>
-            </GamePanel>
-          ))}
-        </div>
-      </section>
+      </motion.section>
     </GameShell>
   );
 }
