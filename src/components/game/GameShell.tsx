@@ -53,7 +53,7 @@ function Logo() {
       className="group inline-flex items-center gap-2 rounded-btn focus-visible:outline-3 focus-visible:outline-offset-2"
       aria-label="Debator — home"
     >
-      <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow text-base shadow-hard-sm">
+      <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow text-base">
         ⚔️
       </span>
       <span className="font-display text-lg leading-none tracking-tight sm:text-xl">

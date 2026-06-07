@@ -17,6 +17,7 @@ export function SoundToggle() {
       color={soundEnabled ? "yellow" : "white"}
       active={soundEnabled}
       silent
+      flat
     >
       <span aria-hidden>{soundEnabled ? "🔊" : "🔇"}</span>
     </IconButton>

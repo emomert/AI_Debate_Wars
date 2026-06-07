@@ -19,6 +19,7 @@ export function MusicToggle() {
       color={musicEnabled ? "purple" : "white"}
       active={musicEnabled}
       silent
+      flat
     >
       <span aria-hidden>{musicEnabled ? "🎵" : "🎶"}</span>
     </IconButton>

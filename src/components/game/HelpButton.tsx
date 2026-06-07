@@ -84,7 +84,7 @@ export function HelpButton() {
     <>
       {/* A real text glyph (not the ❔ emoji) so it renders in solid ink —
           emoji ignore CSS color and looked washed-out. */}
-      <IconButton label="How to play" onClick={() => setOpen(true)} color="white">
+      <IconButton label="How to play" onClick={() => setOpen(true)} color="white" flat>
         <span aria-hidden className="font-display text-[1.2em] leading-none">
           ?
         </span>

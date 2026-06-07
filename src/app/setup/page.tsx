@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
+import { IconButton } from "@/components/game/IconButton";
 import { TopicInput } from "@/components/setup/TopicInput";
 import { ModelSelector } from "@/components/setup/ModelSelector";
 import { RoundSelector } from "@/components/setup/RoundSelector";
@@ -118,6 +119,11 @@ export default function SetupPage() {
           </GamePanel>
 
           <GamePanel title="3 · Choose Your Fighters">
+            <div className="mb-3 flex justify-end">
+              <IconButton label="Swap fighters A and B" onClick={swapFighters}>
+                <span aria-hidden>⇄</span>
+              </IconButton>
+            </div>
             <div className="grid gap-5 sm:grid-cols-2">
               <ModelSelector
                 label="Fighter A"
@@ -141,11 +147,6 @@ export default function SetupPage() {
                   setConfig({ modelB: toSelectedModel(entry, "red") })
                 }
               />
-            </div>
-            <div className="mt-3 flex justify-center">
-              <ArcadeButton variant="neutral-white" size="sm" onClick={swapFighters}>
-                ⇄ Swap A ↔ B
-              </ArcadeButton>
             </div>
           </GamePanel>
 

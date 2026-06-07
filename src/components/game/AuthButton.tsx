@@ -91,7 +91,6 @@ export function AuthButton() {
   }
 
   const email = user.email ?? "Account";
-  const initial = email.charAt(0).toUpperCase();
 
   return (
     <div className="relative" ref={menuRef}>
@@ -104,10 +103,11 @@ export function AuthButton() {
         }}
         aria-haspopup="true"
         aria-expanded={open}
+        aria-label={`Account: ${email}`}
         title={email}
-        className="grid h-9 w-9 place-items-center rounded-btn border-3 border-ink bg-arcade-purple font-heading text-sm font-extrabold text-white focus-visible:outline-[3px] focus-visible:outline-offset-2"
+        className="grid h-9 w-9 place-items-center rounded-btn border-3 border-ink bg-arcade-purple text-lg focus-visible:outline-[3px] focus-visible:outline-offset-[-3px]"
       >
-        {initial}
+        <span aria-hidden>👤</span>
       </button>
       {open ? (
         <div className="absolute right-0 z-50 mt-2 w-52 rounded-card border-3 border-ink bg-card p-2 shadow-hard-sm">
