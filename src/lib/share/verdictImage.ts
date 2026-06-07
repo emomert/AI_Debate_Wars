@@ -201,19 +201,26 @@ export async function renderVerdictImage(
   let cursorY = winY;
 
   const v = session.verdict;
-  // The winning argument (one line).
+  // The winning argument (up to 2 lines).
+  let argLineCount = 0;
   if (v?.winnerArgument) {
     cursorY += 34;
     ctx.font = `700 22px ${FONT_BODY}`;
     ctx.fillStyle = C.ink;
-    ctx.fillText(wrapLines(ctx, `💥 ${v.winnerArgument}`, innerW, 1)[0] ?? "", padX, cursorY);
+    const aLines = wrapLines(ctx, `💥 ${v.winnerArgument}`, innerW, 2);
+    argLineCount = aLines.length;
+    aLines.forEach((line, i) => ctx.fillText(line, padX, cursorY + i * 28));
+    cursorY += (aLines.length - 1) * 28;
   }
-  // Why the judge decided (2 lines; strip ** markdown — canvas has no bold run).
+  // Why the judge decided (strip ** — canvas has no bold run). Cap at 2 lines
+  // when the argument already took 2, so the lower content can't crowd the
+  // fixed footer; otherwise up to 3.
   if (v?.summary) {
     cursorY += 34;
     ctx.font = `500 22px ${FONT_BODY}`;
     ctx.fillStyle = "rgba(5,5,5,0.72)";
-    const rLines = wrapLines(ctx, v.summary.replace(/\*\*/g, ""), innerW, 2);
+    const maxReason = argLineCount >= 2 ? 2 : 3;
+    const rLines = wrapLines(ctx, v.summary.replace(/\*\*/g, ""), innerW, maxReason);
     rLines.forEach((line, i) => ctx.fillText(line, padX, cursorY + i * 30));
     cursorY += (rLines.length - 1) * 30;
   }
@@ -269,11 +276,11 @@ export async function renderVerdictImage(
   ctx.textAlign = "left";
   ctx.font = `700 14px ${FONT_BODY}`;
   ctx.fillStyle = "rgba(5,5,5,0.45)";
-  const topicLabelY = boxY + boxH + 42;
+  const topicLabelY = boxY + boxH + 34;
   ctx.fillText("TOPIC", padX, topicLabelY);
   ctx.font = `500 24px ${FONT_BODY}`;
   ctx.fillStyle = C.ink;
-  const topicLines = wrapLines(ctx, session.topic, innerW, 2);
+  const topicLines = wrapLines(ctx, session.topic, innerW, 1);
   topicLines.forEach((line, i) => ctx.fillText(line, padX, topicLabelY + 32 + i * 32));
 
   // Footer strip: judge (left) + meta/cost (right).
