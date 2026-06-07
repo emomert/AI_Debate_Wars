@@ -7,6 +7,7 @@
  */
 
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 
 import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
@@ -19,7 +20,16 @@ import { RejudgePanel } from "@/components/result/RejudgePanel";
 import { SharePanel } from "@/components/result/SharePanel";
 import { SourcesList, mergeCitations } from "@/components/debate/SourcesList";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { useArena } from "@/lib/state/ArenaContext";
+
+// Lazy + config-gated so the Supabase SDK stays off the result bundle when
+// auth is disabled, and otherwise loads only after hydration.
+const MatchSaver = dynamic(
+  () => import("@/components/result/MatchSaver").then((m) => m.MatchSaver),
+  { ssr: false },
+);
+const authEnabled = isSupabaseConfigured();
 
 export default function ResultPage() {
   const router = useRouter();
@@ -109,6 +119,10 @@ export default function ResultPage() {
         ) : null}
 
         <FinalSummaryCard session={session} />
+
+        {/* Persist the finished match to the signed-in user's history (no-op
+            when auth is off / signed out). */}
+        {authEnabled ? <MatchSaver session={session} /> : null}
 
         {allSources.length > 0 ? (
           <GamePanel title={`📚 Sources used (${allSources.length})`}>

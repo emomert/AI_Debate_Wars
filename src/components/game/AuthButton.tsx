@@ -114,6 +114,16 @@ export function AuthButton() {
           <p className="truncate px-2 py-1 text-[11px] text-ink/55" title={email}>
             {email}
           </p>
+          <Link
+            href="/profile"
+            onClick={() => {
+              playSound("buttonClick");
+              setOpen(false);
+            }}
+            className="mb-1 block w-full rounded-btn border-2 border-ink bg-surface px-2 py-1.5 text-left font-heading text-sm font-bold transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-[3px] focus-visible:outline-offset-2"
+          >
+            👤 Profile
+          </Link>
           <button
             type="button"
             onClick={signOut}
