@@ -62,12 +62,16 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
           {d.setup.topic.quickExamples}
         </p>
         <div className="flex flex-wrap gap-2">
-          {sampleTopics.map((topic) => (
+          {sampleTopics.map((topic, i) => (
             <button
               key={topic}
               type="button"
               onClick={() => onChange(topic)}
-              className="rounded-badge border-3 border-ink bg-surface px-2.5 py-1 text-left text-xs font-semibold transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
+              className={cn(
+                "rounded-badge border-3 border-ink bg-surface px-2.5 py-1 text-left text-xs font-semibold transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2",
+                // Keep the phone list short — show the first 4, reveal the rest from sm up.
+                i >= 4 ? "hidden sm:inline-block" : "inline-block",
+              )}
             >
               {topic}
             </button>

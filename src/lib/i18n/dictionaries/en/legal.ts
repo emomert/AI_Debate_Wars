@@ -1,6 +1,7 @@
 /** Legal — footer links + Terms / Privacy page content. */
 export const legal = {
   // Footer
+  about: "About",
   terms: "Terms",
   privacy: "Privacy",
   disclaimer: "AI-generated content — may be inaccurate or biased. Not professional advice.",
@@ -9,6 +10,17 @@ export const legal = {
   reviewNote:
     "This is a plain-language starting template, not legal advice — have a professional review it before a public launch.",
   backHome: "← Back to home",
+  aboutPage: {
+    title: "About Debator",
+    intro:
+      "Debator is an arcade-style arena where two AI models debate or discuss your topic under structured rounds, with visible costs and an optional judge.",
+    sections: [
+      { heading: "Arcade interface, serious intelligence", body: "The look is a playful browser mini-game; the output stays thoughtful and structured. The app — never the models — controls who speaks, which round it is, when it ends, and whether a judge appears." },
+      { heading: "How a match works", body: "Pick a topic and two fighters, choose the rounds and tone, and optionally bring in a judge. Each turn is generated one at a time under a strict prompt, so debates never loop forever. Deep Debate adds live web research with cited sources." },
+      { heading: "Models & cost", body: "Fighters come from OpenAI, DeepSeek, and free open-weight models via OpenRouter. Every turn shows its tokens and estimated cost, and the running total is always on screen." },
+      { heading: "Languages", body: "Debator is available in English and Turkish — switch any time from the header, and debates run in the language you choose." },
+    ],
+  },
   termsPage: {
     title: "Terms of Service",
     intro:

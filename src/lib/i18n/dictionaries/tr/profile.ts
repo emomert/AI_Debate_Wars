@@ -38,4 +38,14 @@ export const profile = {
     opening: "Açılıyor…",
     view: "Görüntüle",
   },
+  del: {
+    trigger: "Maçı sil",
+    confirm: "Sil",
+    cancel: "İptal",
+    deleting: "Siliniyor…",
+    deleteAll: "🗑 Tüm geçmişi sil",
+    deleteAllConfirm: (n: number) => `${n} maçın tümü silinsin mi? Bu işlem geri alınamaz.`,
+    deleteAllAction: "Tümünü sil",
+    deletingAll: "Siliniyor…",
+  },
 };

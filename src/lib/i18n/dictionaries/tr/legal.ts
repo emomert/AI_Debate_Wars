@@ -1,5 +1,6 @@
 /** Turkish — Legal. Must mirror ../en/legal.ts (formal "siz"). */
 export const legal = {
+  about: "Hakkında",
   terms: "Kullanım Şartları",
   privacy: "Gizlilik",
   disclaimer: "Yapay zekâ üretimi içerik — hatalı veya yanlı olabilir. Profesyonel tavsiye değildir.",
@@ -7,6 +8,17 @@ export const legal = {
   reviewNote:
     "Bu, hukuki tavsiye değil, sade dilde bir başlangıç şablonudur — herkese açık bir lansman öncesinde bir uzmana inceletin.",
   backHome: "← Ana sayfaya dön",
+  aboutPage: {
+    title: "Debator Hakkında",
+    intro:
+      "Debator, iki yapay zekâ modelinin konunuzu yapılandırılmış turlar halinde münazara ettiği ya da tartıştığı; maliyetlerin görünür olduğu ve isteğe bağlı bir hakemin bulunduğu arcade tarzı bir arenadır.",
+    sections: [
+      { heading: "Arcade arayüzü, ciddi zekâ", body: "Görünüm eğlenceli bir tarayıcı mini oyunu; çıktı ise düşünceli ve yapılandırılmış kalır. Kimin konuşacağına, hangi turda olunduğuna, ne zaman biteceğine ve bir hakemin görünüp görünmeyeceğine modeller değil, uygulama karar verir." },
+      { heading: "Bir maç nasıl işler", body: "Bir konu ve iki yarışmacı seçin, tur sayısını ve üslubu belirleyin, isterseniz bir hakem ekleyin. Her tur, katı bir istemle teker teker üretilir; böylece münazaralar asla sonsuza dek sürmez. Derin Münazara, kaynak gösterilen canlı web araştırması ekler." },
+      { heading: "Modeller ve maliyet", body: "Yarışmacılar OpenAI, DeepSeek ve OpenRouter üzerinden ücretsiz açık ağırlıklı modellerden gelir. Her tur, token'larını ve tahmini maliyetini gösterir; toplam tutar her zaman ekrandadır." },
+      { heading: "Diller", body: "Debator İngilizce ve Türkçe olarak sunulur — üstteki menüden istediğiniz an geçebilir, münazaraları seçtiğiniz dilde yürütebilirsiniz." },
+    ],
+  },
   termsPage: {
     title: "Kullanım Şartları",
     intro:

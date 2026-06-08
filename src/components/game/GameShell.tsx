@@ -139,10 +139,11 @@ export function GameShell({
 
       {hideFooter ? null : (
         <footer className="mx-auto w-full max-w-7xl px-4 py-6 text-center text-xs text-ink/50 sm:px-6">
-          <p>
-            {d.common.brand} · {d.common.tagline}
-          </p>
-          <p className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <Link href="/about" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
+              {d.legal.about}
+            </Link>
+            <span aria-hidden className="text-ink/30">·</span>
             <Link href="/terms" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
               {d.legal.terms}
             </Link>
@@ -150,9 +151,6 @@ export function GameShell({
             <Link href="/privacy" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
               {d.legal.privacy}
             </Link>
-          </p>
-          <p className="mx-auto mt-2 max-w-xl text-[10px] leading-snug text-ink/40">
-            {d.legal.disclaimer}
           </p>
         </footer>
       )}

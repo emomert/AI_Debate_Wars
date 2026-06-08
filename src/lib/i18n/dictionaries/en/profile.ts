@@ -38,4 +38,14 @@ export const profile = {
     opening: "Opening…",
     view: "View",
   },
+  del: {
+    trigger: "Delete match",
+    confirm: "Delete",
+    cancel: "Cancel",
+    deleting: "Deleting…",
+    deleteAll: "🗑 Delete all history",
+    deleteAllConfirm: (n: number) => `Delete all ${n} matches? This can't be undone.`,
+    deleteAllAction: "Delete all",
+    deletingAll: "Deleting…",
+  },
 };

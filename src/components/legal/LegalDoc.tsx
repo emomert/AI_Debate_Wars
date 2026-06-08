@@ -25,14 +25,14 @@ export function LegalDoc({
   title: string;
   intro: string;
   sections: readonly LegalSection[];
-  effective: string;
-  reviewNote: string;
+  effective?: string;
+  reviewNote?: string;
   backHome: string;
 }) {
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{title}</h1>
-      <p className="mt-1 text-xs text-ink/50">{effective}</p>
+      {effective ? <p className="mt-1 text-xs text-ink/50">{effective}</p> : null}
       <p className="mt-4 text-ink/75">{intro}</p>
 
       <div className="mt-5 space-y-3">
@@ -43,9 +43,11 @@ export function LegalDoc({
         ))}
       </div>
 
-      <p className="mt-5 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-xs text-ink/55">
-        {reviewNote}
-      </p>
+      {reviewNote ? (
+        <p className="mt-5 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-xs text-ink/55">
+          {reviewNote}
+        </p>
+      ) : null}
 
       <div className="mt-5">
         <Link href="/">

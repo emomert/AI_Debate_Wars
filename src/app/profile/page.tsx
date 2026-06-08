@@ -12,6 +12,8 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { Badge } from "@/components/game/Badge";
 import { ReopenButton } from "@/components/profile/ReopenButton";
+import { DeleteMatchButton } from "@/components/profile/DeleteMatchButton";
+import { DeleteAllButton } from "@/components/profile/DeleteAllButton";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   MATCH_SUMMARY_COLUMNS,
@@ -159,11 +161,18 @@ export default async function ProfilePage() {
                   {m.deep_debate ? <Badge color="purple" size="sm">{d.profile.history.deepBadge}</Badge> : null}
                   <Badge color="white" size="sm">{m.created_at.slice(0, 10)}</Badge>
                   <ReopenButton matchId={m.id} />
+                  <DeleteMatchButton matchId={m.id} />
                 </div>
               </li>
             ))}
           </ul>
         )}
+
+        {recent.length > 0 ? (
+          <div className="mt-3 flex justify-end border-t-3 border-dashed border-ink/15 pt-3">
+            <DeleteAllButton userId={user.id} total={stats.total} />
+          </div>
+        ) : null}
       </GamePanel>
     </GameShell>
   );
