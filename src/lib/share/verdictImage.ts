@@ -153,14 +153,16 @@ export async function renderVerdictImage(
   ctx.font = `800 52px ${FONT_HEADING}`;
   const winLines = wrapLines(ctx, winnerLine(session), innerW, 2);
 
-  ctx.font = `700 24px ${FONT_BODY}`;
+  ctx.font = `700 22px ${FONT_BODY}`;
   const argLines = v?.winnerArgument
-    ? wrapLines(ctx, v.winnerArgument, innerW, 4)
+    ? wrapLines(ctx, v.winnerArgument, innerW, 5)
     : [];
 
-  ctx.font = `500 23px ${FONT_BODY}`;
+  // Smaller body size + a higher line cap so a longer reasoning (Turkish runs
+  // ~15-20% longer than English) fits in full instead of being clipped.
+  ctx.font = `500 20px ${FONT_BODY}`;
   const reasonLines = v?.summary
-    ? wrapLines(ctx, v.summary.replace(/\*\*/g, ""), panelTextW, 9)
+    ? wrapLines(ctx, v.summary.replace(/\*\*/g, ""), panelTextW, 11)
     : [];
 
   ctx.font = `500 24px ${FONT_BODY}`;
@@ -169,8 +171,8 @@ export async function renderVerdictImage(
   // ---- VERTICAL LAYOUT: walk top-down, recording each block's top edge so the
   //      draw pass paints at the same coordinates and the card grows to fit. ----
   const winLH = 54;
-  const argLH = 32;
-  const reasonLH = 30;
+  const argLH = 30;
+  const reasonLH = 26;
   const topicLH = 32;
   const scoreBoxH = 96;
 
@@ -282,9 +284,9 @@ export async function renderVerdictImage(
     ctx.font = `700 14px ${FONT_BODY}`;
     ctx.fillStyle = "rgba(5,5,5,0.5)";
     ctx.fillText("💥 WINNING ARGUMENT", padX, argTop + 14);
-    ctx.font = `700 24px ${FONT_BODY}`;
+    ctx.font = `700 22px ${FONT_BODY}`;
     ctx.fillStyle = C.ink;
-    argLines.forEach((line, i) => ctx.fillText(line, padX, argTop + 48 + i * argLH));
+    argLines.forEach((line, i) => ctx.fillText(line, padX, argTop + 46 + i * argLH));
   }
 
   // "Why this verdict" panel — label + the FULL reasoning, in a surface box
@@ -301,10 +303,10 @@ export async function renderVerdictImage(
     ctx.font = `700 14px ${FONT_BODY}`;
     ctx.fillStyle = "rgba(5,5,5,0.5)";
     ctx.fillText("⚖️ WHY THIS VERDICT", padX + panelPad, panelTop + 32);
-    ctx.font = `500 23px ${FONT_BODY}`;
+    ctx.font = `500 20px ${FONT_BODY}`;
     ctx.fillStyle = "rgba(5,5,5,0.82)";
     reasonLines.forEach((line, i) =>
-      ctx.fillText(line, padX + panelPad, panelTop + 68 + i * reasonLH),
+      ctx.fillText(line, padX + panelPad, panelTop + 62 + i * reasonLH),
     );
   }
 

@@ -71,7 +71,7 @@ export default function SetupPage() {
   // OpenAI/DeepSeek fighters); null until /api/health resolves → optimistic.
   const injectedSearchReady = availability ? availability.webSearch : null;
 
-  const validation = validateSetup(config, { injectedSearchReady });
+  const validation = validateSetup(config, { injectedSearchReady, locale });
 
   const topicTooLong = config.topic.trim().length > TOPIC_MAX_LENGTH;
   const topicError =
@@ -109,7 +109,7 @@ export default function SetupPage() {
 
   const handleStart = () => {
     setAttempted(true);
-    if (!validateSetup(config, { injectedSearchReady }).valid) return;
+    if (!validateSetup(config, { injectedSearchReady, locale }).valid) return;
     playSound("debateStart");
     startMatch();
     router.push("/debate");

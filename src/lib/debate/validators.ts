@@ -10,6 +10,7 @@
  * server build an enormous prompt and burn the deployer's API key.
  */
 
+import type { Locale } from "@/lib/i18n/config";
 import type { DebateConfig, DebateSession } from "@/lib/debate/debateTypes";
 import {
   CUSTOM_TONE_MAX_LENGTH,
@@ -144,6 +145,44 @@ export interface ValidationResult {
   errors: Partial<Record<"topic" | "models" | "judge" | "tone" | "deep", string>>;
 }
 
+/**
+ * User-facing setup error copy, localized. Kept here (not in the shared UI
+ * dictionary) because each message is tied to a specific validation rule below.
+ */
+interface SetupMessages {
+  topicRequired: string;
+  topicTooLong: (max: number) => string;
+  modelsRequired: string;
+  customToneRequired: string;
+  customToneTooLong: (max: number) => string;
+  deepNeedsSearch: string;
+  deepFixedFormat: string;
+  judgePickThird: string;
+}
+
+const SETUP_MESSAGES: Record<Locale, SetupMessages> = {
+  en: {
+    topicRequired: "Drop a topic into the arena first.",
+    topicTooLong: (max) => `Keep it under ${max} characters.`,
+    modelsRequired: "Choose two fighters before starting.",
+    customToneRequired: "Describe your custom tone.",
+    customToneTooLong: (max) => `Keep the tone under ${max} characters.`,
+    deepNeedsSearch: "Deep Debate needs the server's web-search key.",
+    deepFixedFormat: "Deep Debate runs as 3 rounds with the standard tone.",
+    judgePickThird: "Pick a third model to be the judge.",
+  },
+  tr: {
+    topicRequired: "Önce arenaya bir konu girin.",
+    topicTooLong: (max) => `${max} karakterin altında tutun.`,
+    modelsRequired: "Başlamadan önce iki yarışmacı seçin.",
+    customToneRequired: "Özel üslubunuzu tanımlayın.",
+    customToneTooLong: (max) => `Üslubu ${max} karakterin altında tutun.`,
+    deepNeedsSearch: "Derin Münazara için sunucunun web arama anahtarı gerekir.",
+    deepFixedFormat: "Derin Münazara, standart üslupla 3 tur olarak çalışır.",
+    judgePickThird: "Hakem olması için üçüncü bir model seçin.",
+  },
+};
+
 export function validateSetup(
   config: DebateConfig,
   opts?: {
@@ -153,28 +192,31 @@ export function validateSetup(
      * server validator is the authority and rejects cleanly if it's missing.
      */
     injectedSearchReady?: boolean | null;
+    /** UI locale for the user-facing error messages. Defaults to English. */
+    locale?: Locale;
   },
 ): ValidationResult {
+  const m = SETUP_MESSAGES[opts?.locale ?? "en"] ?? SETUP_MESSAGES.en;
   const errors: ValidationResult["errors"] = {};
 
   const topic = config.topic.trim();
   if (topic.length < TOPIC_MIN_LENGTH) {
-    errors.topic = "Drop a topic into the arena first.";
+    errors.topic = m.topicRequired;
   } else if (topic.length > TOPIC_MAX_LENGTH) {
-    errors.topic = `Keep it under ${TOPIC_MAX_LENGTH} characters.`;
+    errors.topic = m.topicTooLong(TOPIC_MAX_LENGTH);
   }
 
   if (!config.modelA || !config.modelB) {
-    errors.models = "Choose two fighters before starting.";
+    errors.models = m.modelsRequired;
   }
 
   if (config.tone === "custom") {
     const t = (config.customTone ?? "").trim();
     if (!t) {
-      errors.tone = "Describe your custom tone.";
+      errors.tone = m.customToneRequired;
     } else if (t.length > CUSTOM_TONE_MAX_LENGTH) {
       // Mirror the server cap so Start is blocked instead of failing turn 1.
-      errors.tone = `Keep the tone under ${CUSTOM_TONE_MAX_LENGTH} characters.`;
+      errors.tone = m.customToneTooLong(CUSTOM_TONE_MAX_LENGTH);
     }
   }
 
@@ -186,12 +228,12 @@ export function validateSetup(
     (!modelSupportsWebSearch(config.modelA.modelId, injectedReady) ||
       !modelSupportsWebSearch(config.modelB.modelId, injectedReady))
   ) {
-    errors.deep = "Deep Debate needs the server's web-search key.";
+    errors.deep = m.deepNeedsSearch;
   }
   // Mirror the server's fixed Deep Debate format (the UI normally locks these;
   // this catches stale persisted configs reaching Start via other paths).
   if (config.deepDebate && (config.roundCount !== 3 || config.tone !== "serious")) {
-    errors.deep = "Deep Debate runs as 3 rounds with the standard tone.";
+    errors.deep = m.deepFixedFormat;
   }
 
   if (
@@ -199,7 +241,7 @@ export function validateSetup(
     config.judge.mode === "thirdModel" &&
     !config.judge.model
   ) {
-    errors.judge = "Pick a third model to be the judge.";
+    errors.judge = m.judgePickThird;
   }
 
   return { valid: Object.keys(errors).length === 0, errors };

@@ -52,6 +52,18 @@
   color-scheme: dark;
 }
 
+/* Turkish display face. Lilita One only ships the "latin" subset (no Latin
+   Extended-A), so Turkish letters (ş ğ ı İ) fall back mid-word and render
+   broken/mismatched in big titles. In Turkish, drive the display face from
+   Baloo 2 — which has full Turkish coverage — at an extra-bold weight so the
+   chunky arcade look is preserved while every glyph renders correctly. */
+html[lang="tr"] {
+  --font-display: "Baloo 2", system-ui, sans-serif;
+}
+html[lang="tr"] .font-display {
+  font-weight: 800;
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
