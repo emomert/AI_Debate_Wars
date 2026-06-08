@@ -14,6 +14,10 @@ export type AppErrorCode =
   | "INVALID_SESSION"
   | "INVALID_REQUEST"
   | "RATE_LIMITED"
+  // Our OWN guards (distinct from the provider's RATE_LIMITED so the client
+  // never silently auto-retries past them):
+  | "TOO_MANY_REQUESTS" // per-IP request rate limit on the paid routes
+  | "DAILY_LIMIT_REACHED" // global/per-IP daily spend cap
   | "INSUFFICIENT_CREDITS"
   | "TOKEN_LIMIT_EXCEEDED"
   | "UNKNOWN_ERROR";
@@ -42,6 +46,8 @@ export function httpStatusForCode(code: AppErrorCode): number {
     case "MISSING_API_KEY":
       return 401;
     case "RATE_LIMITED":
+    case "TOO_MANY_REQUESTS":
+    case "DAILY_LIMIT_REACHED":
       return 429;
     case "INSUFFICIENT_CREDITS":
       return 402;
@@ -74,6 +80,16 @@ export function friendlyMessage(code: AppErrorCode): { title: string; body: stri
       return {
         title: "The arena is cooling down",
         body: "The provider is rate-limiting requests. Wait a moment and try again.",
+      };
+    case "TOO_MANY_REQUESTS":
+      return {
+        title: "Whoa — slow down, champ",
+        body: "You're starting matches faster than the arena can run them. Wait a few seconds and try again.",
+      };
+    case "DAILY_LIMIT_REACHED":
+      return {
+        title: "The arena hit today's limit",
+        body: "Debator caps how much it can spend per day to keep the lights on. The limit's reached for now — come back tomorrow, or pick free models (they don't count against it).",
       };
     case "INSUFFICIENT_CREDITS":
       return {

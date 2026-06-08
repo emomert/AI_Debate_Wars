@@ -92,6 +92,14 @@ export const debate = {
       title: "Bu maçta bir şeyler ters görünüyor",
       body: "Maç verisi reddedildi. Kuruluma dönüp yeni bir maç başlatın.",
     },
+    TOO_MANY_REQUESTS: {
+      title: "Yavaş olun, şampiyon",
+      body: "Maçları arenanın yetişebileceğinden daha hızlı başlatıyorsunuz. Birkaç saniye bekleyip tekrar deneyin.",
+    },
+    DAILY_LIMIT_REACHED: {
+      title: "Arena bugünkü sınırına ulaştı",
+      body: "Debator, ışıkları açık tutmak için günlük harcamasını sınırlar. Şimdilik sınıra ulaşıldı — yarın tekrar gelin ya da bu sınıra dahil olmayan ücretsiz modelleri seçin.",
+    },
     PROVIDER_ERROR: {
       title: "Arena ışıkları titredi",
       body: "Model düzgün bir yanıt vermedi. Tekrar deneyin ya da modelleri değiştirin.",

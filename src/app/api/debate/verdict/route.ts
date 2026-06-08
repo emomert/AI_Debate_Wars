@@ -34,6 +34,7 @@ import {
   getProviderModelConfig,
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
+import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
 import {
   buildUsage,
   calculateCost,
@@ -79,6 +80,7 @@ function resolveJudgeModelId(session: DebateSession): string {
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
+    await enforceLimits(req, "verdict"); // cost/abuse guard before any paid work
     const deadlineMs = Date.now() + 55_000; // stay under Vercel maxDuration=60
     const body = await readJsonBody<GenerateVerdictRequest>(req);
     const session = body?.session;
@@ -136,6 +138,9 @@ export async function POST(req: Request): Promise<NextResponse> {
         estimateTokensFromText(result.content),
       );
     const cost = calculateCost(modelConfig.providerId, judgeModelId, usage, estimated);
+
+    // Record the judge call's cost against the daily spend ledger.
+    await recordSpend(req, cost.totalCost);
 
     const verdict: DebateVerdict = {
       id: createId("verdict"),

@@ -45,6 +45,7 @@ import {
   injectedSearchCostUsd,
 } from "@/lib/search/searchRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
+import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
 import {
   DEEP_SEARCH_COST_USD,
   narrowCitationsToCited,
@@ -71,6 +72,9 @@ export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
+    // Cost/abuse guard FIRST: cheaply reject floods + enforce the daily spend
+    // cap before doing any paid work (rate limit + spend caps, per IP).
+    await enforceLimits(req, "turn");
     // Keep total work under Vercel's maxDuration=60 (return a clean JSON error
     // before the platform kills the function with an opaque 502/504).
     const deadlineMs = Date.now() + 55_000;
@@ -196,6 +200,9 @@ export async function POST(req: Request): Promise<NextResponse> {
         cost.totalCost += fee;
       }
     }
+
+    // Record what this turn actually cost against the daily spend ledger.
+    await recordSpend(req, cost.totalCost);
 
     const message: DebateMessage = {
       id: createId("msg"),

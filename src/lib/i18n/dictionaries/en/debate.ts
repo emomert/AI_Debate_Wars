@@ -92,6 +92,14 @@ export const debate = {
       title: "Something about this match looks off",
       body: "The match data was rejected. Head back to setup and start a fresh match.",
     },
+    TOO_MANY_REQUESTS: {
+      title: "Whoa — slow down, champ",
+      body: "You're starting matches faster than the arena can run them. Wait a few seconds and try again.",
+    },
+    DAILY_LIMIT_REACHED: {
+      title: "The arena hit today's limit",
+      body: "Debator caps how much it can spend per day to keep the lights on. The limit's reached for now — come back tomorrow, or pick free models (they don't count against it).",
+    },
     PROVIDER_ERROR: {
       title: "The arena lights flickered",
       body: "The model didn't respond cleanly. Try again or switch models.",

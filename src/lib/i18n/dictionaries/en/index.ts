@@ -14,6 +14,7 @@ import { result } from "./result";
 import { profile } from "./profile";
 import { report } from "./report";
 import { auth } from "./auth";
+import { legal } from "./legal";
 
 export const en = {
   common,
@@ -25,6 +26,7 @@ export const en = {
   profile,
   report,
   auth,
+  legal,
 };
 
 export type Dictionary = typeof en;
