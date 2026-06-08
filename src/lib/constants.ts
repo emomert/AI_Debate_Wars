@@ -3,6 +3,7 @@
  * These are pure data (no provider logic) and drive the arcade UI copy.
  */
 
+import type { Locale } from "@/lib/i18n/config";
 import type {
   DebateMode,
   DebatePace,
@@ -145,6 +146,33 @@ export const SAMPLE_TOPICS: string[] = [
   // Idea / discussion
   "Evaluate my startup idea: a food-waste marketplace for restaurants.",
 ];
+
+/** Turkish sample topics (shown on Home + Setup when the UI is in Turkish). */
+export const SAMPLE_TOPICS_TR: string[] = [
+  // Sorular
+  "Üniversiteler yapay zekâ araçlarını yasaklamalı mı?",
+  "Uzaktan çalışma, ofiste çalışmaktan daha mı iyi?",
+  "Yapay zekâ düzenlemeleri inovasyonu yavaşlatır mı?",
+  "Haftada 4 günlük çalışma ekonomi için iyi mi?",
+  "Türkiye nükleer enerjiye daha fazla yatırım yapmalı mı?",
+  "Sosyal medyaya yaş sınırı getirilmeli mi?",
+  // İddialar (savunulacak ya da çürütülecek net tezler — Münazara Modu için ideal)
+  "Sauron, Yüzüklerin Efendisi'nin asıl kötü adamı değildir.",
+  "Ananas kesinlikle pizzanın üzerine yakışır.",
+  "Sosyal medya faydadan çok zarar getirdi.",
+  "Adil bir dövüşte Batman, Iron Man'i yenerdi.",
+  "İnsanlar 50 yıl içinde Mars'ta yaşayacak.",
+  "Sekme (tab) boşluktan daha iyidir.",
+  "Para mutluluğu satın alabilir.",
+  "Sosis sandviç bir tür sandviçtir.",
+  // Fikir / tartışma
+  "Girişim fikrimi değerlendir: restoranlar için bir gıda-atığı pazaryeri.",
+];
+
+/** Sample topics for the active UI locale. */
+export function getSampleTopics(locale: Locale): string[] {
+  return locale === "tr" ? SAMPLE_TOPICS_TR : SAMPLE_TOPICS;
+}
 
 export const TOPIC_MIN_LENGTH = 8;
 export const TOPIC_MAX_LENGTH = 280;

@@ -7,12 +7,14 @@
 
 import { IconButton } from "@/components/game/IconButton";
 import { useArena } from "@/lib/state/ArenaContext";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function SoundToggle() {
   const { soundEnabled, toggleSound } = useArena();
+  const d = useT();
   return (
     <IconButton
-      label={soundEnabled ? "Mute sound" : "Enable sound"}
+      label={soundEnabled ? d.shell.controls.soundMute : d.shell.controls.soundEnable}
       onClick={toggleSound}
       color={soundEnabled ? "yellow" : "white"}
       active={soundEnabled}

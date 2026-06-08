@@ -12,16 +12,11 @@ import { createPortal } from "react-dom";
 import { IconButton } from "@/components/game/IconButton";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { Badge } from "@/components/game/Badge";
-
-const STEPS: { emoji: string; title: string; body: string }[] = [
-  { emoji: "📝", title: "Drop a topic", body: "Any question, claim, or idea you want stress-tested." },
-  { emoji: "🔍", title: "Go deep (optional)", body: "Flip on Deep Debate to let eligible fighters research with live web sources." },
-  { emoji: "🤖", title: "Choose two fighters", body: "Select Model A and Model B like arcade characters." },
-  { emoji: "🎚️", title: "Set the rules", body: "3, 5 or 7 rounds, a tone, and an optional judge." },
-  { emoji: "🏆", title: "Watch & judge", body: "The arena runs the rounds and reveals a final verdict." },
-];
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function HelpButton() {
+  const d = useT();
+  const help = d.shell.help;
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -84,7 +79,7 @@ export function HelpButton() {
     <>
       {/* A real text glyph (not the ❔ emoji) so it renders in solid ink —
           emoji ignore CSS color and looked washed-out. */}
-      <IconButton label="How to play" onClick={() => setOpen(true)} color="white" flat>
+      <IconButton label={help.open} onClick={() => setOpen(true)} color="white" flat>
         <span aria-hidden className="font-display text-[1.2em] leading-none">
           ?
         </span>
@@ -102,7 +97,7 @@ export function HelpButton() {
             onClick={() => setOpen(false)}
             role="dialog"
             aria-modal="true"
-            aria-label="How to play"
+            aria-label={help.title}
           >
             <motion.div
               ref={dialogRef}
@@ -116,13 +111,13 @@ export function HelpButton() {
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="font-heading text-2xl font-extrabold sm:text-3xl">
-                  How to Play
+                  {help.title}
                 </h2>
-                <Badge color="yellow">Arena Rules</Badge>
+                <Badge color="yellow">{help.rulesBadge}</Badge>
               </div>
 
               <ol className="space-y-3">
-                {STEPS.map((s, i) => (
+                {help.steps.map((s, i) => (
                   <li key={s.title} className="flex items-start gap-3">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow font-mono text-sm font-bold text-night">
                       {i + 1}
@@ -139,13 +134,12 @@ export function HelpButton() {
               </ol>
 
               <p className="mt-4 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-xs text-ink/70">
-                The arena controls the rounds — the models only speak when it's
-                their turn. No endless back-and-forth.
+                {help.note}
               </p>
 
               <div className="mt-5 flex justify-end">
                 <ArcadeButton variant="primary-green" onClick={() => setOpen(false)}>
-                  Got it
+                  {help.gotIt}
                 </ArcadeButton>
               </div>
             </motion.div>

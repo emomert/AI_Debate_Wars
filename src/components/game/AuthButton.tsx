@@ -18,8 +18,10 @@ import type { User } from "@supabase/supabase-js";
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { playSound } from "@/lib/audio/soundManager";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function AuthButton() {
+  const d = useT();
   const supabase = getSupabaseBrowserClient();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -85,12 +87,12 @@ export function AuthButton() {
         onClick={() => playSound("buttonClick")}
         className="inline-flex h-9 items-center rounded-btn border-3 border-ink bg-surface px-3 font-heading text-sm font-extrabold transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-[3px] focus-visible:outline-offset-2"
       >
-        Sign in
+        {d.auth.button.signIn}
       </Link>
     );
   }
 
-  const email = user.email ?? "Account";
+  const email = user.email ?? d.auth.button.accountFallback;
 
   return (
     <div className="relative" ref={menuRef}>
@@ -103,7 +105,7 @@ export function AuthButton() {
         }}
         aria-haspopup="true"
         aria-expanded={open}
-        aria-label={`Account: ${email}`}
+        aria-label={d.auth.button.accountAriaLabel(email)}
         title={email}
         className="grid h-9 w-9 place-items-center rounded-btn border-3 border-ink bg-arcade-purple text-lg focus-visible:outline-[3px] focus-visible:outline-offset-[-3px]"
       >
@@ -122,14 +124,14 @@ export function AuthButton() {
             }}
             className="mb-1 block w-full rounded-btn border-2 border-ink bg-surface px-2 py-1.5 text-left font-heading text-sm font-bold transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-[3px] focus-visible:outline-offset-2"
           >
-            👤 Profile
+            {d.auth.button.profile}
           </Link>
           <button
             type="button"
             onClick={signOut}
             className="w-full rounded-btn border-2 border-ink bg-surface px-2 py-1.5 text-left font-heading text-sm font-bold transition hover:bg-arcade-red hover:text-white focus-visible:outline-[3px] focus-visible:outline-offset-2"
           >
-            ⏏ Sign out
+            {d.auth.button.signOut}
           </button>
         </div>
       ) : null}

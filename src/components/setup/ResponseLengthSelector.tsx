@@ -9,6 +9,7 @@ import { LENGTH_OPTIONS } from "@/lib/constants";
 import type { ResponseLength } from "@/lib/debate/debateTypes";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface ResponseLengthSelectorProps {
   value: ResponseLength;
@@ -22,15 +23,17 @@ export function ResponseLengthSelector({
   onChange,
   disabled = false,
 }: ResponseLengthSelectorProps) {
+  const d = useT();
   return (
     <div
       role="radiogroup"
-      aria-label="Max response length"
+      aria-label={d.setup.rules.maxLength}
       aria-disabled={disabled}
       className={cn("grid grid-cols-3 gap-2", disabled && "opacity-50")}
     >
       {LENGTH_OPTIONS.map((opt) => {
         const selected = value === opt.id;
+        const copy = d.setup.lengths[opt.id];
         return (
           <button
             key={opt.id}
@@ -53,7 +56,7 @@ export function ResponseLengthSelector({
             )}
           >
             <div className="font-heading text-sm font-extrabold uppercase">
-              {opt.label}
+              {copy.label}
             </div>
             {/* group-hover: the blurb must flip with the yellow hover fill too —
                 its own text-ink class would otherwise stay light in dark mode. */}
@@ -63,7 +66,7 @@ export function ResponseLengthSelector({
                 selected ? "text-night/60" : "text-ink/55 group-hover:text-night/60",
               )}
             >
-              {opt.blurb}
+              {copy.blurb}
             </div>
           </button>
         );

@@ -7,6 +7,7 @@
  * the opponent — i.e. the model NEVER controls the debate flow.
  */
 
+import type { Locale } from "@/lib/i18n/config";
 import type {
   Citation,
   DebateMessage,
@@ -92,14 +93,29 @@ The live web search for this topic returned no usable results this turn.
 - Do NOT use bracketed citation markers like [1], [2] — you have no sources to cite.
 - Prefer specific, verifiable claims over generic assertions; never invent sources.`;
 
+// Appended to the system prompt when the debate runs in Turkish. Kept forceful
+// (and last) so the language requirement overrides the model's English default.
+const TURKISH_SYSTEM_ADDENDUM = `
+
+LANGUAGE:
+Write your entire response in Turkish (Türkçe). Use natural, fluent, grammatically correct Turkish throughout — every argument, example and transition. Do not switch to English and do not translate the user's topic; argue about it in Turkish.`;
+
+/** Language addendum for the system prompt (empty for English). */
+function languageSystemAddendum(language: Locale): string {
+  return language === "tr" ? TURKISH_SYSTEM_ADDENDUM : "";
+}
+
 export function buildSystemPrompt(
   mode: DebateMode,
   deepDebate = false,
   deepSourcesAvailable = true,
+  language: Locale = "en",
 ): string {
   const base = mode === "debate" ? DEBATE_SYSTEM_PROMPT : DISCUSSION_SYSTEM_PROMPT;
-  if (!deepDebate) return base;
-  return base + (deepSourcesAvailable ? DEEP_DEBATE_SYSTEM_ADDENDUM : DEEP_DEBATE_NO_SOURCES_ADDENDUM);
+  const withDeep = !deepDebate
+    ? base
+    : base + (deepSourcesAvailable ? DEEP_DEBATE_SYSTEM_ADDENDUM : DEEP_DEBATE_NO_SOURCES_ADDENDUM);
+  return withDeep + languageSystemAddendum(language);
 }
 
 // Built-in tone presets. "custom" is handled separately (free text).
@@ -253,6 +269,11 @@ export function buildTurnPrompt(
           ]
         : []),
     `Response requirements:`,
+    ...(session.language === "tr"
+      ? [
+          `- Write your ENTIRE response in Turkish (Türkçe) — fluent, natural Turkish, no English.`,
+        ]
+      : []),
     `- Write only your own turn.`,
     `- Do not write the other participant's turn.`,
     `- Do not ask to continue.`,
@@ -309,5 +330,10 @@ export function buildJudgePrompt(session: DebateSession): string {
     `  "scoreModelB": number             // 0-100, scoreModelA + scoreModelB = 100`,
     `}`,
     `Do not continue the debate. Do not invent claims not present in the transcript.`,
+    ...(session.language === "tr"
+      ? [
+          `Write every string VALUE in the JSON in Turkish (Türkçe), in fluent natural Turkish. Keep the JSON KEYS exactly as written above, in English.`,
+        ]
+      : []),
   ].join("\n");
 }

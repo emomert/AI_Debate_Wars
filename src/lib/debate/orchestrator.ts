@@ -33,7 +33,8 @@ function rolesForMode(mode: DebateConfig["mode"]): { a: string; b: string } {
  * Status is "running" so the live screen can begin immediately.
  */
 export function createDebateSession(config: DebateConfig): DebateSession {
-  const plan = getRoundPlan(config.mode, config.roundCount);
+  const language = config.language ?? "en";
+  const plan = getRoundPlan(config.mode, config.roundCount, language);
   const roles = rolesForMode(config.mode);
   const sessionId = createId("sess");
 
@@ -68,6 +69,7 @@ export function createDebateSession(config: DebateConfig): DebateSession {
     id: sessionId,
     topic: config.topic.trim(),
     mode: config.mode,
+    language,
     tone: config.tone,
     customTone: config.customTone,
     deepDebate: config.deepDebate,

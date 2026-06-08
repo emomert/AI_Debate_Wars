@@ -10,12 +10,8 @@
 
 import { cn } from "@/lib/utils/cn";
 import type { ModelColor } from "@/lib/debate/debateTypes";
-import {
-  FIGHTER_LINES,
-  JUDGE_LINES,
-  RESEARCH_LINES,
-  useRotatingLine,
-} from "@/components/debate/waitingMessages";
+import { useRotatingLine } from "@/components/debate/waitingMessages";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 const DOT_COLOR: Record<ModelColor, string> = {
   blue: "bg-arcade-blue",
@@ -39,7 +35,12 @@ export function ThinkingBubble({
   deep = false,
   kind = "fighter",
 }: ThinkingBubbleProps) {
-  const pool = deep ? RESEARCH_LINES : kind === "judge" ? JUDGE_LINES : FIGHTER_LINES;
+  const d = useT();
+  const pool = deep
+    ? d.debate.researchLines
+    : kind === "judge"
+      ? d.debate.judgeLines
+      : d.debate.fighterLines;
   const message = useRotatingLine(pool, name);
 
   return (
@@ -60,9 +61,9 @@ export function ThinkingBubble({
         ))}
       </span>
       <span className="font-heading text-sm font-bold">
-        {message}…
+        {d.debate.thinking.line(message)}
         {deep ? (
-          <span className="font-normal text-ink/55"> (this can take a while)</span>
+          <span className="font-normal text-ink/55">{d.debate.thinking.deepSuffix}</span>
         ) : null}
       </span>
     </div>

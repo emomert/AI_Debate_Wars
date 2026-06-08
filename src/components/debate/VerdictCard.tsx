@@ -14,6 +14,7 @@ import { CostBadge } from "@/components/debate/CostBadge";
 import { MarkdownText } from "@/components/debate/MarkdownText";
 import { ScoreBreakdown } from "@/components/result/ScoreBreakdown";
 import { getModelById } from "@/lib/models/modelRegistry";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface VerdictCardProps {
   verdict: DebateVerdict;
@@ -24,23 +25,6 @@ interface VerdictCardProps {
 /** Resolve a judge model id to a friendly display name. */
 function judgeDisplayName(id: string): string {
   return getModelById(id)?.displayName ?? id;
-}
-
-function winnerLabel(
-  verdict: DebateVerdict,
-  modelA: SelectedModel,
-  modelB: SelectedModel,
-): string {
-  switch (verdict.winner) {
-    case "modelA":
-      return `${modelA.displayName} takes it`;
-    case "modelB":
-      return `${modelB.displayName} takes it`;
-    case "tie":
-      return "It's a draw";
-    default:
-      return "Discussion complete";
-  }
 }
 
 function Insight({
@@ -66,6 +50,19 @@ function Insight({
 
 export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
   const reduce = useReducedMotion();
+  const d = useT();
+  const winnerLabel = (() => {
+    switch (verdict.winner) {
+      case "modelA":
+        return d.result.verdict.takesIt(modelA.displayName);
+      case "modelB":
+        return d.result.verdict.takesIt(modelB.displayName);
+      case "tie":
+        return d.result.verdict.draw;
+      default:
+        return d.result.verdict.discussionComplete;
+    }
+  })();
   return (
     <motion.section
       initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 16 }}
@@ -82,17 +79,17 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
             transition={{ type: "spring", stiffness: 220, damping: 12 }}
             className="inline-block rounded-btn border-3 border-ink bg-arcade-yellow px-3 py-1 font-display text-3xl tracking-tight text-night sm:text-4xl"
           >
-            🏆 VERDICT
+            {d.result.verdict.badge}
           </motion.h2>
-          <Badge color="purple">⚖️ Judge: {judgeDisplayName(verdict.judgeModelId)}</Badge>
+          <Badge color="purple">{d.result.verdict.judge(judgeDisplayName(verdict.judgeModelId))}</Badge>
         </div>
 
         <p className="mt-4 font-heading text-xl font-extrabold sm:text-2xl">
-          {winnerLabel(verdict, modelA, modelB)}
+          {winnerLabel}
         </p>
         {verdict.winnerArgument ? (
           <p className="mt-1 text-sm text-ink/80 sm:text-base">
-            <span className="font-bold">💥 Winning argument: </span>
+            <span className="font-bold">{d.result.verdict.winningArgument}</span>
             {verdict.winnerArgument}
           </p>
         ) : null}
@@ -101,7 +98,7 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
             decisive points). */}
         <div className="mt-3 rounded-card border-3 border-ink bg-surface p-3">
           <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-ink/45">
-            ⚖️ Why this verdict
+            {d.result.verdict.whyThis}
           </p>
           <MarkdownText content={verdict.summary} />
         </div>
@@ -118,10 +115,10 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
         ) : null}
 
         <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Insight label={`${modelA.displayName} strongest`} value={verdict.strongestModelA} tone="good" />
-          <Insight label={`${modelB.displayName} strongest`} value={verdict.strongestModelB} tone="good" />
-          <Insight label={`${modelA.displayName} weakest`} value={verdict.weakestModelA} tone="risk" />
-          <Insight label={`${modelB.displayName} weakest`} value={verdict.weakestModelB} tone="risk" />
+          <Insight label={d.result.verdict.strongest(modelA.displayName)} value={verdict.strongestModelA} tone="good" />
+          <Insight label={d.result.verdict.strongest(modelB.displayName)} value={verdict.strongestModelB} tone="good" />
+          <Insight label={d.result.verdict.weakest(modelA.displayName)} value={verdict.weakestModelA} tone="risk" />
+          <Insight label={d.result.verdict.weakest(modelB.displayName)} value={verdict.weakestModelB} tone="risk" />
         </ul>
 
         <div className="mt-4">

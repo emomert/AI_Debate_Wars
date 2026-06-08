@@ -8,6 +8,7 @@ import { PACE_OPTIONS } from "@/lib/constants";
 import type { DebatePace } from "@/lib/debate/debateTypes";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface PaceSelectorProps {
   value: DebatePace;
@@ -15,10 +16,12 @@ interface PaceSelectorProps {
 }
 
 export function PaceSelector({ value, onChange }: PaceSelectorProps) {
+  const d = useT();
   return (
-    <div role="radiogroup" aria-label="Pacing" className="grid grid-cols-2 gap-2">
+    <div role="radiogroup" aria-label={d.setup.rules.pacing} className="grid grid-cols-2 gap-2">
       {PACE_OPTIONS.map((opt) => {
         const selected = value === opt.id;
+        const copy = d.setup.paces[opt.id];
         return (
           <button
             key={opt.id}
@@ -39,10 +42,10 @@ export function PaceSelector({ value, onChange }: PaceSelectorProps) {
           >
             <div className="font-heading text-base font-extrabold">
               <span aria-hidden className="mr-1.5">{opt.emoji}</span>
-              {opt.label}
+              {copy.label}
             </div>
             <div className={cn("text-xs", selected ? "text-white/80" : "text-ink/55")}>
-              {opt.blurb}
+              {copy.blurb}
             </div>
           </button>
         );

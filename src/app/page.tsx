@@ -15,7 +15,7 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
-import { SAMPLE_TOPICS, TONE_OPTIONS } from "@/lib/constants";
+import { getSampleTopics, TONE_OPTIONS } from "@/lib/constants";
 import {
   useArena,
   toSelectedModel,
@@ -24,6 +24,8 @@ import {
 } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { createDebateSession } from "@/lib/debate/orchestrator";
+import { readClientLocale, type Locale } from "@/lib/i18n/config";
+import { useT, useLocale } from "@/lib/i18n/LocaleProvider";
 import {
   MODEL_CATALOG,
   type ModelCatalogEntry,
@@ -48,7 +50,10 @@ function samplePool(availability: ProviderAvailability | null): ModelCatalogEntr
 }
 
 /** A fresh randomized matchup every click — topic, tone and fighters. */
-function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
+function sampleConfig(
+  availability: ProviderAvailability | null,
+  locale: Locale,
+): DebateConfig {
   const pool = samplePool(availability);
   const fallback = defaultFighters(); // shared default pair (no duplicated ids)
 
@@ -59,7 +64,7 @@ function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
   // Avoid the "custom" tone in samples — it needs user-typed text.
   const presetTones = TONE_OPTIONS.filter((t) => t.id !== "custom");
   return {
-    topic: randomItem(SAMPLE_TOPICS),
+    topic: randomItem(getSampleTopics(locale)),
     mode: "debate",
     modelA: toSelectedModel(a, "blue"),
     modelB: toSelectedModel(b, "red"),
@@ -73,28 +78,16 @@ function sampleConfig(availability: ProviderAvailability | null): DebateConfig {
   };
 }
 
-const HOW_IT_WORKS: { emoji: string; title: string; body: string }[] = [
-  {
-    emoji: "📝",
-    title: "Pick a topic & two fighters",
-    body: "Any question, claim or idea — then choose two AI models like arcade characters.",
-  },
-  {
-    emoji: "🎚️",
-    title: "Set the rules",
-    body: "3 / 5 / 7 rounds, a tone, optional Deep Debate, and an optional AI judge.",
-  },
-  {
-    emoji: "🍿",
-    title: "Watch the match",
-    body: "The arena runs every round live — costs on screen, verdict at the end.",
-  },
-];
+/** Emojis for the "How it works" steps; titles/bodies come from the dictionary. */
+const HOW_IT_WORKS_EMOJI = ["📝", "🎚️", "🍿"] as const;
 
 export default function HomePage() {
   const router = useRouter();
   const reduce = useReducedMotion();
   const { setConfig, setSession, availability } = useArena();
+  const d = useT();
+  const { locale } = useLocale();
+  const sampleTopics = getSampleTopics(locale);
 
   // Consistent staggered fade-up so every section animates in on load.
   const fade = (delay: number) => ({
@@ -106,9 +99,9 @@ export default function HomePage() {
   const useDebator = () => router.push("/setup");
 
   const trySample = () => {
-    const sample = sampleConfig(availability);
+    const sample = sampleConfig(availability, locale);
     setConfig(sample);
-    setSession(createDebateSession(sample));
+    setSession(createDebateSession({ ...sample, language: readClientLocale() }));
     playSound("debateStart");
     router.push("/debate");
   };
@@ -119,7 +112,7 @@ export default function HomePage() {
       <section className="relative pt-2 text-center">
         <motion.div {...fade(0)} className="mb-4 flex justify-center">
           <FloatingBadge color="pink" rotate={-4}>
-            🕹️ AI vs AI
+            {d.home.hero.badge}
           </FloatingBadge>
         </motion.div>
 
@@ -127,25 +120,25 @@ export default function HomePage() {
           {...fade(0.06)}
           className="mx-auto max-w-3xl font-display text-5xl leading-[0.95] tracking-tight sm:text-7xl"
         >
-          Make AIs Fight
+          {d.home.hero.titleLine1}
           <br />
-          <span className="text-arcade-purple">Your Ideas</span>
+          <span className="text-arcade-purple">{d.home.hero.titleLine2}</span>
         </motion.h1>
 
         <motion.p
           {...fade(0.12)}
           className="mx-auto mt-4 max-w-2xl text-base text-ink/70 sm:text-lg"
         >
-          Debator is a browser arcade where <strong>two AI models argue your
-          topic</strong> in structured rounds. An optional AI judge scores the
-          match, and every token spent is counted live.
+          {d.home.hero.introBefore}
+          <strong>{d.home.hero.introStrong}</strong>
+          {d.home.hero.introAfter}
         </motion.p>
 
         <motion.div {...fade(0.18)} className="mt-3 flex flex-wrap justify-center gap-1.5">
-          <Badge color="yellow" size="sm">⚔️ Two AI fighters</Badge>
-          <Badge color="green" size="sm">3 / 5 / 7 rounds</Badge>
-          <Badge color="purple" size="sm">⚖️ Optional judge</Badge>
-          <Badge color="white" size="sm">💰 Live cost tracking</Badge>
+          <Badge color="yellow" size="sm">{d.home.hero.badges.fighters}</Badge>
+          <Badge color="green" size="sm">{d.home.hero.badges.rounds}</Badge>
+          <Badge color="purple" size="sm">{d.home.hero.badges.judge}</Badge>
+          <Badge color="white" size="sm">{d.home.hero.badges.cost}</Badge>
         </motion.div>
       </section>
 
@@ -160,7 +153,7 @@ export default function HomePage() {
               onClick={useDebator}
               rightIcon={<span aria-hidden>▶</span>}
             >
-              🎮 Use Debator
+              {d.home.cta.useDebator}
             </ArcadeButton>
             <ArcadeButton
               variant="primary-yellow"
@@ -168,13 +161,14 @@ export default function HomePage() {
               fullWidth
               onClick={trySample}
             >
-              🎲 Try a Sample
+              {d.home.cta.trySample}
             </ArcadeButton>
           </div>
           <p className="mt-3 text-center text-xs text-ink/55">
-            <strong>Use Debator</strong> sets up your own match · <strong>Try a
-            Sample</strong> rolls a random demo match — new topic, fighters and
-            rules every time.
+            <strong>{d.home.cta.noteUseStrong}</strong>
+            {d.home.cta.noteMiddle}
+            <strong>{d.home.cta.noteSampleStrong}</strong>
+            {d.home.cta.noteAfter}
           </p>
         </GamePanel>
       </motion.div>
@@ -182,16 +176,16 @@ export default function HomePage() {
       {/* How it works */}
       <motion.section {...fade(0.3)} className="mx-auto mt-10 max-w-4xl">
         <h2 className="mb-3 text-center font-heading text-xl font-extrabold">
-          How it works
+          {d.home.howItWorks.heading}
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {HOW_IT_WORKS.map((step, i) => (
+          {d.home.howItWorks.steps.map((step, i) => (
             <GamePanel key={step.title} padding="md">
               <div className="flex items-center gap-2">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow font-mono text-sm font-bold text-night">
                   {i + 1}
                 </span>
-                <span aria-hidden className="text-2xl">{step.emoji}</span>
+                <span aria-hidden className="text-2xl">{HOW_IT_WORKS_EMOJI[i]}</span>
               </div>
               <p className="mt-2 font-heading text-base font-extrabold">
                 {step.title}
@@ -205,13 +199,13 @@ export default function HomePage() {
       {/* Example topics — display only; the topic is written on the Setup screen */}
       <motion.section {...fade(0.36)} className="mx-auto mt-10 max-w-3xl text-center">
         <h2 className="mb-1 font-heading text-xl font-extrabold">
-          What can you throw in the arena?
+          {d.home.examples.heading}
         </h2>
         <p className="mb-3 text-sm text-ink/60">
-          Anything debatable — questions, hot takes, even your own plans:
+          {d.home.examples.subtitle}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
-          {SAMPLE_TOPICS.map((topic) => (
+          {sampleTopics.map((topic) => (
             <span
               key={topic}
               className="rounded-badge border-3 border-ink bg-surface px-2.5 py-1 text-xs font-semibold"

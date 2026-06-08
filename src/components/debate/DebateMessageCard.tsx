@@ -22,7 +22,8 @@ import { Badge } from "@/components/game/Badge";
 import { CostBadge } from "@/components/debate/CostBadge";
 import { MarkdownText } from "@/components/debate/MarkdownText";
 import { SourcesList } from "@/components/debate/SourcesList";
-import { WRITING_LINES, useRotatingLine } from "@/components/debate/waitingMessages";
+import { useRotatingLine } from "@/components/debate/waitingMessages";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -31,9 +32,10 @@ import { cn } from "@/lib/utils/cn";
  * (mounted only while streaming), not on every completed message card.
  */
 function WritingCaption({ name }: { name: string }) {
-  const line = useRotatingLine(WRITING_LINES, name);
+  const d = useT();
+  const line = useRotatingLine(d.debate.writingLines, name);
   return (
-    <p className="truncate text-[11px] italic text-ink/55">✍️ {line}…</p>
+    <p className="truncate text-[11px] italic text-ink/55">{d.debate.message.writing(line)}</p>
   );
 }
 
@@ -75,9 +77,18 @@ function DebateMessageCardComponent({
   latencyMs,
   citations,
 }: DebateMessageCardProps) {
+  const d = useT();
   const isJudge = speaker === "judge";
   const isModelB = speaker === "modelB";
-  const align = isModelB ? "sm:ml-auto sm:mr-0" : isJudge ? "sm:mx-auto" : "sm:mr-auto sm:ml-0";
+  // Mirror-symmetric lean at EVERY breakpoint (incl. phones): Model A leans left,
+  // Model B leans right, the judge is centred. The small fixed gap on the flush
+  // side (mr-1 / ml-1) keeps both sides symmetric AND gives the bottom-right hard
+  // shadow room so the right edge never reads tighter than the left on mobile.
+  const align = isJudge
+    ? "mx-auto"
+    : isModelB
+      ? "ml-auto mr-1"
+      : "mr-auto ml-1";
   // Model B (red) leans right, so its accent bar sits on the RIGHT edge to match
   // its side of the arena; Model A and the judge keep the bar on the left.
   const barSide = isModelB ? "right-0" : "left-0";
@@ -88,7 +99,9 @@ function DebateMessageCardComponent({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: "easeOut" }}
       className={cn(
-        "relative w-full overflow-hidden rounded-card border-4 border-ink bg-card shadow-hard-sm sm:max-w-[88%]",
+        // Capped under full width on phones too (was w-full), so the lean above
+        // actually has room to push A left / B right instead of filling the row.
+        "relative w-full max-w-[94%] overflow-hidden rounded-card border-4 border-ink bg-card shadow-hard-sm sm:max-w-[88%]",
         align,
       )}
     >
@@ -115,10 +128,10 @@ function DebateMessageCardComponent({
             {roundLabel ? <Badge color="white" size="sm">{roundLabel}</Badge> : null}
             {stance ? (
               <Badge color={stance === "pro" ? "blue" : "red"} size="sm">
-                {stance === "pro" ? "PRO" : "AGAINST"}
+                {stance === "pro" ? d.debate.message.pro : d.debate.message.against}
               </Badge>
             ) : null}
-            {isJudge ? <Badge color="purple" size="sm">⚖️ Judge</Badge> : null}
+            {isJudge ? <Badge color="purple" size="sm">{d.debate.message.judge}</Badge> : null}
           </div>
         </header>
 

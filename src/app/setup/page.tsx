@@ -23,16 +23,49 @@ import { PaceSelector } from "@/components/setup/PaceSelector";
 import { JudgeSelector } from "@/components/setup/JudgeSelector";
 import { SetupSummaryCard } from "@/components/setup/SetupSummaryCard";
 
-import { useArena, toSelectedModel } from "@/lib/state/ArenaContext";
+import { useArena, toSelectedModel, defaultFighters } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { validateSetup } from "@/lib/debate/validators";
 import { TOPIC_MAX_LENGTH } from "@/lib/constants";
-import { modelSupportsWebSearch } from "@/lib/models/modelRegistry";
+import {
+  modelIdSupportsLanguage,
+  modelSupportsWebSearch,
+} from "@/lib/models/modelRegistry";
+import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
+import type { DebateConfig } from "@/lib/debate/debateTypes";
 
 export default function SetupPage() {
   const router = useRouter();
   const { config, setConfig, startMatch, availability } = useArena();
+  const { locale } = useLocale();
+  const d = useT();
   const [attempted, setAttempted] = useState(false);
+
+  // In Turkish mode, a fighter (or third-model judge) that can't speak fluent
+  // Turkish is hidden from the picker — so if the persisted config still holds
+  // one, swap it for a Turkish-capable default (and drop a non-Turkish judge to
+  // Auto) so the match never starts with a model that can't run in Turkish.
+  useEffect(() => {
+    if (locale !== "tr") return;
+    const patch: Partial<DebateConfig> = {};
+    const { a, b } = defaultFighters();
+    if (!modelIdSupportsLanguage(config.modelA.modelId, locale)) {
+      patch.modelA = toSelectedModel(config.modelB.modelId === a.id ? b : a, "blue");
+    }
+    if (!modelIdSupportsLanguage(config.modelB.modelId, locale)) {
+      patch.modelB = toSelectedModel(config.modelA.modelId === b.id ? a : b, "red");
+    }
+    if (
+      config.judge.enabled &&
+      config.judge.mode === "thirdModel" &&
+      config.judge.model &&
+      !modelIdSupportsLanguage(config.judge.model.modelId, locale)
+    ) {
+      patch.judge = { ...config.judge, mode: "auto", model: undefined };
+    }
+    if (Object.keys(patch).length > 0) setConfig(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale, config.modelA.modelId, config.modelB.modelId, config.judge.mode, config.judge.model?.modelId]);
 
   // Whether the server can run app-side web search (Deep Debate for
   // OpenAI/DeepSeek fighters); null until /api/health resolves → optimistic.
@@ -86,17 +119,17 @@ export default function SetupPage() {
     <GameShell wide>
       <div className="mb-5">
         <h1 className="font-display text-4xl tracking-tight sm:text-5xl">
-          Set Up Your Match
+          {d.setup.heading}
         </h1>
         <p className="mt-1 text-ink/65">
-          Choose your fighters and set the rules. The arena handles the rest.
+          {d.setup.subheading}
         </p>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Config sections */}
         <div className="space-y-5">
-          <GamePanel title="1 · Topic">
+          <GamePanel title={d.setup.sections.topic}>
             <TopicInput
               value={config.topic}
               onChange={(topic) => setConfig({ topic })}
@@ -104,7 +137,7 @@ export default function SetupPage() {
             />
           </GamePanel>
 
-          <GamePanel title="2 · Deep Debate">
+          <GamePanel title={d.setup.sections.deepDebate}>
             <DeepDebateToggle
               value={config.deepDebate}
               fightersEligible={fightersEligibleForDeep}
@@ -118,15 +151,15 @@ export default function SetupPage() {
             />
           </GamePanel>
 
-          <GamePanel title="3 · Choose Your Fighters">
+          <GamePanel title={d.setup.sections.fighters}>
             <div className="mb-3 flex justify-end">
-              <IconButton label="Swap fighters A and B" onClick={swapFighters}>
+              <IconButton label={d.setup.swapFighters} onClick={swapFighters}>
                 <span aria-hidden>⇄</span>
               </IconButton>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               <ModelSelector
-                label="Fighter A"
+                label={d.setup.fighterA}
                 accent="blue"
                 selectedId={config.modelA.modelId}
                 conflictId={config.modelB.modelId}
@@ -137,7 +170,7 @@ export default function SetupPage() {
                 }
               />
               <ModelSelector
-                label="Fighter B"
+                label={d.setup.fighterB}
                 accent="red"
                 selectedId={config.modelB.modelId}
                 conflictId={config.modelA.modelId}
@@ -150,14 +183,14 @@ export default function SetupPage() {
             </div>
           </GamePanel>
 
-          <GamePanel title="4 · Match Rules">
+          <GamePanel title={d.setup.sections.rules}>
             <div className="space-y-5">
               <div>
                 <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                  Rounds
+                  {d.setup.rules.rounds}
                   {config.deepDebate ? (
                     <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
-                      🔒 3 in Deep Debate
+                      {d.setup.rules.lockRounds}
                     </span>
                   ) : null}
                 </p>
@@ -169,10 +202,10 @@ export default function SetupPage() {
               </div>
               <div>
                 <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                  Tone
+                  {d.setup.rules.tone}
                   {config.deepDebate ? (
                     <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
-                      🔒 Standard
+                      {d.setup.rules.lockStandard}
                     </span>
                   ) : null}
                 </p>
@@ -187,10 +220,10 @@ export default function SetupPage() {
               </div>
               <div>
                 <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                  Max response length
+                  {d.setup.rules.maxLength}
                   {config.deepDebate ? (
                     <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
-                      🔒 Auto
+                      {d.setup.rules.lockAuto}
                     </span>
                   ) : null}
                 </p>
@@ -201,14 +234,13 @@ export default function SetupPage() {
                 />
                 {config.deepDebate ? (
                   <p className="mt-2 text-xs text-ink/55">
-                    Deep Debate uses a structured, longer format — length is set
-                    for you, and turns take longer.
+                    {d.setup.rules.deepLengthNote}
                   </p>
                 ) : null}
               </div>
               <div>
                 <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                  Pacing
+                  {d.setup.rules.pacing}
                 </p>
                 <PaceSelector
                   value={config.pace}
@@ -218,7 +250,7 @@ export default function SetupPage() {
             </div>
           </GamePanel>
 
-          <GamePanel title="5 · Judge">
+          <GamePanel title={d.setup.sections.judge}>
             <JudgeSelector
               value={config.judge}
               onChange={(judge) => setConfig({ judge })}
@@ -242,7 +274,7 @@ export default function SetupPage() {
                 size="sm"
                 onClick={() => router.push("/")}
               >
-                ← Back to home
+                {d.setup.backToHome}
               </ArcadeButton>
             </div>
           </div>
@@ -260,7 +292,7 @@ export default function SetupPage() {
           onClick={handleStart}
           rightIcon={<span aria-hidden>▶</span>}
         >
-          Start the Match
+          {d.setup.start}
         </ArcadeButton>
         {!validation.valid ? (
           <p className="mt-1 text-center text-[11px] font-semibold text-arcade-red">

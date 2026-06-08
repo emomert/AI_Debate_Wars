@@ -10,7 +10,8 @@ import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { Badge } from "@/components/game/Badge";
 import type { DebateConfig } from "@/lib/debate/debateTypes";
 import type { ValidationResult } from "@/lib/debate/validators";
-import { ROUND_OPTIONS, TONE_OPTIONS } from "@/lib/constants";
+import { TONE_OPTIONS } from "@/lib/constants";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface SetupSummaryCardProps {
   config: DebateConfig;
@@ -23,12 +24,13 @@ export function SetupSummaryCard({
   validation,
   onStart,
 }: SetupSummaryCardProps) {
-  const roundLabel = ROUND_OPTIONS.find((r) => r.count === config.roundCount)?.label;
-  const tone = TONE_OPTIONS.find((t) => t.id === config.tone);
+  const d = useT();
+  const roundLabel = d.setup.rounds[config.roundCount]?.label;
+  const toneEmoji = TONE_OPTIONS.find((t) => t.id === config.tone)?.emoji;
   const toneLabel =
     config.tone === "custom"
-      ? `✏️ ${(config.customTone ?? "").trim() || "Custom"}`
-      : `${tone?.emoji} ${tone?.label}`;
+      ? `✏️ ${(config.customTone ?? "").trim() || d.setup.toneCustom.fallbackLabel}`
+      : `${toneEmoji} ${d.setup.tones[config.tone]?.label}`;
   const errorList = Object.values(validation.errors);
 
   // Solid yellow panel: constant `night` text in both themes; inner cards stay
@@ -36,13 +38,13 @@ export function SetupSummaryCard({
   return (
     <div className="rounded-panel border-4 border-ink bg-arcade-yellow p-4 text-night shadow-hard sm:p-5">
       <h2 className="font-heading text-xl font-extrabold sm:text-2xl">
-        🎮 Match Card
+        {d.setup.summary.title}
       </h2>
 
       <div className="mt-3 space-y-3">
         <div className="rounded-card border-3 border-night bg-white p-3 text-night">
           <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
-            Topic
+            {d.setup.summary.topic}
           </p>
           <p className="mt-0.5 line-clamp-2 text-sm font-semibold">
             {config.topic.trim() || "—"}
@@ -52,7 +54,7 @@ export function SetupSummaryCard({
         <div className="grid grid-cols-2 gap-2">
           <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
             <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
-              Fighter A
+              {d.setup.summary.fighterA}
             </p>
             <p className="truncate text-sm font-bold text-arcade-blue">
               {config.modelA.displayName}
@@ -60,7 +62,7 @@ export function SetupSummaryCard({
           </div>
           <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
             <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
-              Fighter B
+              {d.setup.summary.fighterB}
             </p>
             <p className="truncate text-sm font-bold text-arcade-red">
               {config.modelB.displayName}
@@ -70,21 +72,21 @@ export function SetupSummaryCard({
 
         <div className="flex flex-wrap gap-1.5">
           <Badge color="white" size="sm">
-            {config.mode === "debate" ? "⚔️ Debate" : "🧠 Discussion"}
+            {config.mode === "debate" ? d.setup.summary.badgeDebate : d.setup.summary.badgeDiscussion}
           </Badge>
-          <Badge color="white" size="sm">{config.roundCount} · {roundLabel}</Badge>
+          <Badge color="white" size="sm">{d.setup.summary.roundLine(config.roundCount, roundLabel ?? "")}</Badge>
           <Badge color="white" size="sm" className="max-w-[12rem] truncate">{toneLabel}</Badge>
           <Badge color="white" size="sm">
-            {config.deepDebate ? "🔒 Deep template" : config.responseLength}
+            {config.deepDebate ? d.setup.summary.deepTemplate : config.responseLength}
           </Badge>
           {config.deepDebate ? (
-            <Badge color="purple" size="sm">🌐 Deep Debate</Badge>
+            <Badge color="purple" size="sm">{d.setup.summary.deepDebate}</Badge>
           ) : null}
           <Badge color="blue" size="sm">
-            {config.pace === "auto" ? "⚡ Fast" : "🚶 Normal"}
+            {config.pace === "auto" ? d.setup.summary.fast : d.setup.summary.normal}
           </Badge>
           <Badge color={config.judge.enabled ? "purple" : "white"} size="sm">
-            {config.judge.enabled ? "⚖️ Judge on" : "No judge"}
+            {config.judge.enabled ? d.setup.summary.judgeOn : d.setup.summary.judgeOff}
           </Badge>
         </div>
       </div>
@@ -107,10 +109,10 @@ export function SetupSummaryCard({
         disabled={!validation.valid}
         onClick={onStart}
       >
-        ▶ Start the Match
+        {d.setup.summary.start}
       </ArcadeButton>
       <p className="mt-2 text-center text-[11px] text-night/55">
-        Live models · OpenRouter brands are free with a key
+        {d.setup.summary.footnote}
       </p>
     </div>
   );

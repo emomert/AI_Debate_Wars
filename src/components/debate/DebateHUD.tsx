@@ -19,18 +19,19 @@ import type { RunnerPhase } from "@/lib/debate/useDebateRunner";
 import { RoundCounter } from "@/components/debate/RoundCounter";
 import { Badge } from "@/components/game/Badge";
 import { formatCost, formatTokens } from "@/lib/utils/format";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
-const PHASE_LABEL: Record<
+const PHASE_COLOR: Record<
   RunnerPhase,
-  { text: string; color: "yellow" | "green" | "purple" | "white" | "red" | "blue" }
+  "yellow" | "green" | "purple" | "white" | "red" | "blue"
 > = {
-  thinking: { text: "Thinking…", color: "yellow" },
-  streaming: { text: "Speaking", color: "green" },
-  judging: { text: "Judge entering", color: "purple" },
-  awaiting: { text: "Your move", color: "blue" },
-  done: { text: "Complete", color: "white" },
-  stopped: { text: "Stopped", color: "red" },
-  error: { text: "Error", color: "red" },
+  thinking: "yellow",
+  streaming: "green",
+  judging: "purple",
+  awaiting: "blue",
+  done: "white",
+  stopped: "red",
+  error: "red",
 };
 
 interface DebateHUDProps {
@@ -59,7 +60,8 @@ function DebateHUDComponent({
   pace,
   onTogglePace,
 }: DebateHUDProps) {
-  const status = PHASE_LABEL[phase];
+  const d = useT();
+  const status = { text: d.debate.hud.phase[phase], color: PHASE_COLOR[phase] };
   const showActive = activeModelName && (phase === "thinking" || phase === "streaming");
   const live = phase !== "done" && phase !== "stopped" && phase !== "error";
 
@@ -104,10 +106,10 @@ function DebateHUDComponent({
             <button
               type="button"
               onClick={onTogglePace}
-              aria-label={`Pacing: ${pace === "auto" ? "Fast" : "Normal"}. Click to switch.`}
+              aria-label={d.debate.hud.paceLabel(pace)}
               className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
             >
-              {pace === "auto" ? "⚡ Fast" : "🚶 Normal"}
+              {pace === "auto" ? d.debate.hud.paceFast : d.debate.hud.paceNormal}
             </button>
           ) : null}
         </div>
@@ -118,14 +120,14 @@ function DebateHUDComponent({
           animate={{ scale: 1 }}
           transition={{ duration: 0.2 }}
           className="inline-flex items-center gap-1.5 rounded-btn border-3 border-ink bg-night px-2 py-0.5 font-mono text-[11px] font-bold text-arcade-green"
-          aria-label="Total cost so far"
+          aria-label={d.debate.hud.totalCost}
         >
           <span aria-hidden>💰</span>
           <span>{formatCost(costSummary.totalCost)}</span>
           <span className="text-white/50">·</span>
           <span className="text-white/70">{formatTokens(costSummary.totalTokens)}</span>
           <span className="text-white/50">·</span>
-          <span className="text-white/70">{messageCount} msg</span>
+          <span className="text-white/70">{messageCount} {d.debate.hud.msgSuffix}</span>
         </motion.div>
       </div>
     </div>

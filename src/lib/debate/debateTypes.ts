@@ -10,6 +10,8 @@
  * `src/lib/providers/types.ts` (added in Phase 3).
  */
 
+import type { Locale } from "@/lib/i18n/config";
+
 export type DebateMode = "debate" | "discussion";
 
 export type ResponseLength = "short" | "medium" | "long";
@@ -174,6 +176,13 @@ export interface DebateSession {
   id: string;
   topic: string;
   mode: DebateMode;
+  /**
+   * Language the debate runs in (UI locale captured when the match starts).
+   * Drives the "respond in Turkish" prompt instruction and localized round
+   * labels/tasks. Optional for backward-compat with sessions saved before i18n
+   * (treated as "en").
+   */
+  language?: Locale;
   tone: DebateTone;
   /** Free-text tone, set when tone === "custom". */
   customTone?: string;
@@ -206,6 +215,8 @@ export interface DebateSession {
 export interface DebateConfig {
   topic: string;
   mode: DebateMode;
+  /** Language the debate should run in; defaults to the active UI locale at start. */
+  language?: Locale;
   modelA: SelectedModel;
   modelB: SelectedModel;
   roundCount: RoundCount;

@@ -33,6 +33,7 @@ import {
   type ModelCatalogEntry,
 } from "@/lib/models/modelRegistry";
 import { createDebateSession } from "@/lib/debate/orchestrator";
+import { readClientLocale } from "@/lib/i18n/config";
 import { fetchHealth } from "@/lib/api/debateClient";
 import type { HealthResponse } from "@/lib/api/contracts";
 import { soundManager } from "@/lib/audio/soundManager";
@@ -213,7 +214,10 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     const effective: DebateConfig = config.deepDebate
       ? { ...config, roundCount: 3, tone: "serious" }
       : config;
-    const next = createDebateSession(effective);
+    // Stamp the debate with the language it should run in — the live UI locale,
+    // read straight from the cookie so it's correct even if the persisted config
+    // predates the current choice.
+    const next = createDebateSession({ ...effective, language: readClientLocale() });
     setSessionState(next);
     return next;
   }, [config]);

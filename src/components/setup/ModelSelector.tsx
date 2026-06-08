@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BRANDS,
   COST_TIER_LABEL,
+  brandsForLocale,
   familiesForBrand,
   getModelById,
   modelsForBrand,
@@ -28,6 +29,7 @@ import {
 import { Badge } from "@/components/game/Badge";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 
 type Accent = "blue" | "red" | "purple";
@@ -74,6 +76,8 @@ export function ModelSelector({
   availability,
   requireWebSearch = false,
 }: ModelSelectorProps) {
+  const { locale } = useLocale();
+  const d = useT();
   const selected = getModelById(selectedId);
   const [activeBrand, setActiveBrand] = useState<string>(
     selected?.brand ?? BRANDS[0]?.brand ?? "OpenAI",
@@ -107,7 +111,15 @@ export function ModelSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
-  const families = familiesForBrand(activeBrand);
+  // In Turkish mode, brands whose models all lack fluent Turkish disappear; if
+  // the active tab was one of them, fall back to the first available brand.
+  useEffect(() => {
+    if (!brandsForLocale(locale).some((b) => b.brand === activeBrand)) {
+      setActiveBrand(brandsForLocale(locale)[0]?.brand ?? "OpenAI");
+    }
+  }, [locale, activeBrand]);
+
+  const families = familiesForBrand(activeBrand, locale);
 
   const toggleFamily = (family: string) => {
     const key = `${activeBrand}:${family}`;
@@ -119,10 +131,11 @@ export function ModelSelector({
     });
   };
 
-  const primaryBrands = BRANDS.filter((b) => b.backend !== "openrouter");
-  const freeBrands = BRANDS.filter((b) => b.backend === "openrouter");
+  const localeBrands = brandsForLocale(locale);
+  const primaryBrands = localeBrands.filter((b) => b.backend !== "openrouter");
+  const freeBrands = localeBrands.filter((b) => b.backend === "openrouter");
   const freeModelCount = freeBrands.reduce(
-    (n, b) => n + modelsForBrand(b.brand).length,
+    (n, b) => n + modelsForBrand(b.brand, locale).length,
     0,
   );
 
@@ -147,7 +160,7 @@ export function ModelSelector({
       >
         <span>{b.brand}</span>
         {ready === null ? null : ready ? (
-          <span aria-label="ready" className="h-2 w-2 rounded-full bg-arcade-green" />
+          <span aria-label={d.setup.models.ready} className="h-2 w-2 rounded-full bg-arcade-green" />
         ) : (
           <span className="text-[10px] font-bold text-arcade-orange">🔑</span>
         )}
@@ -185,7 +198,7 @@ export function ModelSelector({
               freeOpen ? "bg-arcade-green text-night" : "bg-arcade-yellow text-night",
             )}
           >
-            <span>🆓 Free models</span>
+            <span>{d.setup.models.freeModels}</span>
             <span className="rounded-badge border-2 border-night bg-white px-1 text-[10px] text-night">
               {freeModelCount}
             </span>
@@ -205,12 +218,12 @@ export function ModelSelector({
             className="mb-3 origin-top rounded-card border-3 border-dashed border-ink/40 bg-paper p-2.5"
           >
             <p className="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/45">
-              Free via OpenRouter ·{" "}
+              {d.setup.models.freeVia}
               {backendReady("openrouter", availability) === false
-                ? "needs OPENROUTER_API_KEY"
-                : "$0 to run"}
+                ? d.setup.models.needsOpenRouterKey
+                : d.setup.models.zeroCost}
             </p>
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Free brands">
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label={d.setup.models.freeBrands}>
               {freeBrands.map((b) => renderTab(b))}
             </div>
           </motion.div>
@@ -261,7 +274,9 @@ export function ModelSelector({
                     </span>
                     {picked ? (
                       <Badge color="green" size="sm">
-                        Picked{picked.id !== flagship.id ? `: ${picked.displayName}` : ""}
+                        {picked.id !== flagship.id
+                          ? d.setup.models.pickedWith(picked.displayName)
+                          : d.setup.models.picked}
                       </Badge>
                     ) : null}
                   </span>
@@ -270,7 +285,7 @@ export function ModelSelector({
                   </span>
                 </span>
                 <span className="rounded-badge border-2 border-ink bg-paper px-1.5 py-0.5 text-[10px] font-bold">
-                  {f.models.length} models
+                  {d.setup.models.modelsCount(f.models.length)}
                 </span>
                 <span aria-hidden className="font-bold">
                   {open ? "▴" : "▾"}
@@ -339,7 +354,7 @@ export function ModelSelector({
             <span className="font-heading text-base font-extrabold leading-tight">
               {m.displayName}
             </span>
-            {isSelected ? <Badge color="green" size="sm">Picked</Badge> : null}
+            {isSelected ? <Badge color="green" size="sm">{d.setup.models.picked}</Badge> : null}
           </span>
           <span className="block text-xs font-semibold text-ink/55">
             {m.nickname}
@@ -348,7 +363,7 @@ export function ModelSelector({
           {/* Debate-fit rating bar */}
           <span className="mt-1.5 flex items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-              Debate fit
+              {d.setup.models.debateFit}
             </span>
             <span className="h-2 w-24 overflow-hidden rounded-full border-2 border-ink bg-paper">
               <span
@@ -361,15 +376,15 @@ export function ModelSelector({
 
           {noWeb ? (
             <span className="mt-1 block text-[10px] font-bold text-arcade-orange">
-              Needs the server&apos;s web-search key for Deep Debate
+              {d.setup.models.needsWebSearchKey}
             </span>
           ) : isConflict ? (
             <span className="mt-1 block text-[10px] font-bold text-arcade-orange">
-              Also picked for the other fighter
+              {d.setup.models.alsoPicked}
             </span>
           ) : ready === false ? (
             <span className="mt-1 block text-[10px] font-bold text-arcade-orange">
-              Needs an API key to run
+              {d.setup.models.needsApiKey}
             </span>
           ) : null}
         </span>

@@ -27,6 +27,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Citation } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface CitationViewerValue {
   open: (citation: Citation) => void;
@@ -71,6 +72,7 @@ function CitationModal({
   citation: Citation | null;
   onClose: () => void;
 }) {
+  const d = useT();
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -156,7 +158,7 @@ function CitationModal({
           onClick={onClose}
           role="dialog"
           aria-modal="true"
-          aria-label={`Source ${citation.index}`}
+          aria-label={d.debate.citation.ariaSource(citation.index)}
         >
           <motion.div
             ref={dialogRef}
@@ -172,7 +174,7 @@ function CitationModal({
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[6px] border-3 border-ink bg-night font-mono text-sm font-bold text-arcade-yellow">
                 {citation.index}
               </span>
-              <Badge color="purple">📚 Source</Badge>
+              <Badge color="purple">{d.debate.citation.sourceBadge}</Badge>
             </div>
 
             <p className="font-heading text-lg font-extrabold leading-snug">
@@ -192,7 +194,7 @@ function CitationModal({
 
             <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
               <ArcadeButton variant="neutral-white" onClick={onClose}>
-                Close
+                {d.debate.citation.close}
               </ArcadeButton>
               {isHttp ? (
                 <a
@@ -201,7 +203,7 @@ function CitationModal({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 rounded-btn border-3 border-ink bg-arcade-blue px-4 py-2 font-heading text-sm font-extrabold text-white shadow-hard-sm transition hover:-translate-y-0.5 focus-visible:outline-[3px] focus-visible:outline-offset-2"
                 >
-                  Open source ↗
+                  {d.debate.citation.openSource}
                 </a>
               ) : null}
             </div>

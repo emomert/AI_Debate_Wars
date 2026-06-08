@@ -1,0 +1,144 @@
+/** Setup screen + all selectors + their option labels. */
+export const setup = {
+  // Page heading + section panel titles
+  heading: "Set Up Your Match",
+  subheading: "Choose your fighters and set the rules. The arena handles the rest.",
+  sections: {
+    topic: "1 · Topic",
+    deepDebate: "2 · Deep Debate",
+    fighters: "3 · Choose Your Fighters",
+    rules: "4 · Match Rules",
+    judge: "5 · Judge",
+  },
+  swapFighters: "Swap fighters A and B",
+  fighterA: "Fighter A",
+  fighterB: "Fighter B",
+  backToHome: "← Back to home",
+
+  // Match Rules sub-section labels + lock badges
+  rules: {
+    rounds: "Rounds",
+    tone: "Tone",
+    maxLength: "Max response length",
+    pacing: "Pacing",
+    lockRounds: "🔒 3 in Deep Debate",
+    lockStandard: "🔒 Standard",
+    lockAuto: "🔒 Auto",
+    deepLengthNote:
+      "Deep Debate uses a structured, longer format — length is set for you, and turns take longer.",
+  },
+
+  // Start CTA (mobile + summary card)
+  start: "Start the Match",
+
+  // TopicInput
+  topic: {
+    label: "🎤 Your Topic",
+    placeholder: "e.g. Should universities ban AI tools?",
+    quickExamples: "Quick examples",
+  },
+
+  // RoundSelector option labels/blurbs, keyed by round count
+  rounds: {
+    3: { label: "Quick Match", blurb: "Fast & punchy" },
+    5: { label: "Standard Match", blurb: "Balanced depth" },
+    7: { label: "Deep Match", blurb: "Full tournament" },
+  } as Record<number, { label: string; blurb: string }>,
+
+  // ToneSelector option labels (keyed by id) + custom input
+  tones: {
+    serious: { label: "Serious" },
+    aggressive: { label: "Aggressive" },
+    casual: { label: "Casual" },
+    custom: { label: "Custom" },
+  } as Record<string, { label: string }>,
+  toneCustom: {
+    describe: "Describe the tone",
+    placeholder: "e.g. witty courtroom lawyer, calm professor, sports commentator…",
+    fallbackLabel: "Custom",
+  },
+
+  // ResponseLengthSelector option labels/blurbs (keyed by id)
+  lengths: {
+    short: { label: "Short", blurb: "100–160 words" },
+    medium: { label: "Medium", blurb: "180–300 words" },
+    long: { label: "Long", blurb: "350–600 words" },
+  } as Record<string, { label: string; blurb: string }>,
+
+  // PaceSelector option labels/blurbs (keyed by id)
+  paces: {
+    manual: { label: "Normal", blurb: "Click to reveal each turn" },
+    auto: { label: "Fast", blurb: "Auto-plays every turn" },
+  } as Record<string, { label: string; blurb: string }>,
+
+  // DeepDebateToggle
+  deep: {
+    title: "🌐 Deep Debate — real web research",
+    subtitle: "Fighters search the live web, quote and cite their sources.",
+    enable: "Enable Deep Debate",
+    benefitSearch: "✅ Live web search every turn",
+    benefitCited: "✅ Quoted & cited sources (in a collapsible list)",
+    benefitSlower: "⏱ Longer turns — about 30–90s each",
+    benefitFixed: "🔒 Fixed format: 3 rounds · standard tone · auto length",
+    benefitFees: "💰 Search fees (if any) show up on each turn's cost badge.",
+    needsKey: "⚠️ Server needs a web-search key for these fighters",
+  },
+
+  // JudgeSelector
+  judge: {
+    enableTitle: "⚖️ Bring in a judge?",
+    enableSubtitle: "A judge delivers a final verdict once all rounds finish.",
+    enable: "Enable judge mode",
+    typeLabel: "Judge type",
+    disabledNote: "No judge selected. The debate will end after the final round.",
+    lessNeutral: "Less neutral",
+    warnParticipated:
+      "⚠️ This judge participated in the debate, so the verdict may be less neutral.",
+    warnThirdFighting:
+      "⚠️ This judge is also fighting in the match, so the verdict may be less neutral.",
+    judgeModelLabel: "Judge model",
+    // Judge mode option labels/blurbs (keyed by id)
+    modes: {
+      auto: { label: "Auto Judge", blurb: "Neutral third model picks a winner" },
+      thirdModel: { label: "Pick a Judge", blurb: "Choose a neutral third model" },
+      modelA: { label: "Model A Judges", blurb: "Less neutral — A was in the fight" },
+      modelB: { label: "Model B Judges", blurb: "Less neutral — B was in the fight" },
+    } as Record<string, { label: string; blurb: string }>,
+  },
+
+  // ModelSelector
+  models: {
+    freeModels: "🆓 Free models",
+    freeBrands: "Free brands",
+    ready: "ready",
+    freeVia: "Free via OpenRouter · ",
+    needsOpenRouterKey: "needs OPENROUTER_API_KEY",
+    zeroCost: "$0 to run",
+    picked: "Picked",
+    pickedWith: (name: string) => `Picked: ${name}`,
+    modelsCount: (n: number) => `${n} models`,
+    debateFit: "Debate fit",
+    needsWebSearchKey: "Needs the server's web-search key for Deep Debate",
+    alsoPicked: "Also picked for the other fighter",
+    needsApiKey: "Needs an API key to run",
+  },
+
+  // SetupSummaryCard
+  summary: {
+    title: "🎮 Match Card",
+    topic: "Topic",
+    fighterA: "Fighter A",
+    fighterB: "Fighter B",
+    badgeDebate: "⚔️ Debate",
+    badgeDiscussion: "🧠 Discussion",
+    roundLine: (count: number, label: string) => `${count} · ${label}`,
+    deepTemplate: "🔒 Deep template",
+    deepDebate: "🌐 Deep Debate",
+    fast: "⚡ Fast",
+    normal: "🚶 Normal",
+    judgeOn: "⚖️ Judge on",
+    judgeOff: "No judge",
+    start: "▶ Start the Match",
+    footnote: "Live models · OpenRouter brands are free with a key",
+  },
+};

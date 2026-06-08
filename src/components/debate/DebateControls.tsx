@@ -9,6 +9,7 @@ import { memo } from "react";
 
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import type { AwaitingKind, RunnerPhase } from "@/lib/debate/useDebateRunner";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface DebateControlsProps {
   phase: RunnerPhase;
@@ -33,6 +34,7 @@ function DebateControlsComponent({
   onRetry,
   onNext,
 }: DebateControlsProps) {
+  const d = useT();
   const running = phase === "thinking" || phase === "streaming" || phase === "judging";
 
   return (
@@ -41,39 +43,39 @@ function DebateControlsComponent({
         {phase === "awaiting" ? (
           <>
             <ArcadeButton variant="danger-red" onClick={onStop} leftIcon={<span aria-hidden>⏹</span>}>
-              Stop
+              {d.debate.controls.stop}
             </ArcadeButton>
             <ArcadeButton variant="primary-green" size="lg" onClick={onNext}>
-              {awaitingKind === "verdict" ? "🏆 Reveal the Verdict" : "▶ Next Turn"}
+              {awaitingKind === "verdict" ? d.debate.controls.revealVerdict : d.debate.controls.nextTurn}
             </ArcadeButton>
           </>
         ) : running ? (
           <ArcadeButton variant="danger-red" onClick={onStop} leftIcon={<span aria-hidden>⏹</span>}>
-            Stop Match
+            {d.debate.controls.stopMatch}
           </ArcadeButton>
         ) : phase === "error" ? (
           <>
             <ArcadeButton variant="neutral-white" onClick={onNewSetup}>
-              ⚙️ New Setup
+              {d.debate.controls.newSetup}
             </ArcadeButton>
             <ArcadeButton variant="primary-green" onClick={onRetry} leftIcon={<span aria-hidden>↻</span>}>
-              Retry Turn
+              {d.debate.controls.retryTurn}
             </ArcadeButton>
           </>
         ) : (
           <>
             <ArcadeButton variant="neutral-white" onClick={onNewSetup}>
-              ⚙️ New Setup
+              {d.debate.controls.newSetup}
             </ArcadeButton>
             <ArcadeButton variant="primary-yellow" onClick={onRestart}>
-              🔁 Rematch
+              {d.debate.controls.rematch}
             </ArcadeButton>
             <ArcadeButton
               variant="primary-green"
               onClick={onResults}
               disabled={!hasMessages}
             >
-              📊 See Results
+              {d.debate.controls.seeResults}
             </ArcadeButton>
           </>
         )}

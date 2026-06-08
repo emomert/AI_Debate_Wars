@@ -19,6 +19,8 @@ import {
   type MatchSummary,
 } from "@/lib/supabase/matches";
 import { formatCost } from "@/lib/utils/format";
+import { getServerDictionary } from "@/lib/i18n/server";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export const dynamic = "force-dynamic";
 
@@ -34,18 +36,19 @@ function Notice({ title, body, cta }: { title: string; body: string; cta?: React
   );
 }
 
-function winnerLabel(m: MatchSummary): string {
-  if (m.winner === "modelA") return `${m.model_a} won`;
-  if (m.winner === "modelB") return `${m.model_b} won`;
-  if (m.winner === "tie") return "Draw";
-  if (m.winner === "not_applicable") return "Discussion"; // judged, no winner concept
-  return "No verdict"; // no judge ran
+function winnerLabel(m: MatchSummary, d: Dictionary): string {
+  if (m.winner === "modelA") return d.profile.winner.won(m.model_a);
+  if (m.winner === "modelB") return d.profile.winner.won(m.model_b);
+  if (m.winner === "tie") return d.profile.winner.draw;
+  if (m.winner === "not_applicable") return d.profile.winner.discussion; // judged, no winner concept
+  return d.profile.winner.noVerdict; // no judge ran
 }
 
 export default async function ProfilePage() {
+  const d = await getServerDictionary();
   const supabase = await getSupabaseServerClient();
   if (!supabase) {
-    return <Notice title="Accounts aren't set up yet" body="Match history arrives soon — debates work without an account." />;
+    return <Notice title={d.profile.notices.noAccountsTitle} body={d.profile.notices.noAccountsBody} />;
   }
 
   const {
@@ -54,11 +57,11 @@ export default async function ProfilePage() {
   if (!user) {
     return (
       <Notice
-        title="Sign in to see your profile"
-        body="Your saved matches, history and stats live here once you sign in."
+        title={d.profile.notices.signedOutTitle}
+        body={d.profile.notices.signedOutBody}
         cta={
           <Link href="/login">
-            <ArcadeButton variant="primary-green">Sign in</ArcadeButton>
+            <ArcadeButton variant="primary-green">{d.profile.notices.signIn}</ArcadeButton>
           </Link>
         }
       />
@@ -76,8 +79,8 @@ export default async function ProfilePage() {
     console.error("[profile] failed to load matches:", error.message);
     return (
       <Notice
-        title="Couldn't load your history"
-        body="We couldn't reach your saved matches right now. Please try again in a moment."
+        title={d.profile.notices.loadErrorTitle}
+        body={d.profile.notices.loadErrorBody}
       />
     );
   }
@@ -89,24 +92,23 @@ export default async function ProfilePage() {
   return (
     <GameShell>
       <div className="mb-5">
-        <h1 className="font-display text-4xl tracking-tight sm:text-5xl">Your Arena</h1>
+        <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{d.profile.heading}</h1>
         <p className="mt-1 text-sm text-ink/60">{user.email}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Matches" value={String(stats.total)} accent />
-        <Stat label="Total spent" value={formatCost(stats.totalCost)} />
-        <Stat label="Debates" value={String(stats.debates)} />
-        <Stat label="Discussions" value={String(stats.discussions)} />
+        <Stat label={d.profile.stats.matches} value={String(stats.total)} accent />
+        <Stat label={d.profile.stats.totalSpent} value={formatCost(stats.totalCost)} />
+        <Stat label={d.profile.stats.debates} value={String(stats.debates)} />
+        <Stat label={d.profile.stats.deepDebates} value={String(stats.deep)} />
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Deep Debates" value={String(stats.deep)} />
-        <Stat label="Most used" value={stats.topFighter ?? "—"} />
+      <div className="mt-2">
+        <Stat label={d.profile.stats.mostUsedFighter} value={stats.topFighter ?? "—"} />
       </div>
 
       {topWins.length > 0 ? (
-        <GamePanel title="🏆 Wins by fighter" className="mt-5">
+        <GamePanel title={d.profile.winsByFighter} className="mt-5">
           <ul className="flex flex-wrap gap-2">
             {topWins.map(([name, wins]) => (
               <li key={name}>
@@ -121,17 +123,17 @@ export default async function ProfilePage() {
       <GamePanel
         title={
           stats.total > recent.length
-            ? `📜 Recent matches (${recent.length} of ${stats.total})`
-            : `📜 Match history (${stats.total})`
+            ? d.profile.history.recentTitle(recent.length, stats.total)
+            : d.profile.history.historyTitle(stats.total)
         }
         className="mt-5"
       >
         {recent.length === 0 ? (
           <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-6 text-center text-sm text-ink/60">
-            No matches yet. Run a debate and it&apos;ll show up here.
+            {d.profile.history.empty}
             <div className="mt-4 flex justify-center">
               <Link href="/setup">
-                <ArcadeButton variant="primary-green">⚙️ Set up a match</ArcadeButton>
+                <ArcadeButton variant="primary-green">{d.profile.history.setUpMatch}</ArcadeButton>
               </Link>
             </div>
           </div>
@@ -145,12 +147,16 @@ export default async function ProfilePage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-heading text-sm font-extrabold">{m.topic}</p>
                   <p className="mt-0.5 truncate text-xs text-ink/55">
-                    {m.model_a} vs {m.model_b} · {winnerLabel(m)} · {m.round_count} rounds ·{" "}
-                    {formatCost(Number(m.total_cost))}
+                    {d.profile.history.subLine(
+                      d.profile.history.vs(m.model_a, m.model_b),
+                      winnerLabel(m, d),
+                      m.round_count,
+                      formatCost(Number(m.total_cost)),
+                    )}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
-                  {m.deep_debate ? <Badge color="purple" size="sm">🌐 Deep</Badge> : null}
+                  {m.deep_debate ? <Badge color="purple" size="sm">{d.profile.history.deepBadge}</Badge> : null}
                   <Badge color="white" size="sm">{m.created_at.slice(0, 10)}</Badge>
                   <ReopenButton matchId={m.id} />
                 </div>

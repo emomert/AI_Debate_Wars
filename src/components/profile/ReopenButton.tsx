@@ -14,8 +14,10 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useArena } from "@/lib/state/ArenaContext";
 import { markMatchPersisted } from "@/components/result/MatchSaver";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function ReopenButton({ matchId }: { matchId: string }) {
+  const d = useT();
   const { setSession } = useArena();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -47,7 +49,7 @@ export function ReopenButton({ matchId }: { matchId: string }) {
 
   return (
     <ArcadeButton size="sm" variant="neutral-white" onClick={open} disabled={busy}>
-      {busy ? "Opening…" : "View"}
+      {busy ? d.profile.reopen.opening : d.profile.reopen.view}
     </ArcadeButton>
   );
 }

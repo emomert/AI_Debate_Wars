@@ -12,12 +12,14 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { Badge } from "@/components/game/Badge";
 import { ROUND_OPTIONS } from "@/lib/constants";
 import { formatCost, formatTokens } from "@/lib/utils/format";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface FinalSummaryCardProps {
   session: DebateSession;
 }
 
 export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
+  const d = useT();
   const split = useMemo(() => {
     let a = 0;
     let b = 0;
@@ -45,30 +47,30 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
   const roundLabel = ROUND_OPTIONS.find((r) => r.count === session.roundCount)?.label;
 
   return (
-    <GamePanel title="📊 Match Summary">
+    <GamePanel title={d.result.summary.title}>
       <div className="rounded-card border-3 border-ink bg-paper p-3">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">Topic</p>
+        <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">{d.result.summary.topic}</p>
         <p className="mt-0.5 font-semibold">{session.topic}</p>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         <Badge color={session.mode === "debate" ? "red" : "purple"} size="sm">
-          {session.mode === "debate" ? "⚔️ Debate" : "🧠 Discussion"}
+          {session.mode === "debate" ? d.result.summary.debate : d.result.summary.discussion}
         </Badge>
         <Badge color="white" size="sm">{session.roundCount} · {roundLabel}</Badge>
-        <Badge color="white" size="sm">Tone: {session.tone}</Badge>
-        <Badge color="white" size="sm">{session.messages.length} messages</Badge>
+        <Badge color="white" size="sm">{d.result.summary.tone(session.tone)}</Badge>
+        <Badge color="white" size="sm">{d.result.summary.messages(session.messages.length)}</Badge>
         <Badge color={session.judge.enabled ? "purple" : "white"} size="sm">
-          {session.judge.enabled ? "⚖️ Judged" : "No judge"}
+          {session.judge.enabled ? d.result.summary.judged : d.result.summary.noJudge}
         </Badge>
       </div>
 
       {/* Cost summary */}
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Total cost" value={formatCost(cost.totalCost)} accent />
-        <Stat label="Total tokens" value={formatTokens(cost.totalTokens)} />
-        <Stat label="Input tokens" value={formatTokens(cost.totalInputTokens)} />
-        <Stat label="Output tokens" value={formatTokens(cost.totalOutputTokens)} />
+        <Stat label={d.result.summary.totalCost} value={formatCost(cost.totalCost)} accent />
+        <Stat label={d.result.summary.totalTokens} value={formatTokens(cost.totalTokens)} />
+        <Stat label={d.result.summary.inputTokens} value={formatTokens(cost.totalInputTokens)} />
+        <Stat label={d.result.summary.outputTokens} value={formatTokens(cost.totalOutputTokens)} />
       </div>
 
       {/* Per-fighter (and judge) split — reconciles with the Total above. */}
@@ -92,7 +94,7 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
         {session.verdict ? (
           <div className="rounded-card border-3 border-ink bg-surface p-3">
             <p className="text-[10px] font-bold uppercase tracking-wide text-arcade-purple">
-              ⚖️ Judge
+              {d.result.summary.judge}
             </p>
             <p className="mt-0.5 font-mono text-base font-bold sm:text-lg">{formatCost(judgeCost)}</p>
           </div>
@@ -109,15 +111,15 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
         const pricier = aCheaper ? `B · ${session.modelB.displayName}` : `A · ${session.modelA.displayName}`;
         return (
           <p className="mt-2 text-center text-xs text-ink/60">
-            {cheaper} cost{" "}
-            <span className="font-bold text-arcade-green">{formatCost(diff)}</span> less than{" "}
-            {pricier}.
+            {d.result.summary.cheaperLessPre(cheaper)}
+            <span className="font-bold text-arcade-green">{formatCost(diff)}</span>
+            {d.result.summary.cheaperLessPost(pricier)}
           </p>
         );
       })()}
 
       <p className="mt-3 text-center text-[11px] text-ink/50">
-        {anyEstimated ? "Estimated · " : ""}Pricing is configurable in{" "}
+        {anyEstimated ? d.result.summary.estimatedPrefix : ""}{d.result.summary.pricingNote}{" "}
         <code className="font-mono">lib/cost/pricing.ts</code>
       </p>
     </GamePanel>

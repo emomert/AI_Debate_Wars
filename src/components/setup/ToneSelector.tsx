@@ -9,6 +9,7 @@ import { CUSTOM_TONE_MAX_LENGTH, TONE_OPTIONS } from "@/lib/constants";
 import type { DebateTone } from "@/lib/debate/debateTypes";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface ToneSelectorProps {
   value: DebateTone;
@@ -28,11 +29,12 @@ export function ToneSelector({
   error,
   disabled = false,
 }: ToneSelectorProps) {
+  const d = useT();
   return (
     <div>
       <div
         role="radiogroup"
-        aria-label="Tone"
+        aria-label={d.setup.rules.tone}
         className="grid grid-cols-2 gap-2 sm:grid-cols-4"
       >
         {TONE_OPTIONS.map((opt) => {
@@ -61,7 +63,7 @@ export function ToneSelector({
               )}
             >
               <span aria-hidden>{opt.emoji}</span>
-              <span>{opt.label}</span>
+              <span>{d.setup.tones[opt.id].label}</span>
             </button>
           );
         })}
@@ -72,7 +74,7 @@ export function ToneSelector({
         <div className="mt-3">
           <div className="mb-1 flex items-center justify-between gap-2">
             <label htmlFor="custom-tone" className="text-xs font-bold uppercase tracking-wide text-ink/55">
-              Describe the tone
+              {d.setup.toneCustom.describe}
             </label>
             <span
               className={cn(
@@ -89,7 +91,7 @@ export function ToneSelector({
             value={customTone}
             maxLength={CUSTOM_TONE_MAX_LENGTH + 10}
             onChange={(e) => onCustomToneChange(e.target.value)}
-            placeholder="e.g. witty courtroom lawyer, calm professor, sports commentator…"
+            placeholder={d.setup.toneCustom.placeholder}
             aria-invalid={Boolean(error)}
             className={cn(
               "w-full rounded-btn border-3 bg-surface px-3 py-2 text-sm outline-none",

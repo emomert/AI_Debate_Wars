@@ -10,6 +10,7 @@
 import { Badge } from "@/components/game/Badge";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface DeepDebateToggleProps {
   value: boolean;
@@ -23,6 +24,7 @@ export function DeepDebateToggle({
   onChange,
   fightersEligible,
 }: DeepDebateToggleProps) {
+  const d = useT();
   return (
     <div>
       <div
@@ -33,17 +35,17 @@ export function DeepDebateToggle({
       >
         <div className="min-w-0">
           <p className="font-heading text-base font-extrabold">
-            🌐 Deep Debate — real web research
+            {d.setup.deep.title}
           </p>
           <p className={cn("text-sm", value ? "text-white/80" : "text-ink/60")}>
-            Fighters search the live web, quote and cite their sources.
+            {d.setup.deep.subtitle}
           </p>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={value}
-          aria-label="Enable Deep Debate"
+          aria-label={d.setup.deep.enable}
           onClick={() => {
             playSound(value ? "buttonClick" : "modeSelect");
             onChange(!value);
@@ -64,17 +66,17 @@ export function DeepDebateToggle({
 
       {value ? (
         <div className="mt-3 space-y-2 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-sm">
-          <p className="flex items-center gap-2 text-ink/75">✅ Live web search every turn</p>
-          <p className="flex items-center gap-2 text-ink/75">✅ Quoted &amp; cited sources (in a collapsible list)</p>
-          <p className="flex items-center gap-2 text-ink/75">⏱ Longer turns — about 30–90s each</p>
-          <p className="flex items-center gap-2 text-ink/75">🔒 Fixed format: 3 rounds · standard tone · auto length</p>
+          <p className="flex items-center gap-2 text-ink/75">{d.setup.deep.benefitSearch}</p>
+          <p className="flex items-center gap-2 text-ink/75">{d.setup.deep.benefitCited}</p>
+          <p className="flex items-center gap-2 text-ink/75">{d.setup.deep.benefitSlower}</p>
+          <p className="flex items-center gap-2 text-ink/75">{d.setup.deep.benefitFixed}</p>
           <p className="flex items-center gap-2 font-semibold text-ink/60">
-            💰 Search fees (if any) show up on each turn&apos;s cost badge.
+            {d.setup.deep.benefitFees}
           </p>
           {!fightersEligible ? (
             <p className="mt-1">
               <Badge color="orange" size="sm">
-                ⚠️ Server needs a web-search key for these fighters
+                {d.setup.deep.needsKey}
               </Badge>
             </p>
           ) : null}

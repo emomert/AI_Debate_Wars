@@ -7,6 +7,7 @@
  * later, by the real Phase 2 orchestrator.
  */
 
+import type { Locale } from "@/lib/i18n/config";
 import type {
   DebateMode,
   RoundCount,
@@ -211,14 +212,223 @@ const DISCUSSION_7: RoundPlanEntry[] = [
   },
 ];
 
-const PLANS: Record<DebateMode, Record<RoundCount, RoundPlanEntry[]>> = {
-  debate: { 3: DEBATE_3, 5: DEBATE_5, 7: DEBATE_7 },
-  discussion: { 3: DISCUSSION_3, 5: DISCUSSION_5, 7: DISCUSSION_7 },
+// ── Turkish round plans ────────────────────────────────────────────────────
+// Labels are shown in the UI (round badges) and tasks are injected into the
+// prompt, so a Turkish debate gets Turkish instructions AND Turkish badges.
+
+const DEBATE_3_TR: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "Açılış Argümanları",
+    modelATask: "Konu lehine en güçlü savı sun.",
+    modelBTask: "Konu aleyhine en güçlü savı sun.",
+  },
+  {
+    round: 2,
+    label: "Çürütmeler",
+    modelATask: "Model B'nin açılışına doğrudan yanıt ver.",
+    modelBTask: "Model A'nın açılışına doğrudan yanıt ver.",
+  },
+  {
+    round: 3,
+    label: "Son Savunma",
+    modelATask: "Son savunmanı yap ve en güçlü itirazı yanıtla.",
+    modelBTask: "Son savunmanı yap ve en güçlü itirazı yanıtla.",
+  },
+];
+
+const DEBATE_5_TR: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "Açılış Argümanları",
+    modelATask: "Konu lehine en güçlü savı sun.",
+    modelBTask: "Konu aleyhine en güçlü savı sun.",
+  },
+  {
+    round: 2,
+    label: "Çürütmeler",
+    modelATask: "Model B'nin temel iddiasına meydan oku.",
+    modelBTask: "Model A'nın temel iddiasına meydan oku.",
+  },
+  {
+    round: 3,
+    label: "Karşı Çürütmeler",
+    modelATask: "Konumunu çürütmeye karşı savun.",
+    modelBTask: "Konumunu çürütmeye karşı savun.",
+  },
+  {
+    round: 4,
+    label: "Pratik Örnekler",
+    modelATask: "Tarafını desteklemek için somut örnekler veya sonuçlar kullan.",
+    modelBTask: "Tarafını desteklemek için somut örnekler veya sonuçlar kullan.",
+  },
+  {
+    round: 5,
+    label: "Son Sözler",
+    modelATask: "Tarafının neden daha güçlü olduğuna dair son ve özlü savını sun.",
+    modelBTask: "Tarafının neden daha güçlü olduğuna dair son ve özlü savını sun.",
+  },
+];
+
+const DEBATE_7_TR: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "Açılış Argümanları",
+    modelATask: "Konu lehine en güçlü savı sun.",
+    modelBTask: "Konu aleyhine en güçlü savı sun.",
+  },
+  {
+    round: 2,
+    label: "Çürütmeler",
+    modelATask: "Model B'nin temel iddiasına meydan oku.",
+    modelBTask: "Model A'nın temel iddiasına meydan oku.",
+  },
+  {
+    round: 3,
+    label: "Karşı Çürütmeler",
+    modelATask: "Konumunu çürütmeye karşı savun.",
+    modelBTask: "Konumunu çürütmeye karşı savun.",
+  },
+  {
+    round: 4,
+    label: "Kanıt ve Örnekler",
+    modelATask: "Örnekler, mantık veya kanıt sun.",
+    modelBTask: "Örnekler, mantık veya kanıt sun.",
+  },
+  {
+    round: 5,
+    label: "En Güçlü Noktaya Saldırı",
+    modelATask: "Rakibin yaptığı en güçlü çıkışa saldır.",
+    modelBTask: "Rakibin yaptığı en güçlü çıkışa saldır.",
+  },
+  {
+    round: 6,
+    label: "En Zayıf Noktayı Savun",
+    modelATask: "Tarafının en zayıf noktasını kabul et ve savun.",
+    modelBTask: "Tarafının en zayıf noktasını kabul et ve savun.",
+  },
+  {
+    round: 7,
+    label: "Son Sözler",
+    modelATask: "Savını en güçlü haliyle kapat.",
+    modelBTask: "Savını en güçlü haliyle kapat.",
+  },
+];
+
+const DISCUSSION_3_TR: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "Geliştir ve Eleştir",
+    modelATask: "Fikri geliştir ve daha uygulanabilir hale getir.",
+    modelBTask: "Önemli zayıflıkları, riskleri ve kör noktaları belirle.",
+  },
+  {
+    round: 2,
+    label: "Çözümler ve Stres Testi",
+    modelATask: "Zayıflıklara çözümlerle yanıt ver.",
+    modelBTask: "Bu çözümleri stres testine tabi tut.",
+  },
+  {
+    round: 3,
+    label: "Nihai Sürüm ve Riskler",
+    modelATask: "Geliştirilmiş nihai sürümü sun.",
+    modelBTask: "Son riskleri ve önerileri sun.",
+  },
+];
+
+const DISCUSSION_5_TR: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "İlk Taslak",
+    modelATask: "Fikri geliştir ve netleştir.",
+    modelBTask: "Zayıflıkları ve gizli varsayımları belirle.",
+  },
+  {
+    round: 2,
+    label: "Pazar / Bağlam Uyumu",
+    modelATask: "Bunun hedef bağlamda neden işe yarayabileceğini açıkla.",
+    modelBTask: "Pazar uyumunu ve uygulanabilirliği sorgula.",
+  },
+  {
+    round: 3,
+    label: "Uygulama Planı",
+    modelATask: "Pratik uygulama adımları öner.",
+    modelBTask: "Operasyonel riskleri belirle.",
+  },
+  {
+    round: 4,
+    label: "İyileştirme",
+    modelATask: "Eleştirilere göre iyileştir.",
+    modelBTask: "İyileştirilmiş sürümü stres testine tabi tut.",
+  },
+  {
+    round: 5,
+    label: "Nihai Öneri",
+    modelATask: "Fikrin en iyi sürümünü sun.",
+    modelBTask: "Son riskleri ve mutlaka düzeltilmesi gereken sorunları sun.",
+  },
+];
+
+const DISCUSSION_7_TR: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "İlk Taslak",
+    modelATask: "Fikri geliştir ve netleştir.",
+    modelBTask: "Zayıflıkları ve gizli varsayımları belirle.",
+  },
+  {
+    round: 2,
+    label: "Kullanıcı / Hedef Kitle",
+    modelATask: "Hedef kullanıcıları ve değer önerisini tanımla.",
+    modelBTask: "Kullanıcı ihtiyacını ve ödeme isteğini sorgula.",
+  },
+  {
+    round: 3,
+    label: "Pazar / Bağlam",
+    modelATask: "Pazar fırsatını açıkla.",
+    modelBTask: "Pazar büyüklüğünü ve rekabeti sorgula.",
+  },
+  {
+    round: 4,
+    label: "Ürün / Uygulama",
+    modelATask: "MVP ve uygulama planı öner.",
+    modelBTask: "Teknik ve operasyonel riskleri belirle.",
+  },
+  {
+    round: 5,
+    label: "İş Modeli",
+    modelATask: "Gelir modeli ve büyüme öner.",
+    modelBTask: "Ekonomiyi ve ölçeklenebilirliği sorgula.",
+  },
+  {
+    round: 6,
+    label: "Risk Yanıtı",
+    modelATask: "Önemli risklere yanıt ver.",
+    modelBTask: "Yanıtları stres testine tabi tut.",
+  },
+  {
+    round: 7,
+    label: "Nihai Öneri",
+    modelATask: "En iyi sürümü ve sonraki adımları sun.",
+    modelBTask: "Son riskleri ve karar önerisini sun.",
+  },
+];
+
+const PLANS: Record<Locale, Record<DebateMode, Record<RoundCount, RoundPlanEntry[]>>> = {
+  en: {
+    debate: { 3: DEBATE_3, 5: DEBATE_5, 7: DEBATE_7 },
+    discussion: { 3: DISCUSSION_3, 5: DISCUSSION_5, 7: DISCUSSION_7 },
+  },
+  tr: {
+    debate: { 3: DEBATE_3_TR, 5: DEBATE_5_TR, 7: DEBATE_7_TR },
+    discussion: { 3: DISCUSSION_3_TR, 5: DISCUSSION_5_TR, 7: DISCUSSION_7_TR },
+  },
 };
 
 export function getRoundPlan(
   mode: DebateMode,
   roundCount: RoundCount,
+  language: Locale = "en",
 ): RoundPlanEntry[] {
-  return PLANS[mode][roundCount];
+  return (PLANS[language] ?? PLANS.en)[mode][roundCount];
 }

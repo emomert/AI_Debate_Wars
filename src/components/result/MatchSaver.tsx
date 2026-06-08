@@ -14,6 +14,7 @@ import type { DebateSession } from "@/lib/debate/debateTypes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toMatchRow } from "@/lib/supabase/matches";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 const MAX_ROW_BYTES = 500_000;
 
@@ -30,6 +31,7 @@ export function markMatchPersisted(session: DebateSession): void {
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 export function MatchSaver({ session }: { session: DebateSession }) {
+  const d = useT();
   const supabase = getSupabaseBrowserClient();
   const [userId, setUserId] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
@@ -88,7 +90,7 @@ export function MatchSaver({ session }: { session: DebateSession }) {
   if (state === "saved") {
     return (
       <p className="text-center text-xs font-semibold text-arcade-green">
-        ✓ Saved to your profile
+        {d.result.saver.saved}
       </p>
     );
   }
@@ -99,9 +101,9 @@ export function MatchSaver({ session }: { session: DebateSession }) {
     return (
       <p className="text-center text-xs text-ink/55">
         <Link href={href} className="font-bold underline">
-          Sign in
+          {d.result.saver.signIn}
         </Link>{" "}
-        to save this match to your history.
+        {d.result.saver.signInNudge}
       </p>
     );
   }
@@ -110,10 +112,10 @@ export function MatchSaver({ session }: { session: DebateSession }) {
     <div className="flex justify-center">
       <ArcadeButton variant="neutral-white" size="sm" onClick={save} disabled={state === "saving"}>
         {state === "saving"
-          ? "Saving…"
+          ? d.result.saver.saving
           : state === "error"
-            ? "↻ Couldn't save — retry"
-            : "💾 Save to my history"}
+            ? d.result.saver.retry
+            : d.result.saver.save}
       </ArcadeButton>
     </div>
   );

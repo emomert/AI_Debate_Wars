@@ -17,41 +17,46 @@ import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { renderVerdictBlob } from "@/lib/share/verdictImage";
 import { encodeSharePayload, sharePayloadFromSession } from "@/lib/share/shareLink";
 import { formatCost } from "@/lib/utils/format";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
-function headline(session: DebateSession): string {
+type ShareDict = ReturnType<typeof useT>["result"]["share"];
+
+function headline(session: DebateSession, t: ShareDict): string {
   const v = session.verdict;
   const a = session.modelA.displayName;
   const b = session.modelB.displayName;
-  if (v?.winner === "modelA") return `${a} beat ${b}`;
-  if (v?.winner === "modelB") return `${b} beat ${a}`;
-  if (v?.winner === "tie") return `${a} vs ${b} ended in a draw`;
-  return `${a} vs ${b}`;
+  if (v?.winner === "modelA") return t.beat(a, b);
+  if (v?.winner === "modelB") return t.beat(b, a);
+  if (v?.winner === "tie") return t.drawHeadline(a, b);
+  return t.versus(a, b);
 }
 
 /** Short, tweet-sized text (topic clamped) for the per-platform share links. */
-function buildShareText(session: DebateSession): string {
+function buildShareText(session: DebateSession, t: ShareDict): string {
   const topic = session.topic.length > 90 ? `${session.topic.slice(0, 87)}…` : session.topic;
-  return `${headline(session)} debating “${topic}” on Debator 🏟️`;
+  return t.shareText(headline(session, t), topic);
 }
 
 /** Longer plain-text recap (clipboard fallback). */
-function buildRecap(session: DebateSession): string {
+function buildRecap(session: DebateSession, t: ShareDict): string {
   const v = session.verdict;
   return [
-    `🏟️ Debator — ${headline(session)}`,
-    `Topic: ${session.topic}`,
-    `Mode: ${session.mode} · ${session.roundCount} rounds`,
-    `Fighters: ${session.modelA.displayName} (A) vs ${session.modelB.displayName} (B)`,
+    t.recap.header(headline(session, t)),
+    t.recap.topic(session.topic),
+    t.recap.mode(session.mode, session.roundCount),
+    t.recap.fighters(session.modelA.displayName, session.modelB.displayName),
     // Strip the **bold** markers the reasoning carries (plain-text clipboard).
-    v ? `Verdict: ${v.summary.replace(/\*\*/g, "")}` : `No judge — ended after the final round.`,
-    ...(v?.winnerArgument ? [`Winning argument: ${v.winnerArgument}`] : []),
-    `Total cost: ${formatCost(session.costSummary.totalCost)}`,
+    v ? t.recap.verdict(v.summary.replace(/\*\*/g, "")) : t.recap.noJudge,
+    ...(v?.winnerArgument ? [t.recap.winningArgument(v.winnerArgument)] : []),
+    t.recap.totalCost(formatCost(session.costSummary.totalCost)),
   ].join("\n");
 }
 
 type Flash = "image" | "recap" | "link" | null;
 
 export function SharePanel({ session }: { session: DebateSession }) {
+  const d = useT();
+  const t = d.result.share;
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
   const blobRef = useRef<Blob | null>(null);
@@ -123,8 +128,8 @@ export function SharePanel({ session }: { session: DebateSession }) {
       const file = new File([blob], "debator-verdict.png", { type: "image/png" });
       await navigator.share({
         files: [file],
-        title: "Debator verdict",
-        text: buildShareText(session),
+        title: t.nativeTitle,
+        text: buildShareText(session, t),
         url: shareUrl(),
       });
     } catch {
@@ -134,7 +139,7 @@ export function SharePanel({ session }: { session: DebateSession }) {
 
   const copyRecap = async () => {
     try {
-      await navigator.clipboard.writeText(buildRecap(session));
+      await navigator.clipboard.writeText(buildRecap(session, t));
       ping("recap");
     } catch {
       /* ignore */
@@ -156,7 +161,7 @@ export function SharePanel({ session }: { session: DebateSession }) {
 
   const openShare = (kind: "x" | "whatsapp" | "reddit" | "linkedin") => {
     const url = shareUrl();
-    const text = buildShareText(session);
+    const text = buildShareText(session, t);
     const e = encodeURIComponent;
     const targets: Record<typeof kind, string> = {
       x: `https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}`,
@@ -173,24 +178,22 @@ export function SharePanel({ session }: { session: DebateSession }) {
     Boolean(navigator.clipboard?.write);
 
   return (
-    <GamePanel title="📣 Share the Match" padding="md">
+    <GamePanel title={t.title} padding="md">
       <p className="text-sm text-ink/65">
-        Share the verdict as an image — download it, copy it, or post it. Links
-        carry a short recap to the arena.
+        {t.blurb}
       </p>
 
       {/* Verdict image preview */}
       <div className="mt-4 overflow-hidden rounded-card border-4 border-ink bg-paper shadow-hard-sm">
         {imgUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imgUrl} alt="Verdict card preview" className="block w-full" />
+          <img src={imgUrl} alt={t.previewAlt} className="block w-full" />
         ) : imgError ? (
           <p className="p-6 text-center text-sm text-ink/60">
-            Couldn&apos;t render the image here — you can still copy the recap or
-            share a link below.
+            {t.renderError}
           </p>
         ) : (
-          <p className="p-6 text-center text-sm text-ink/55">🎨 Drawing your verdict card…</p>
+          <p className="p-6 text-center text-sm text-ink/55">{t.drawing}</p>
         )}
       </div>
 
@@ -199,15 +202,15 @@ export function SharePanel({ session }: { session: DebateSession }) {
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {canShareFiles ? (
             <ArcadeButton variant="primary-green" onClick={shareNative}>
-              📤 Share image
+              {t.shareImage}
             </ArcadeButton>
           ) : null}
           <ArcadeButton variant="primary-yellow" onClick={download}>
-            📥 Download
+            {t.download}
           </ArcadeButton>
           {supportsCopyImage ? (
             <ArcadeButton variant="neutral-white" onClick={copyImage}>
-              {flash === "image" ? "✅ Copied!" : "🖼️ Copy image"}
+              {flash === "image" ? t.copied : t.copyImage}
             </ArcadeButton>
           ) : null}
         </div>
@@ -216,28 +219,27 @@ export function SharePanel({ session }: { session: DebateSession }) {
       {/* Social + link */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("x")}>
-          𝕏 Post
+          {t.post}
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("whatsapp")}>
-          💬 WhatsApp
+          {t.whatsapp}
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("reddit")}>
-          👽 Reddit
+          {t.reddit}
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("linkedin")}>
-          in LinkedIn
+          {t.linkedin}
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={copyLink}>
-          {flash === "link" ? "✅ Link copied" : "🔗 Copy link"}
+          {flash === "link" ? t.linkCopied : t.copyLink}
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={copyRecap}>
-          {flash === "recap" ? "✅ Copied!" : "📋 Copy recap"}
+          {flash === "recap" ? t.copied : t.copyRecap}
         </ArcadeButton>
       </div>
 
       <p className="mt-3 text-[11px] text-ink/45">
-        Tip: on phones, “Share image” posts the picture straight to any app. On
-        desktop, download or copy it, then attach it to your post.
+        {t.tip}
       </p>
     </GamePanel>
   );

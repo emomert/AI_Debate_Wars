@@ -22,7 +22,10 @@ const C = {
 };
 
 const W = 1200;
-const H = 675;
+// The image height is computed per-verdict (below) so the FULL winning argument
+// and reasoning always fit; this is just the floor so a short/no-judge verdict
+// still renders as a proper card-shaped image.
+const MIN_H = 540;
 const SCALE = 2; // export at 2x for crisp social images
 
 const FONT_DISPLAY = "'Lilita One', system-ui, sans-serif";
@@ -128,10 +131,95 @@ export async function renderVerdictImage(
   await ensureFonts();
 
   const canvas = document.createElement("canvas");
-  canvas.width = W * SCALE;
-  canvas.height = H * SCALE;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context unavailable");
+  ctx.textBaseline = "alphabetic";
+
+  const v = session.verdict;
+
+  // ---- Card geometry (CSS px; the bitmap is scaled up at the very end). ----
+  const cx = 48;
+  const cy = 44;
+  const cw = W - 96;
+  const padX = cx + 48;
+  const innerW = cw - 96;
+  const panelPad = 22;
+  const panelTextW = innerW - panelPad * 2;
+
+  // ---- MEASURE PASS ---------------------------------------------------------
+  // Wrap every text block up-front (at scale 1) so the canvas can be sized to
+  // fit the FULL winning argument + reasoning — the substance the big verdict
+  // card shows. Only the strongest/weakest grid is intentionally left out.
+  ctx.font = `800 52px ${FONT_HEADING}`;
+  const winLines = wrapLines(ctx, winnerLine(session), innerW, 2);
+
+  ctx.font = `700 24px ${FONT_BODY}`;
+  const argLines = v?.winnerArgument
+    ? wrapLines(ctx, v.winnerArgument, innerW, 4)
+    : [];
+
+  ctx.font = `500 23px ${FONT_BODY}`;
+  const reasonLines = v?.summary
+    ? wrapLines(ctx, v.summary.replace(/\*\*/g, ""), panelTextW, 9)
+    : [];
+
+  ctx.font = `500 24px ${FONT_BODY}`;
+  const topicLines = wrapLines(ctx, session.topic, innerW, 2);
+
+  // ---- VERTICAL LAYOUT: walk top-down, recording each block's top edge so the
+  //      draw pass paints at the same coordinates and the card grows to fit. ----
+  const winLH = 54;
+  const argLH = 32;
+  const reasonLH = 30;
+  const topicLH = 32;
+  const scoreBoxH = 96;
+
+  let y = cy + 36;
+
+  const headerTop = y;
+  y += 56 + 30; // VERDICT pill row + gap
+
+  const winTop = y;
+  y += winLines.length * winLH + 6;
+
+  let argTop = 0;
+  if (argLines.length) {
+    y += 12;
+    argTop = y;
+    y += 24 /* label */ + argLines.length * argLH + 4;
+  }
+
+  let panelTop = 0;
+  let panelH = 0;
+  if (reasonLines.length) {
+    y += 16;
+    panelTop = y;
+    panelH = 18 + 20 /* label */ + 12 + reasonLines.length * reasonLH + 18;
+    y += panelH;
+  }
+
+  y += 26;
+  const scoreTop = y;
+  y += scoreBoxH;
+
+  let topicTop = 0;
+  if (topicLines.length) {
+    y += 26;
+    topicTop = y;
+    y += 22 /* label */ + topicLines.length * topicLH;
+  }
+
+  y += 32;
+  const footerBaseline = y;
+  y += 20;
+
+  // ---- Final card + canvas height derived from the accumulated content. ----
+  const ch = Math.max(MIN_H - cy - 30, y - cy);
+  const H = cy + ch + 30; // room for the offset shadow + bottom margin
+
+  // ---- SIZE + SCALE (resetting the context) then DRAW. ----------------------
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
   ctx.scale(SCALE, SCALE);
   ctx.textBaseline = "alphabetic";
 
@@ -139,19 +227,15 @@ export async function renderVerdictImage(
   ctx.fillStyle = C.paper;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = C.dot;
-  for (let y = 24; y < H; y += 28) {
-    for (let x = 24; x < W; x += 28) {
+  for (let yy = 24; yy < H; yy += 28) {
+    for (let xx = 24; xx < W; xx += 28) {
       ctx.beginPath();
-      ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+      ctx.arc(xx, yy, 1.5, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
   // Card with chunky offset shadow + thick border.
-  const cx = 48;
-  const cy = 44;
-  const cw = W - 96;
-  const ch = H - 92;
   ctx.fillStyle = C.ink;
   roundRect(ctx, cx + 12, cy + 14, cw, ch, 28);
   ctx.fill();
@@ -163,71 +247,68 @@ export async function renderVerdictImage(
   roundRect(ctx, cx, cy, cw, ch, 28);
   ctx.stroke();
 
-  const padX = cx + 48;
-  const innerW = cw - 96;
-
   // Header: VERDICT pill (left) + DEBATOR wordmark (right).
-  const pillY = cy + 40;
-  ctx.font = `400 38px ${FONT_DISPLAY}`;
+  ctx.font = `400 36px ${FONT_DISPLAY}`;
   const pillLabel = "🏆 VERDICT";
-  const pillTextW = ctx.measureText(pillLabel).width;
-  const pillW = pillTextW + 44;
-  const pillH = 60;
+  const pillW = ctx.measureText(pillLabel).width + 44;
+  const pillH = 56;
   ctx.fillStyle = C.yellow;
-  roundRect(ctx, padX, pillY, pillW, pillH, 14);
+  roundRect(ctx, padX, headerTop, pillW, pillH, 14);
   ctx.fill();
   ctx.lineWidth = 5;
   ctx.strokeStyle = C.ink;
-  roundRect(ctx, padX, pillY, pillW, pillH, 14);
+  roundRect(ctx, padX, headerTop, pillW, pillH, 14);
   ctx.stroke();
   ctx.fillStyle = C.ink;
   ctx.textAlign = "left";
-  ctx.fillText(pillLabel, padX + 22, pillY + 42);
+  ctx.fillText(pillLabel, padX + 22, headerTop + 39);
 
-  ctx.font = `400 34px ${FONT_DISPLAY}`;
+  ctx.font = `400 32px ${FONT_DISPLAY}`;
   ctx.fillStyle = C.ink;
   ctx.textAlign = "right";
-  ctx.fillText("DEBATOR", padX + innerW, pillY + 40);
+  ctx.fillText("DEBATOR", padX + innerW, headerTop + 28);
   ctx.font = `500 16px ${FONT_BODY}`;
   ctx.fillStyle = "rgba(5,5,5,0.55)";
-  ctx.fillText("AI vs AI", padX + innerW, pillY + 60);
+  ctx.fillText("AI vs AI", padX + innerW, headerTop + 50);
 
-  // Winner headline (one line).
+  // Winner headline (up to 2 lines).
   ctx.textAlign = "left";
   ctx.fillStyle = C.ink;
-  ctx.font = `800 50px ${FONT_HEADING}`;
-  const winY = pillY + pillH + 70;
-  ctx.fillText(wrapLines(ctx, winnerLine(session), innerW, 1)[0] ?? "", padX, winY);
-  let cursorY = winY;
+  ctx.font = `800 52px ${FONT_HEADING}`;
+  winLines.forEach((line, i) => ctx.fillText(line, padX, winTop + 42 + i * winLH));
 
-  const v = session.verdict;
-  // The winning argument (up to 2 lines).
-  let argLineCount = 0;
-  if (v?.winnerArgument) {
-    cursorY += 34;
-    ctx.font = `700 22px ${FONT_BODY}`;
+  // Winning argument — the full one-sentence punchline (up to 4 lines).
+  if (argLines.length) {
+    ctx.font = `700 14px ${FONT_BODY}`;
+    ctx.fillStyle = "rgba(5,5,5,0.5)";
+    ctx.fillText("💥 WINNING ARGUMENT", padX, argTop + 14);
+    ctx.font = `700 24px ${FONT_BODY}`;
     ctx.fillStyle = C.ink;
-    const aLines = wrapLines(ctx, `💥 ${v.winnerArgument}`, innerW, 2);
-    argLineCount = aLines.length;
-    aLines.forEach((line, i) => ctx.fillText(line, padX, cursorY + i * 28));
-    cursorY += (aLines.length - 1) * 28;
+    argLines.forEach((line, i) => ctx.fillText(line, padX, argTop + 48 + i * argLH));
   }
-  // Why the judge decided (strip ** — canvas has no bold run). Cap at 2 lines
-  // when the argument already took 2, so the lower content can't crowd the
-  // fixed footer; otherwise up to 3.
-  if (v?.summary) {
-    cursorY += 34;
-    ctx.font = `500 22px ${FONT_BODY}`;
-    ctx.fillStyle = "rgba(5,5,5,0.72)";
-    const maxReason = argLineCount >= 2 ? 2 : 3;
-    const rLines = wrapLines(ctx, v.summary.replace(/\*\*/g, ""), innerW, maxReason);
-    rLines.forEach((line, i) => ctx.fillText(line, padX, cursorY + i * 30));
-    cursorY += (rLines.length - 1) * 30;
+
+  // "Why this verdict" panel — label + the FULL reasoning, in a surface box
+  // (mirrors the big verdict card; ** bold markers stripped — canvas has no runs).
+  if (reasonLines.length) {
+    ctx.fillStyle = "#f4f4ef";
+    roundRect(ctx, padX, panelTop, innerW, panelH, 16);
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = C.ink;
+    roundRect(ctx, padX, panelTop, innerW, panelH, 16);
+    ctx.stroke();
+    ctx.textAlign = "left";
+    ctx.font = `700 14px ${FONT_BODY}`;
+    ctx.fillStyle = "rgba(5,5,5,0.5)";
+    ctx.fillText("⚖️ WHY THIS VERDICT", padX + panelPad, panelTop + 32);
+    ctx.font = `500 23px ${FONT_BODY}`;
+    ctx.fillStyle = "rgba(5,5,5,0.82)";
+    reasonLines.forEach((line, i) =>
+      ctx.fillText(line, padX + panelPad, panelTop + 68 + i * reasonLH),
+    );
   }
 
   // Fighter score boxes.
-  const boxY = cursorY + 36;
-  const boxH = 96;
   const gap = 24;
   const boxW = (innerW - gap) / 2;
   const drawFighter = (
@@ -238,65 +319,58 @@ export async function renderVerdictImage(
     score?: number,
   ) => {
     ctx.fillStyle = "#fafafa";
-    roundRect(ctx, x, boxY, boxW, boxH, 16);
+    roundRect(ctx, x, scoreTop, boxW, scoreBoxH, 16);
     ctx.fill();
     ctx.lineWidth = 4;
     ctx.strokeStyle = C.ink;
-    roundRect(ctx, x, boxY, boxW, boxH, 16);
+    roundRect(ctx, x, scoreTop, boxW, scoreBoxH, 16);
     ctx.stroke();
     // accent bar
     ctx.fillStyle = accent;
-    roundRect(ctx, x + 6, boxY + 6, 10, boxH - 12, 5);
+    roundRect(ctx, x + 6, scoreTop + 6, 10, scoreBoxH - 12, 5);
     ctx.fill();
     ctx.textAlign = "left";
     ctx.font = `700 18px ${FONT_BODY}`;
     ctx.fillStyle = accent;
-    ctx.fillText(tag, x + 30, boxY + 34);
+    ctx.fillText(tag, x + 30, scoreTop + 34);
     ctx.font = `800 26px ${FONT_HEADING}`;
     ctx.fillStyle = C.ink;
     const nameLines = wrapLines(ctx, name, boxW - (score !== undefined ? 120 : 50), 1);
-    ctx.fillText(nameLines[0] ?? name, x + 30, boxY + 68);
+    ctx.fillText(nameLines[0] ?? name, x + 30, scoreTop + 68);
     if (score !== undefined) {
       ctx.font = `400 44px ${FONT_DISPLAY}`;
       ctx.fillStyle = accent;
       ctx.textAlign = "right";
-      ctx.fillText(String(score), x + boxW - 24, boxY + 64);
+      ctx.fillText(String(score), x + boxW - 24, scoreTop + 64);
     }
   };
-  drawFighter(padX, C.blue, "A", session.modelA.displayName, session.verdict?.scoreModelA);
-  drawFighter(
-    padX + boxW + gap,
-    C.red,
-    "B",
-    session.modelB.displayName,
-    session.verdict?.scoreModelB,
-  );
+  drawFighter(padX, C.blue, "A", session.modelA.displayName, v?.scoreModelA);
+  drawFighter(padX + boxW + gap, C.red, "B", session.modelB.displayName, v?.scoreModelB);
 
   // Topic line.
-  ctx.textAlign = "left";
-  ctx.font = `700 14px ${FONT_BODY}`;
-  ctx.fillStyle = "rgba(5,5,5,0.45)";
-  const topicLabelY = boxY + boxH + 34;
-  ctx.fillText("TOPIC", padX, topicLabelY);
-  ctx.font = `500 24px ${FONT_BODY}`;
-  ctx.fillStyle = C.ink;
-  const topicLines = wrapLines(ctx, session.topic, innerW, 1);
-  topicLines.forEach((line, i) => ctx.fillText(line, padX, topicLabelY + 32 + i * 32));
+  if (topicLines.length) {
+    ctx.textAlign = "left";
+    ctx.font = `700 14px ${FONT_BODY}`;
+    ctx.fillStyle = "rgba(5,5,5,0.45)";
+    ctx.fillText("TOPIC", padX, topicTop + 12);
+    ctx.font = `500 24px ${FONT_BODY}`;
+    ctx.fillStyle = C.ink;
+    topicLines.forEach((line, i) => ctx.fillText(line, padX, topicTop + 42 + i * topicLH));
+  }
 
   // Footer strip: judge (left) + meta/cost (right).
-  const footY = cy + ch - 30;
   ctx.font = `500 20px ${FONT_BODY}`;
   ctx.fillStyle = "rgba(5,5,5,0.6)";
   ctx.textAlign = "left";
-  if (session.verdict) {
-    const judge = getModelById(session.verdict.judgeModelId)?.displayName ?? "Judge";
-    ctx.fillText(`⚖️ Judge: ${judge}`, padX, footY);
+  if (v) {
+    const judge = getModelById(v.judgeModelId)?.displayName ?? "Judge";
+    ctx.fillText(`⚖️ Judge: ${judge}`, padX, footerBaseline);
   } else {
-    ctx.fillText("No judge", padX, footY);
+    ctx.fillText("No judge", padX, footerBaseline);
   }
   ctx.textAlign = "right";
   const meta = `${session.roundCount} rounds · ${session.mode} · ${formatCost(session.costSummary.totalCost)}`;
-  ctx.fillText(meta, padX + innerW, footY);
+  ctx.fillText(meta, padX + innerW, footerBaseline);
 
   return canvas;
 }

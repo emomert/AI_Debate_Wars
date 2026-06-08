@@ -12,6 +12,7 @@ import type { ModelColor, SelectedModel, Stance } from "@/lib/debate/debateTypes
 import { getModelById } from "@/lib/models/modelRegistry";
 import { Badge } from "@/components/game/Badge";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export type ModelCardStatus =
   | "idle"
@@ -43,15 +44,15 @@ const ACCENT_TEXT: Record<ModelColor, string> = {
   purple: "text-arcade-purple",
 };
 
-const STATUS_BADGE: Record<
+const STATUS_COLOR: Record<
   ModelCardStatus,
-  { label: string; color: "white" | "yellow" | "green" | "red" | "blue" }
+  "white" | "yellow" | "green" | "red" | "blue"
 > = {
-  idle: { label: "Ready", color: "white" },
-  thinking: { label: "Thinking…", color: "yellow" },
-  speaking: { label: "Speaking", color: "green" },
-  finished: { label: "Done", color: "blue" },
-  error: { label: "Error", color: "red" },
+  idle: "white",
+  thinking: "yellow",
+  speaking: "green",
+  finished: "blue",
+  error: "red",
 };
 
 function AIModelCardComponent({
@@ -62,12 +63,13 @@ function AIModelCardComponent({
   status,
   className,
 }: AIModelCardProps) {
+  const d = useT();
   const entry = getModelById(model.modelId);
   const avatar = entry?.avatar ?? "🤖";
   const color = model.color;
   const speaking = status === "speaking";
   const thinking = status === "thinking";
-  const badge = STATUS_BADGE[status];
+  const badge = { label: d.debate.card.status[status], color: STATUS_COLOR[status] };
 
   return (
     <motion.div
@@ -137,7 +139,7 @@ function AIModelCardComponent({
         </Badge>
         {stance ? (
           <Badge color={stance === "pro" ? "blue" : "red"} size="sm">
-            {stance === "pro" ? "PRO" : "AGAINST"}
+            {stance === "pro" ? d.debate.card.pro : d.debate.card.against}
           </Badge>
         ) : null}
       </div>

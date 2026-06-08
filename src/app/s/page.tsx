@@ -18,6 +18,7 @@ import {
   shareHeadline,
   type SharePayload,
 } from "@/lib/share/shareLink";
+import { getServerDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +44,15 @@ export async function generateMetadata({
   const origin = await originFromHeaders();
   const ogUrl = `${origin}/api/og${code ? `?d=${code}` : ""}`;
 
-  const title = payload ? `${shareHeadline(payload)} · Debator` : "Debator — AI vs AI";
+  const dict = await getServerDictionary();
+  const title = payload
+    ? `${shareHeadline(payload)}${dict.result.sharePage.metaTitleSuffix}`
+    : dict.result.sharePage.metaTitleFallback;
   const description =
-    payload?.s ?? (payload ? `“${payload.t}” — settled in the arena.` : "Make AIs fight your ideas.");
+    payload?.s ??
+    (payload
+      ? dict.result.sharePage.metaDescription(payload.t)
+      : dict.result.sharePage.metaDescriptionFallback);
 
   return {
     title,
@@ -64,6 +71,7 @@ export async function generateMetadata({
 export default async function SharePage({ searchParams }: { searchParams: SearchParams }) {
   const { d } = await searchParams;
   const p: SharePayload | null = d ? decodeSharePayload(d) : null;
+  const dict = await getServerDictionary();
 
   return (
     <GameShell>
@@ -71,8 +79,8 @@ export default async function SharePage({ searchParams }: { searchParams: Search
         {p ? (
           <GamePanel className="overflow-hidden">
             <div className="flex items-center justify-between gap-2">
-              <Badge color="yellow">🏆 VERDICT</Badge>
-              <Badge color="white">AI vs AI</Badge>
+              <Badge color="yellow">{dict.result.sharePage.verdictBadge}</Badge>
+              <Badge color="white">{dict.result.sharePage.aiVsAi}</Badge>
             </div>
 
             <h1 className="mt-4 font-heading text-2xl font-extrabold sm:text-3xl">
@@ -80,7 +88,7 @@ export default async function SharePage({ searchParams }: { searchParams: Search
             </h1>
             {p.wa ? (
               <p className="mt-1 text-sm text-ink/80 sm:text-base">
-                <span className="font-bold">💥 Winning argument: </span>
+                <span className="font-bold">{dict.result.sharePage.winningArgument}</span>
                 {p.wa}
               </p>
             ) : null}
@@ -104,25 +112,25 @@ export default async function SharePage({ searchParams }: { searchParams: Search
             ) : null}
 
             <div className="mt-4 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">Topic</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">{dict.result.sharePage.topic}</p>
               <p className="mt-0.5 font-semibold">{p.t}</p>
             </div>
           </GamePanel>
         ) : (
           <GamePanel className="text-center">
-            <h1 className="font-display text-3xl tracking-tight">Debator</h1>
+            <h1 className="font-display text-3xl tracking-tight">{dict.result.sharePage.missingTitle}</h1>
             <p className="mt-2 text-sm text-ink/60">
-              This share link is missing or invalid — but you can start your own match.
+              {dict.result.sharePage.missingBody}
             </p>
           </GamePanel>
         )}
 
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           <Link href="/setup">
-            <ArcadeButton variant="primary-green" size="lg">⚙️ Run your own debate</ArcadeButton>
+            <ArcadeButton variant="primary-green" size="lg">{dict.result.sharePage.runOwn}</ArcadeButton>
           </Link>
           <Link href="/">
-            <ArcadeButton variant="neutral-white" size="lg">⌂ Home</ArcadeButton>
+            <ArcadeButton variant="neutral-white" size="lg">{dict.result.sharePage.home}</ArcadeButton>
           </Link>
         </div>
       </div>

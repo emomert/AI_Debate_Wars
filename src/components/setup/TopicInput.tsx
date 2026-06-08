@@ -5,8 +5,9 @@
  * count, and an inline error state.
  */
 
-import { SAMPLE_TOPICS, TOPIC_MAX_LENGTH } from "@/lib/constants";
+import { getSampleTopics, TOPIC_MAX_LENGTH } from "@/lib/constants";
 import { cn } from "@/lib/utils/cn";
+import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 
 interface TopicInputProps {
   value: string;
@@ -15,11 +16,14 @@ interface TopicInputProps {
 }
 
 export function TopicInput({ value, onChange, error }: TopicInputProps) {
+  const d = useT();
+  const { locale } = useLocale();
+  const sampleTopics = getSampleTopics(locale);
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <label htmlFor="topic" className="font-heading text-lg font-extrabold">
-          🎤 Your Topic
+          {d.setup.topic.label}
         </label>
         <span
           className={cn(
@@ -37,7 +41,7 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
         onChange={(e) => onChange(e.target.value)}
         rows={3}
         maxLength={TOPIC_MAX_LENGTH + 40}
-        placeholder="e.g. Should universities ban AI tools?"
+        placeholder={d.setup.topic.placeholder}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? "topic-error" : undefined}
         className={cn(
@@ -55,10 +59,10 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
 
       <div className="mt-3">
         <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink/50">
-          Quick examples
+          {d.setup.topic.quickExamples}
         </p>
         <div className="flex flex-wrap gap-2">
-          {SAMPLE_TOPICS.map((topic) => (
+          {sampleTopics.map((topic) => (
             <button
               key={topic}
               type="button"

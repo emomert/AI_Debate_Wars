@@ -24,6 +24,7 @@ import { playSound, playVerdictRoll, stopDrumRoll } from "@/lib/audio/soundManag
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { ModelSelector } from "@/components/setup/ModelSelector";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface RejudgePanelProps {
   session: DebateSession;
@@ -33,6 +34,7 @@ interface RejudgePanelProps {
 }
 
 export function RejudgePanel({ session, availability, onSession }: RejudgePanelProps) {
+  const d = useT();
   const hasVerdict = Boolean(session.verdict);
   const [open, setOpen] = useState(false);
   // Start with NO selection so "Run the new verdict" can't immediately re-bill
@@ -108,12 +110,12 @@ export function RejudgePanel({ session, availability, onSession }: RejudgePanelP
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="font-heading text-base font-extrabold">
-            {hasVerdict ? "⚖️ Want a second opinion?" : "⚖️ Add a judge after the fact"}
+            {hasVerdict ? d.result.rejudge.secondOpinionTitle : d.result.rejudge.addJudgeTitle}
           </p>
           <p className="mt-0.5 text-sm text-ink/60">
             {hasVerdict
-              ? "Hand the same transcript to a different judge for a fresh verdict."
-              : "The match ran without a judge — pick one now to score the finished debate."}
+              ? d.result.rejudge.secondOpinionBody
+              : d.result.rejudge.addJudgeBody}
           </p>
         </div>
         <ArcadeButton
@@ -121,14 +123,14 @@ export function RejudgePanel({ session, availability, onSession }: RejudgePanelP
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
         >
-          {open ? "▴ Close" : hasVerdict ? "🔁 Change the judge" : "⚖️ Pick a judge"}
+          {open ? d.result.rejudge.close : hasVerdict ? d.result.rejudge.changeJudge : d.result.rejudge.pickJudge}
         </ArcadeButton>
       </div>
 
       {open ? (
         <div className="mt-4 space-y-3">
           <ModelSelector
-            label="New judge"
+            label={d.result.rejudge.newJudge}
             accent="purple"
             selectedId={judgeId}
             onSelect={(entry) => setJudgeId(entry.id)}
@@ -137,8 +139,7 @@ export function RejudgePanel({ session, availability, onSession }: RejudgePanelP
 
           {judgeIsFighter ? (
             <p className="rounded-card border-3 border-arcade-orange bg-arcade-orange/15 p-3 text-sm font-semibold text-ink">
-              ⚠️ This judge fought in the match, so the verdict may be less
-              neutral.
+              {d.result.rejudge.fighterWarning}
             </p>
           ) : null}
 
@@ -159,11 +160,10 @@ export function RejudgePanel({ session, availability, onSession }: RejudgePanelP
               disabled={judgeId === "" || busy}
               onClick={() => void rejudge(getModelById(judgeId) ?? null)}
             >
-              {busy ? "⚖️ The judge is deliberating…" : "🏆 Run the new verdict"}
+              {busy ? d.result.rejudge.deliberating : d.result.rejudge.runVerdict}
             </ArcadeButton>
             <p className="text-xs text-ink/55">
-              Runs one fresh judge turn — billed like any verdict. The previous
-              verdict stays counted in the match cost.
+              {d.result.rejudge.billingNote}
             </p>
           </div>
         </div>

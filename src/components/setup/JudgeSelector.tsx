@@ -14,6 +14,7 @@ import { ModelSelector } from "@/components/setup/ModelSelector";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface JudgeSelectorProps {
   value: JudgeConfig;
@@ -29,6 +30,7 @@ export function JudgeSelector({
   fighterModelIds = [],
   availability,
 }: JudgeSelectorProps) {
+  const d = useT();
   const setEnabled = (enabled: boolean) => {
     playSound("buttonClick");
     onChange(
@@ -63,16 +65,16 @@ export function JudgeSelector({
       {/* Enable / disable toggle */}
       <div className="flex items-center justify-between gap-3 rounded-card border-4 border-ink bg-surface p-3 shadow-hard-sm">
         <div>
-          <p className="font-heading text-base font-extrabold">⚖️ Bring in a judge?</p>
+          <p className="font-heading text-base font-extrabold">{d.setup.judge.enableTitle}</p>
           <p className="text-sm text-ink/60">
-            A judge delivers a final verdict once all rounds finish.
+            {d.setup.judge.enableSubtitle}
           </p>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={value.enabled}
-          aria-label="Enable judge mode"
+          aria-label={d.setup.judge.enable}
           onClick={() => setEnabled(!value.enabled)}
           className={cn(
             "relative h-9 w-16 shrink-0 rounded-full border-3 border-ink transition",
@@ -90,17 +92,18 @@ export function JudgeSelector({
 
       {!value.enabled ? (
         <p className="mt-3 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-sm text-ink/65">
-          No judge selected. The debate will end after the final round.
+          {d.setup.judge.disabledNote}
         </p>
       ) : (
         <div className="mt-3 space-y-3">
           <div
             role="radiogroup"
-            aria-label="Judge type"
+            aria-label={d.setup.judge.typeLabel}
             className="grid grid-cols-1 gap-2 sm:grid-cols-2"
           >
             {JUDGE_MODE_OPTIONS.map((opt) => {
               const selected = value.mode === opt.id;
+              const copy = d.setup.judge.modes[opt.id];
               return (
                 <button
                   key={opt.id}
@@ -118,10 +121,10 @@ export function JudgeSelector({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-heading text-sm font-extrabold">
-                      {opt.label}
+                      {copy.label}
                     </span>
                     {opt.warns ? (
-                      <Badge color="orange" size="sm">Less neutral</Badge>
+                      <Badge color="orange" size="sm">{d.setup.judge.lessNeutral}</Badge>
                     ) : null}
                   </div>
                   <p
@@ -130,7 +133,7 @@ export function JudgeSelector({
                       selected ? "text-white/80" : "text-ink/60",
                     )}
                   >
-                    {opt.blurb}
+                    {copy.blurb}
                   </p>
                 </button>
               );
@@ -139,15 +142,14 @@ export function JudgeSelector({
 
           {warns ? (
             <p className="rounded-card border-3 border-arcade-orange bg-arcade-orange/15 p-3 text-sm font-semibold text-ink">
-              ⚠️ This judge participated in the debate, so the verdict may be
-              less neutral.
+              {d.setup.judge.warnParticipated}
             </p>
           ) : null}
 
           {value.mode === "thirdModel" ? (
             <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-3">
               <ModelSelector
-                label="Judge model"
+                label={d.setup.judge.judgeModelLabel}
                 accent="purple"
                 selectedId={value.model?.modelId ?? ""}
                 onSelect={setThirdModel}
@@ -155,8 +157,7 @@ export function JudgeSelector({
               />
               {thirdMatchesFighter ? (
                 <p className="mt-3 rounded-card border-3 border-arcade-orange bg-arcade-orange/15 p-3 text-sm font-semibold text-ink">
-                  ⚠️ This judge is also fighting in the match, so the verdict may
-                  be less neutral.
+                  {d.setup.judge.warnThirdFighting}
                 </p>
               ) : null}
             </div>

@@ -17,9 +17,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useArena } from "@/lib/state/ArenaContext";
 import { useDebateRunner } from "@/lib/debate/useDebateRunner";
 import type { DebateSession } from "@/lib/debate/debateTypes";
-import { MODE_OPTIONS } from "@/lib/constants";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
-import { friendlyMessage } from "@/lib/utils/errors";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
@@ -72,20 +71,19 @@ function EmptyArena({
   hydrated: boolean;
   onNewSetup: () => void;
 }) {
+  const d = useT();
   return (
     <GamePanel className="text-center">
       <p className="font-heading text-2xl font-extrabold">
-        {hydrated ? "No match in the arena yet" : "Loading the arena…"}
+        {hydrated ? d.debate.empty.titleReady : d.debate.empty.titleLoading}
       </p>
       <p className="mx-auto mt-2 max-w-md text-sm text-ink/60">
-        {hydrated
-          ? "Set up a topic and two fighters to start a debate."
-          : "Hang tight while we set the stage."}
+        {hydrated ? d.debate.empty.bodyReady : d.debate.empty.bodyLoading}
       </p>
       {hydrated ? (
         <div className="mt-5 flex justify-center">
           <ArcadeButton variant="primary-green" onClick={onNewSetup}>
-            ⚙️ Set up a match
+            {d.debate.empty.setUpMatch}
           </ArcadeButton>
         </div>
       ) : null}
@@ -110,6 +108,7 @@ function ArenaInner({
   onNewSetup,
   onResults,
 }: ArenaInnerProps) {
+  const d = useT();
   // Note: the runner's typewriter intentionally ignores reduced-motion so every
   // visitor gets the same playback; `reduce` only tones down decorative motion.
   const runner = useDebateRunner(session, { onPersist });
@@ -123,10 +122,12 @@ function ArenaInner({
   const doneCostSummary =
     runner.phase === "done" ? session.costSummary : runner.costSummary;
 
+  // Displayed (localized) roles for the fighter cards. The English roles still
+  // flow to prompts via MODE_OPTIONS — these are presentation-only.
   const roles = useMemo(() => {
-    const opt = MODE_OPTIONS.find((m) => m.id === session.mode)!;
-    return { a: opt.modelARole, b: opt.modelBRole };
-  }, [session.mode]);
+    const r = session.mode === "debate" ? d.debate.roles.debate : d.debate.roles.discussion;
+    return { a: r.a, b: r.b };
+  }, [session.mode, d]);
 
   const statusFor = (speaker: "modelA" | "modelB"): ModelCardStatus => {
     if (runner.phase === "stopped") return "idle";
@@ -146,24 +147,27 @@ function ArenaInner({
       ? session.modelB.displayName
       : session.modelA.displayName
     : undefined;
+  const announceName = activeModelName ?? d.debate.announce.fighterFallback;
   const announcement =
     runner.phase === "thinking"
-      ? `${activeModelName ?? "A fighter"} is ${session.deepDebate ? "researching the web" : "thinking"}. Round ${runner.currentRound} of ${runner.totalRounds}.`
+      ? session.deepDebate
+        ? d.debate.announce.researching(announceName, runner.currentRound, runner.totalRounds)
+        : d.debate.announce.thinking(announceName, runner.currentRound, runner.totalRounds)
       : runner.phase === "streaming"
-        ? `${activeModelName ?? "A fighter"} is responding. Round ${runner.currentRound} of ${runner.totalRounds}.`
+        ? d.debate.announce.responding(announceName, runner.currentRound, runner.totalRounds)
         : runner.phase === "judging"
-          ? "The judge is deliberating."
+          ? d.debate.announce.judging
           : runner.phase === "awaiting"
             ? runner.awaitingKind === "verdict"
-              ? "Rounds complete. Reveal the verdict when ready."
-              : "Ready for the next turn. Press the button to continue."
+              ? d.debate.announce.awaitingVerdict
+              : d.debate.announce.awaitingNext
             : runner.phase === "stopped"
-              ? "Match stopped."
+              ? d.debate.announce.stopped
               : runner.phase === "error"
-                ? "A problem interrupted the match."
+                ? d.debate.announce.error
                 : runner.verdict
-                  ? "Final verdict ready."
-                  : "Debate complete.";
+                  ? d.debate.announce.verdictReady
+                  : d.debate.announce.complete;
 
   // Stable so the memoized DebateHUD doesn't re-render every streaming frame.
   const togglePace = useCallback(
@@ -231,7 +235,7 @@ function ArenaInner({
             className="pointer-events-none fixed inset-x-0 top-1/3 z-40 flex justify-center px-4"
           >
             <span className="rounded-modal border-4 border-ink bg-arcade-yellow px-6 py-3 font-display text-3xl shadow-hard-lg sm:text-5xl">
-              ROUND {flashRound}
+              {d.debate.roundFlash(flashRound)}
             </span>
           </motion.div>
         ) : null}
@@ -253,7 +257,7 @@ function ArenaInner({
       {/* Topic bar */}
       <div className="mt-4 rounded-card border-4 border-ink bg-card p-3 shadow-hard-sm sm:p-4">
         <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-          Now debating
+          {d.debate.topic.nowDebating}
         </p>
         <h1 className="font-heading text-lg font-extrabold sm:text-2xl">
           {session.topic}
@@ -262,10 +266,10 @@ function ArenaInner({
           <Badge color="blue" size="sm">A · {session.modelA.displayName}</Badge>
           <Badge color="red" size="sm">B · {session.modelB.displayName}</Badge>
           <Badge color="white" size="sm" className="max-w-[12rem] truncate">
-            Tone: {session.tone === "custom" ? (session.customTone || "custom") : session.tone}
+            {d.debate.topic.tone(session.tone === "custom" ? (session.customTone || d.debate.topic.customTone) : session.tone)}
           </Badge>
           {session.deepDebate ? (
-            <Badge color="purple" size="sm">🌐 Deep Debate</Badge>
+            <Badge color="purple" size="sm">{d.debate.topic.deepDebate}</Badge>
           ) : (
             <Badge color="white" size="sm">{session.responseLength}</Badge>
           )}
@@ -304,7 +308,7 @@ function ArenaInner({
 
           {runner.phase === "done" && isDebateComplete(session) && !session.judge.enabled ? (
             <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-4 text-center text-sm text-ink/65">
-              No judge this round — the debate ended after the final round.
+              {d.debate.noJudge}
             </div>
           ) : null}
 
@@ -330,10 +334,9 @@ function ArenaInner({
           {runner.phase === "stopped" ||
           (runner.phase === "done" && session.status === "stopped") ? (
             <div className="rounded-card border-3 border-arcade-red bg-arcade-red/10 p-4 text-center">
-              <p className="font-heading font-extrabold">Match stopped</p>
+              <p className="font-heading font-extrabold">{d.debate.stoppedPanel.title}</p>
               <p className="mt-1 text-sm text-ink/65">
-                You pulled the fighters out of the arena. You can rematch or view
-                what happened so far.
+                {d.debate.stoppedPanel.body}
               </p>
             </div>
           ) : null}
@@ -345,16 +348,16 @@ function ArenaInner({
               className="rounded-card border-4 border-arcade-blue bg-arcade-blue/10 p-4 text-center"
             >
               <p className="font-heading text-lg font-extrabold">
-                {runner.awaitingKind === "verdict" ? "🏆 The rounds are done" : "🎮 Your move"}
+                {runner.awaitingKind === "verdict" ? d.debate.awaiting.verdictTitle : d.debate.awaiting.moveTitle}
               </p>
               <p className="mx-auto mt-1 max-w-md text-sm text-ink/70">
                 {runner.awaitingKind === "verdict"
-                  ? "Reveal the judge's verdict when you're ready."
-                  : "Reveal the next turn when you're ready — or flip to ⚡ Fast in the bar above to auto-play."}
+                  ? d.debate.awaiting.verdictBody
+                  : d.debate.awaiting.moveBody}
               </p>
               <div className="mt-4 flex justify-center">
                 <ArcadeButton variant="primary-green" size="lg" onClick={runner.next}>
-                  {runner.awaitingKind === "verdict" ? "🏆 Reveal the Verdict" : "▶ Next Turn"}
+                  {runner.awaitingKind === "verdict" ? d.debate.awaiting.revealVerdict : d.debate.awaiting.nextTurn}
                 </ArcadeButton>
               </div>
             </motion.div>
@@ -366,17 +369,17 @@ function ArenaInner({
                 ⚡
               </p>
               <p className="mt-1 font-heading text-lg font-extrabold">
-                {friendlyMessage(runner.error.code).title}
+                {d.debate.errors[runner.error.code].title}
               </p>
               <p className="mx-auto mt-1 max-w-md text-sm text-ink/70">
-                {friendlyMessage(runner.error.code).body}
+                {d.debate.errors[runner.error.code].body}
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <ArcadeButton variant="primary-green" onClick={runner.retry}>
-                  ↻ Retry turn
+                  {d.debate.errorPanel.retryTurn}
                 </ArcadeButton>
                 <ArcadeButton variant="neutral-white" onClick={onNewSetup}>
-                  ⚙️ New Setup
+                  {d.debate.errorPanel.newSetup}
                 </ArcadeButton>
               </div>
             </div>

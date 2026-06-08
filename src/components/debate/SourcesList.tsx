@@ -11,6 +11,7 @@ import { useState } from "react";
 import type { Citation } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 function domainOf(url: string): string {
   try {
@@ -30,9 +31,11 @@ interface SourcesListProps {
 export function SourcesList({
   citations,
   defaultOpen = false,
-  label = "Sources",
+  label,
   className,
 }: SourcesListProps) {
+  const d = useT();
+  const resolvedLabel = label ?? d.debate.sources.label;
   const [open, setOpen] = useState(defaultOpen);
   if (!citations || citations.length === 0) return null;
 
@@ -46,7 +49,7 @@ export function SourcesList({
       >
         <span aria-hidden>📚</span>
         <span>
-          {label} · {citations.length}
+          {resolvedLabel} · {citations.length}
         </span>
         <span aria-hidden className="text-white/60">
           {open ? "▴" : "▾"}

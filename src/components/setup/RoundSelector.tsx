@@ -8,6 +8,7 @@ import { ROUND_OPTIONS } from "@/lib/constants";
 import type { RoundCount } from "@/lib/debate/debateTypes";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface RoundSelectorProps {
   value: RoundCount;
@@ -17,14 +18,16 @@ interface RoundSelectorProps {
 }
 
 export function RoundSelector({ value, onChange, disabled = false }: RoundSelectorProps) {
+  const d = useT();
   return (
     <div
       role="radiogroup"
-      aria-label="Number of rounds"
+      aria-label={d.setup.rules.rounds}
       className="grid grid-cols-3 gap-2 sm:gap-3"
     >
       {ROUND_OPTIONS.map((opt) => {
         const selected = value === opt.count;
+        const copy = d.setup.rounds[opt.count];
         return (
           <button
             key={opt.count}
@@ -55,7 +58,7 @@ export function RoundSelector({ value, onChange, disabled = false }: RoundSelect
               {opt.count}
             </div>
             <div className="mt-1 font-heading text-xs font-extrabold uppercase sm:text-sm">
-              {opt.label}
+              {copy.label}
             </div>
             <div
               className={cn(
@@ -63,7 +66,7 @@ export function RoundSelector({ value, onChange, disabled = false }: RoundSelect
                 selected ? "text-night/60" : "text-ink/55",
               )}
             >
-              {opt.blurb}
+              {copy.blurb}
             </div>
           </button>
         );

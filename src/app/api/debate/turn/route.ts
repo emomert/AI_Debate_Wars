@@ -128,7 +128,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     // injected path knows: an empty result set switches the prompts to the
     // no-sources variant so the model isn't told to cite what it doesn't have.
     const deepSourcesAvailable = !injectedSources || injectedSources.length > 0;
-    const systemPrompt = buildSystemPrompt(session.mode, deep, deepSourcesAvailable);
+    const systemPrompt = buildSystemPrompt(
+      session.mode,
+      deep,
+      deepSourcesAvailable,
+      session.language ?? "en",
+    );
     const userPrompt = buildTurnPrompt(session, turn, injectedSources);
     const maxTokensTarget = deep ? 1500 : lengthPreset(session.responseLength).maxTokens;
     const maxOutputTokens = Math.min(maxTokensTarget, modelConfig.maxOutputTokens);

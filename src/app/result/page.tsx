@@ -22,6 +22,7 @@ import { SourcesList, mergeCitations } from "@/components/debate/SourcesList";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { useArena } from "@/lib/state/ArenaContext";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 // Lazy + config-gated so the Supabase SDK stays off the result bundle when
 // auth is disabled, and otherwise loads only after hydration.
@@ -33,6 +34,7 @@ const authEnabled = isSupabaseConfigured();
 
 export default function ResultPage() {
   const router = useRouter();
+  const d = useT();
   const { session, setSession, startMatch, availability, hydrated } = useArena();
 
   if (!session) {
@@ -40,20 +42,19 @@ export default function ResultPage() {
       <GameShell>
         <GamePanel className="text-center">
           <p className="font-heading text-2xl font-extrabold">
-            {hydrated ? "No finished match yet" : "Loading results…"}
+            {hydrated ? d.result.page.empty.title : d.result.page.empty.loading}
           </p>
           {hydrated ? (
             <>
               <p className="mx-auto mt-2 max-w-md text-sm text-ink/60">
-                Run a debate first and your verdict and cost summary will show up
-                here.
+                {d.result.page.empty.body}
               </p>
               <div className="mt-5 flex justify-center gap-2">
                 <ArcadeButton variant="primary-green" onClick={() => router.push("/setup")}>
-                  ⚙️ Set up a match
+                  {d.result.page.empty.setup}
                 </ArcadeButton>
                 <ArcadeButton variant="neutral-white" onClick={() => router.push("/")}>
-                  ⌂ Home
+                  {d.result.page.empty.home}
                 </ArcadeButton>
               </div>
             </>
@@ -77,15 +78,15 @@ export default function ResultPage() {
       <div className="mb-5 text-center">
         <div className="mb-3 flex justify-center">
           <FloatingBadge color="green" rotate={-3}>
-            ✅ Match Complete
+            {d.result.page.matchComplete}
           </FloatingBadge>
         </div>
         <h1 className="font-display text-4xl tracking-tight sm:text-6xl">
-          The Dust Settles
+          {d.result.page.heading}
         </h1>
         {session.status === "stopped" ? (
           <p className="mt-2">
-            <Badge color="red">Match was stopped early</Badge>
+            <Badge color="red">{d.result.page.stoppedEarly}</Badge>
           </p>
         ) : null}
       </div>
@@ -99,11 +100,11 @@ export default function ResultPage() {
           />
         ) : (
           <GamePanel className="text-center">
-            <p className="font-heading text-lg font-extrabold">No judge this round</p>
+            <p className="font-heading text-lg font-extrabold">{d.result.page.noJudge.title}</p>
             <p className="mt-1 text-sm text-ink/60">
               {isDebateComplete(session)
-                ? "The debate ended after the final round — but you can still bring in a judge below."
-                : "The match was stopped before the final round, so there is nothing to judge yet."}
+                ? d.result.page.noJudge.ended
+                : d.result.page.noJudge.stopped}
             </p>
           </GamePanel>
         )}
@@ -124,11 +125,11 @@ export default function ResultPage() {
         <FinalSummaryCard session={session} />
 
         {allSources.length > 0 ? (
-          <GamePanel title={`📚 Sources used (${allSources.length})`}>
+          <GamePanel title={d.result.page.sources.title(allSources.length)}>
             <p className="mb-3 text-sm text-ink/65">
-              Every live source the fighters cited across this Deep Debate, de-duplicated.
+              {d.result.page.sources.blurb}
             </p>
-            <SourcesList citations={allSources} defaultOpen label="All sources" />
+            <SourcesList citations={allSources} defaultOpen label={d.result.page.sources.label} />
           </GamePanel>
         ) : null}
 
@@ -140,16 +141,16 @@ export default function ResultPage() {
       {/* Actions */}
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
         <ArcadeButton variant="neutral-white" onClick={() => router.push("/debate")}>
-          ↩ Back to arena
+          {d.result.page.actions.backToArena}
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" onClick={() => router.push("/setup")}>
-          ⚙️ New Setup
+          {d.result.page.actions.newSetup}
         </ArcadeButton>
         <ArcadeButton variant="primary-yellow" onClick={rematch}>
-          🔁 Rematch
+          {d.result.page.actions.rematch}
         </ArcadeButton>
         <ArcadeButton variant="primary-green" onClick={() => router.push("/")}>
-          ⌂ Home
+          {d.result.page.actions.home}
         </ArcadeButton>
       </div>
     </GameShell>

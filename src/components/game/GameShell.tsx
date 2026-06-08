@@ -11,10 +11,12 @@ import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
+import { useT } from "@/lib/i18n/LocaleProvider";
 import { DottedBackground } from "@/components/game/DottedBackground";
 import { SoundToggle } from "@/components/game/SoundToggle";
 import { MusicToggle } from "@/components/game/MusicToggle";
 import { HelpButton } from "@/components/game/HelpButton";
+import { LanguageToggle } from "@/components/game/LanguageToggle";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 // Code-split the auth widget so the Supabase SDK stays OFF every page's initial
@@ -47,17 +49,18 @@ interface GameShellProps {
 }
 
 function Logo() {
+  const d = useT();
   return (
     <Link
       href="/"
       className="group inline-flex items-center gap-2 rounded-btn focus-visible:outline-3 focus-visible:outline-offset-2"
-      aria-label="Debator — home"
+      aria-label={d.shell.homeAria}
     >
       <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow text-base">
         ⚔️
       </span>
       <span className="font-display text-lg leading-none tracking-tight sm:text-xl">
-        DEBATOR
+        {d.common.brand}
       </span>
     </Link>
   );
@@ -71,6 +74,7 @@ export function GameShell({
   wide = false,
   className,
 }: GameShellProps) {
+  const d = useT();
   return (
     <div className="relative flex min-h-dvh flex-col">
       <DottedBackground />
@@ -89,11 +93,11 @@ export function GameShell({
               href="/report"
               className="hidden items-center gap-1 rounded-btn border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2 sm:inline-flex"
             >
-              📊 Tech Report
+              📊 {d.shell.techReport}
             </Link>
             <Link
               href="/report"
-              aria-label="Technical report"
+              aria-label={d.shell.techReportAria}
               className="inline-flex h-8 w-8 items-center justify-center rounded-btn border-3 border-ink bg-surface text-sm transition hover:bg-arcade-yellow focus-visible:outline-3 focus-visible:outline-offset-2 sm:hidden"
             >
               📊
@@ -102,6 +106,7 @@ export function GameShell({
           <div className="flex items-center gap-2">
             {headerExtras}
             {authEnabled ? <AuthButton /> : null}
+            <LanguageToggle />
             <MusicToggle />
             <SoundToggle />
             <HelpButton />
@@ -134,7 +139,7 @@ export function GameShell({
 
       {hideFooter ? null : (
         <footer className="mx-auto w-full max-w-7xl px-4 py-6 text-center text-xs text-ink/50 sm:px-6">
-          Debator · Arcade interface, serious intelligence.
+          {d.common.brand} · {d.common.tagline}
         </footer>
       )}
     </div>

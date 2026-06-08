@@ -9,12 +9,14 @@
 
 import { IconButton } from "@/components/game/IconButton";
 import { useArena } from "@/lib/state/ArenaContext";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 export function MusicToggle() {
   const { musicEnabled, toggleMusic } = useArena();
+  const d = useT();
   return (
     <IconButton
-      label={musicEnabled ? "Turn music off" : "Turn music on"}
+      label={musicEnabled ? d.shell.controls.musicOff : d.shell.controls.musicOn}
       onClick={toggleMusic}
       color={musicEnabled ? "purple" : "white"}
       active={musicEnabled}
