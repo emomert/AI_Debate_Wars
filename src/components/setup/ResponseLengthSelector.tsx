@@ -47,7 +47,11 @@ export function ResponseLengthSelector({
               onChange(opt.id);
             }}
             className={cn(
-              "group rounded-btn border-3 border-ink px-2 py-2 text-center transition",
+              // Center the label/blurb in the box. The cards still stretch to a
+              // common height (grid), but the content is vertically centered —
+              // so Medium/Long sit centered and don't have to line up with the
+              // (badge-topped) Short chip.
+              "group flex flex-col items-center justify-center rounded-btn border-3 border-ink px-2 py-2.5 text-center transition",
               "focus-visible:outline-3 focus-visible:outline-offset-2",
               disabled && "cursor-not-allowed",
               selected
@@ -55,23 +59,21 @@ export function ResponseLengthSelector({
                 : "bg-surface hover:bg-arcade-yellow hover:text-night",
             )}
           >
-            {/* Reserved top row keeps all chips aligned; only the recommended
-                option fills it with a badge. */}
-            <div className="mb-1 flex h-5 items-center justify-center">
-              {opt.recommended && !disabled ? (
-                <span className="whitespace-nowrap rounded-badge border-2 border-ink bg-arcade-yellow px-1.5 py-0.5 text-[10px] font-extrabold uppercase leading-none tracking-wide text-night">
-                  ★ {d.setup.rules.recommended}
-                </span>
-              ) : null}
-            </div>
-            <div className="font-heading text-sm font-extrabold uppercase">
+            {/* Badge only on the recommended chip — no reserved row on the rest,
+                so their text centers in the box. */}
+            {opt.recommended && !disabled ? (
+              <span className="mb-1 whitespace-nowrap rounded-badge border-2 border-ink bg-arcade-yellow px-2 py-0.5 text-[10px] font-extrabold uppercase leading-none tracking-wide text-night">
+                ★ {d.setup.rules.recommended}
+              </span>
+            ) : null}
+            <div className="font-heading text-base font-extrabold uppercase leading-tight sm:text-lg">
               {copy.label}
             </div>
             {/* group-hover: the blurb must flip with the yellow hover fill too —
                 its own text-ink class would otherwise stay light in dark mode. */}
             <div
               className={cn(
-                "text-[10px]",
+                "mt-0.5 text-[11px]",
                 selected ? "text-night/60" : "text-ink/55 group-hover:text-night/60",
               )}
             >
