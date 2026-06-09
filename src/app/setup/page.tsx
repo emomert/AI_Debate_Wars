@@ -142,7 +142,7 @@ export default function SetupPage() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Config sections */}
         <div className="space-y-5">
-          <GamePanel title={d.setup.sections.topic} flat>
+          <GamePanel title={d.setup.sections.topic}>
             <TopicInput
               value={config.topic}
               onChange={(topic) => setConfig({ topic })}
