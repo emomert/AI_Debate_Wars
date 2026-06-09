@@ -62,11 +62,20 @@ export function assertValidSession(session: DebateSession): void {
   // Custom tone: require non-empty text, capped (so a forged session can't
   // inflate the prompt the server pays for).
   if (session.tone === "custom") {
-    const custom = typeof session.customTone === "string" ? session.customTone.trim() : "";
-    if (!custom) {
+    // Per-fighter tones each fall back to the shared customTone; both fighters'
+    // EFFECTIVE tone must be present and capped (so a forged session can't
+    // inflate the prompt the server pays for).
+    const shared = typeof session.customTone === "string" ? session.customTone.trim() : "";
+    const a = typeof session.customToneA === "string" ? session.customToneA.trim() : "";
+    const b = typeof session.customToneB === "string" ? session.customToneB.trim() : "";
+    if (!(a || shared) || !(b || shared)) {
       throw new ProviderError("INVALID_REQUEST", "Custom tone is required");
     }
-    if (custom.length > CUSTOM_TONE_MAX_LENGTH) {
+    if (
+      shared.length > CUSTOM_TONE_MAX_LENGTH ||
+      a.length > CUSTOM_TONE_MAX_LENGTH ||
+      b.length > CUSTOM_TONE_MAX_LENGTH
+    ) {
       throw new ProviderError("INVALID_REQUEST", "Custom tone too long");
     }
   }
@@ -211,10 +220,18 @@ export function validateSetup(
   }
 
   if (config.tone === "custom") {
-    const t = (config.customTone ?? "").trim();
-    if (!t) {
+    // Per-fighter tones fall back to the shared one; both fighters' effective
+    // tone must be present and within the cap.
+    const shared = (config.customTone ?? "").trim();
+    const a = (config.customToneA ?? "").trim();
+    const b = (config.customToneB ?? "").trim();
+    if (!(a || shared) || !(b || shared)) {
       errors.tone = m.customToneRequired;
-    } else if (t.length > CUSTOM_TONE_MAX_LENGTH) {
+    } else if (
+      shared.length > CUSTOM_TONE_MAX_LENGTH ||
+      a.length > CUSTOM_TONE_MAX_LENGTH ||
+      b.length > CUSTOM_TONE_MAX_LENGTH
+    ) {
       // Mirror the server cap so Start is blocked instead of failing turn 1.
       errors.tone = m.customToneTooLong(CUSTOM_TONE_MAX_LENGTH);
     }

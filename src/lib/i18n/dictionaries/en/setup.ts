@@ -64,9 +64,12 @@ export const setup = {
     custom: { label: "Custom" },
   } as Record<string, { label: string }>,
   toneCustom: {
-    describe: "Describe the tone",
+    describe: "Describe the tone (applies to both fighters)",
     placeholder: "e.g. witty courtroom lawyer, calm professor, sports commentator…",
     fallbackLabel: "Custom",
+    perFighter: "Give each fighter a different tone",
+    fighterTone: (name: string) => `${name}'s tone`,
+    perFighterShort: "Custom (per fighter)",
   },
 
   // ResponseLengthSelector option labels/blurbs (keyed by id)
@@ -136,7 +139,12 @@ export const setup = {
     picked: "Picked",
     pickedWith: (name: string) => `Picked: ${name}`,
     modelsCount: (n: number) => `${n} models`,
-    debateFit: "Debate fit",
+    debateFit: "Debate skill",
+    debateFitHelp:
+      "Our 0–100 rating of how well this model holds up in a structured debate — reasoning, rebuttals and staying on point. Higher = a tougher opponent.",
+    recommendedHeading: "Recommended",
+    showAll: (n: number) => `Show all ${n} models ▾`,
+    showFewer: "Show fewer ▴",
     needsWebSearchKey: "Needs the server's web-search key for Deep Debate",
     alsoPicked: "Also picked for the other fighter",
     needsApiKey: "Needs an API key to run",

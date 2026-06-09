@@ -13,6 +13,9 @@ interface GamePanelProps {
   sticker?: ReactNode;
   as?: "section" | "div" | "article";
   padding?: "sm" | "md" | "lg";
+  /** Drop the hard offset shadow (flatter card — e.g. when a corner sticker
+   *  should be the only thing that "floats"). */
+  flat?: boolean;
 }
 
 const PADDING: Record<NonNullable<GamePanelProps["padding"]>, string> = {
@@ -28,11 +31,13 @@ export function GamePanel({
   sticker,
   as: Tag = "section",
   padding = "md",
+  flat = false,
 }: GamePanelProps) {
   return (
     <Tag
       className={cn(
-        "relative rounded-panel border-4 border-ink bg-card shadow-hard",
+        "relative rounded-panel border-4 border-ink bg-card",
+        flat ? "shadow-none" : "shadow-hard",
         PADDING[padding],
         className,
       )}

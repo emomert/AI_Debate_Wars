@@ -64,9 +64,12 @@ export const setup = {
     custom: { label: "Özel" },
   } as Record<string, { label: string }>,
   toneCustom: {
-    describe: "Üslubu tarif edin",
+    describe: "Üslubu tarif edin (her iki yarışmacıya uygulanır)",
     placeholder: "örn. nüktedan duruşma avukatı, sakin profesör, spor spikeri…",
     fallbackLabel: "Özel",
+    perFighter: "Her yarışmacıya farklı bir üslup ver",
+    fighterTone: (name: string) => `${name} üslubu`,
+    perFighterShort: "Özel (yarışmacıya göre)",
   },
 
   // ResponseLengthSelector option labels/blurbs (keyed by id)
@@ -134,7 +137,12 @@ export const setup = {
     picked: "Seçildi",
     pickedWith: (name: string) => `Seçildi: ${name}`,
     modelsCount: (n: number) => `${n} model`,
-    debateFit: "Münazara uyumu",
+    debateFit: "Münazara becerisi",
+    debateFitHelp:
+      "Bu modelin yapılandırılmış bir münazarada ne kadar iyi olduğuna dair 0–100 puanımız — akıl yürütme, karşı argüman ve konuya sadık kalma. Yüksek = daha zorlu bir rakip.",
+    recommendedHeading: "Önerilen",
+    showAll: (n: number) => `${n} modelin tümünü göster ▾`,
+    showFewer: "Daha az göster ▴",
     needsWebSearchKey: "Derin Münazara için sunucunun web arama anahtarı gerekir",
     alsoPicked: "Diğer yarışmacı için de seçildi",
     needsApiKey: "Çalışması için bir API anahtarı gerekir",

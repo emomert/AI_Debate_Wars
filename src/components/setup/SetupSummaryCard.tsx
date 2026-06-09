@@ -55,9 +55,14 @@ export function SetupSummaryCard({
       ? `⚖️ ${judgeModel.displayName}`
       : d.setup.summary.judgeOn;
   const toneEmoji = TONE_OPTIONS.find((t) => t.id === config.tone)?.emoji;
+  const perFighterTone =
+    config.tone === "custom" &&
+    Boolean((config.customToneA ?? "").trim() || (config.customToneB ?? "").trim());
   const toneLabel =
     config.tone === "custom"
-      ? `✏️ ${(config.customTone ?? "").trim() || d.setup.toneCustom.fallbackLabel}`
+      ? perFighterTone
+        ? `✏️ ${d.setup.toneCustom.perFighterShort}`
+        : `✏️ ${(config.customTone ?? "").trim() || d.setup.toneCustom.fallbackLabel}`
       : `${toneEmoji} ${d.setup.tones[config.tone]?.label}`;
   const errorList = Object.values(validation.errors);
 

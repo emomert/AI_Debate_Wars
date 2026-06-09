@@ -134,10 +134,19 @@ const TONE_INSTRUCTIONS: Record<Exclude<DebateTone, "custom">, string> = {
   casual: "Use a conversational, easy-to-read tone.",
 };
 
-/** Resolve the tone instruction, wrapping a sanitized custom tone when chosen. */
-function toneInstruction(session: DebateSession): string {
+/**
+ * Resolve the tone instruction for a given fighter. Presets apply to both
+ * fighters; a custom tone can differ per fighter (customToneA/B), each falling
+ * back to the shared customTone. The chosen text is sanitized + capped.
+ */
+function toneInstruction(
+  session: DebateSession,
+  speaker: "modelA" | "modelB",
+): string {
   if (session.tone === "custom") {
-    const custom = (session.customTone ?? "").trim().replace(/\s+/g, " ").slice(0, 80);
+    const perFighter = speaker === "modelA" ? session.customToneA : session.customToneB;
+    const raw = (perFighter?.trim() || session.customTone?.trim() || "");
+    const custom = raw.replace(/\s+/g, " ").slice(0, 80);
     if (custom) {
       return `Use the following user-defined tone, while keeping arguments substantive and good-faith: "${custom}".`;
     }
@@ -257,7 +266,7 @@ export function buildTurnPrompt(
       ? DEEP_LENGTH_NO_SOURCES
       : DEEP_LENGTH
     : LENGTH_PRESETS[session.responseLength];
-  const tone = toneInstruction(session);
+  const tone = toneInstruction(session, turn.speaker === "modelA" ? "modelA" : "modelB");
   const modeLabel = session.mode === "debate" ? "Debate Mode" : "Discussion Mode";
   const identityLine =
     session.mode === "debate"

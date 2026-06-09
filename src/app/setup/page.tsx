@@ -142,7 +142,7 @@ export default function SetupPage() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Config sections */}
         <div className="space-y-5">
-          <GamePanel title={d.setup.sections.topic}>
+          <GamePanel title={d.setup.sections.topic} flat>
             <TopicInput
               value={config.topic}
               onChange={(topic) => setConfig({ topic })}
@@ -228,6 +228,12 @@ export default function SetupPage() {
                   onChange={(tone) => setConfig({ tone })}
                   customTone={config.customTone ?? ""}
                   onCustomToneChange={(customTone) => setConfig({ customTone })}
+                  customToneA={config.customToneA ?? ""}
+                  onCustomToneAChange={(customToneA) => setConfig({ customToneA })}
+                  customToneB={config.customToneB ?? ""}
+                  onCustomToneBChange={(customToneB) => setConfig({ customToneB })}
+                  fighterALabel={config.modelA.displayName}
+                  fighterBLabel={config.modelB.displayName}
                   error={attempted ? validation.errors.tone : undefined}
                   disabled={config.deepDebate}
                 />

@@ -17,8 +17,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   BRANDS,
   COST_TIER_LABEL,
+  RECOMMENDED_MODEL_IDS,
   brandsForLocale,
-  familiesForBrand,
   getModelById,
   modelsForBrand,
   modelSupportsWebSearch,
@@ -88,26 +88,20 @@ export function ModelSelector({
     selected?.providerId === "openrouter",
   );
 
-  // Which model LINES are expanded, keyed "brand:family" so state survives
-  // tab-hopping without leaking across brands with same-named lines.
-  const [openFamilies, setOpenFamilies] = useState<Set<string>>(() => {
-    return selected ? new Set([`${selected.brand}:${selected.family}`]) : new Set();
-  });
+  // Which brands have their "show all models" list expanded (keyed by brand so
+  // the choice survives tab-hopping). A brand whose current pick is a non-
+  // recommended model is shown expanded regardless (see showRest below).
+  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
 
   // The selected model can change AFTER mount (config rehydrates from
   // sessionStorage a tick later), which would otherwise leave the brand tab
-  // stuck on its mount-time default. Re-sync the active tab / free menu / open
-  // line to the selection when it changes — without clobbering a user's
-  // mid-browse tab click (this only fires when the selection actually changes).
+  // stuck on its mount-time default. Re-sync the active tab / free menu to the
+  // selection when it changes — without clobbering a user's mid-browse tab click
+  // (this only fires when the selection actually changes).
   useEffect(() => {
     if (!selected) return;
     setActiveBrand(selected.brand);
     if (selected.providerId === "openrouter") setFreeOpen(true);
-    setOpenFamilies((prev) => {
-      const key = `${selected.brand}:${selected.family}`;
-      if (prev.has(key)) return prev;
-      return new Set(prev).add(key);
-    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
@@ -119,14 +113,27 @@ export function ModelSelector({
     }
   }, [locale, activeBrand]);
 
-  const families = familiesForBrand(activeBrand, locale);
+  // Flatten the active brand into a recommended-first list. A short curated set
+  // shows by default; the rest live behind a "Show all" expander so the picker
+  // isn't an overwhelming wall of models.
+  const brandModels = [...modelsForBrand(activeBrand, locale)].sort(
+    (a, b) => b.debateRating - a.debateRating,
+  );
+  let recommendedModels = brandModels.filter((m) => RECOMMENDED_MODEL_IDS.has(m.id));
+  let restModels = brandModels.filter((m) => !RECOMMENDED_MODEL_IDS.has(m.id));
+  // Defensive: a brand with no curated pick still shows its best as recommended.
+  if (recommendedModels.length === 0 && brandModels.length > 0) {
+    recommendedModels = brandModels.slice(0, 1);
+    restModels = brandModels.slice(1);
+  }
+  const selectedInRest = !!selected && restModels.some((m) => m.id === selected.id);
+  const showRest = selectedInRest || expandedBrands.has(activeBrand);
 
-  const toggleFamily = (family: string) => {
-    const key = `${activeBrand}:${family}`;
-    setOpenFamilies((prev) => {
+  const toggleBrandExpand = (brand: string) => {
+    setExpandedBrands((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(brand)) next.delete(brand);
+      else next.add(brand);
       return next;
     });
   };
@@ -230,86 +237,62 @@ export function ModelSelector({
         ) : null}
       </AnimatePresence>
 
-      {/* Step 2 — model LINES for the active brand. Single-model lines are a
-          plain selectable row; bigger lines expand into their variants.
-          role="group" (not radiogroup): collapsed lines unmount their option
-          buttons, and the expander itself isn't an option — aria-pressed
-          toggles keep the selection state honest in every collapse state. */}
+      {/* Step 2 — a short RECOMMENDED list for the active brand, with the rest
+          tucked behind a "Show all" expander at the bottom so the picker stays
+          scannable instead of dumping every model at once. role="group" (not
+          radiogroup): the collapsed rows unmount, and aria-pressed on each row
+          keeps the selection state honest in every collapse state. */}
       <div role="group" aria-label={`${label} model`} className="space-y-2">
-        {families.map((f) => {
-          if (f.models.length === 1) return renderModelRow(f.models[0]);
+        {restModels.length > 0 ? (
+          <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/45">
+            {d.setup.models.recommendedHeading}
+          </p>
+        ) : null}
 
-          const key = `${activeBrand}:${f.family}`;
-          const open = openFamilies.has(key);
-          const flagship = f.models[0];
-          const picked = f.models.find((m) => m.id === selectedId);
+        {recommendedModels.map((m) => renderModelRow(m))}
 
-          return (
-            <div
-              key={key}
-              className="overflow-hidden rounded-card border-4 border-ink bg-surface shadow-hard-sm"
-            >
+        {restModels.length > 0 ? (
+          <>
+            {/* Hide the toggle when the current pick is a non-recommended model:
+                the rest list is force-shown (showRest) so it can't be collapsed,
+                and a "Show fewer" button that does nothing would be a dead click. */}
+            {!selectedInRest ? (
               <button
                 type="button"
-                aria-expanded={open}
+                aria-expanded={showRest}
                 onClick={() => {
-                  playSound(open ? "buttonClick" : "modeSelect");
-                  toggleFamily(f.family);
+                  playSound(showRest ? "buttonClick" : "modeSelect");
+                  toggleBrandExpand(activeBrand);
                 }}
                 className={cn(
-                  "flex w-full items-center gap-3 p-3 text-left transition hover:bg-paper",
-                  // Inset ring (arbitrary values — the default scale has no 3):
-                  // the wrapper is overflow-hidden, so an outside ring would be
-                  // clipped invisible for keyboard users.
-                  "focus-visible:outline-[3px] focus-visible:outline-offset-[-3px]",
+                  "w-full rounded-btn border-3 border-dashed border-ink/40 bg-paper px-3 py-2 text-sm font-extrabold text-ink/70 transition",
+                  "hover:border-ink hover:text-ink focus-visible:outline-3 focus-visible:outline-offset-2",
                 )}
               >
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-btn border-3 border-ink bg-paper text-2xl">
-                  {flagship.avatar}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="font-heading text-base font-extrabold leading-tight">
-                      {f.family}
-                    </span>
-                    {picked ? (
-                      <Badge color="green" size="sm">
-                        {picked.id !== flagship.id
-                          ? d.setup.models.pickedWith(picked.displayName)
-                          : d.setup.models.picked}
-                      </Badge>
-                    ) : null}
-                  </span>
-                  <span className="block text-xs font-semibold text-ink/55">
-                    {flagship.nickname}
-                  </span>
-                </span>
-                <span className="rounded-badge border-2 border-ink bg-paper px-1.5 py-0.5 text-[10px] font-bold">
-                  {d.setup.models.modelsCount(f.models.length)}
-                </span>
-                <span aria-hidden className="font-bold">
-                  {open ? "▴" : "▾"}
-                </span>
+                {showRest
+                  ? d.setup.models.showFewer
+                  : d.setup.models.showAll(brandModels.length)}
               </button>
+            ) : null}
 
-              <AnimatePresence initial={false}>
-                {open ? (
-                  <motion.div
-                    key="variants"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                  >
-                    <div className="space-y-2 border-t-3 border-dashed border-ink/30 p-2.5">
-                      {f.models.map((m) => renderModelRow(m))}
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-          );
-        })}
+            <AnimatePresence initial={false}>
+              {showRest ? (
+                <motion.div
+                  key="rest"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-2 pt-1">
+                    {restModels.map((m) => renderModelRow(m))}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </>
+        ) : null}
       </div>
     </div>
   );
@@ -360,8 +343,11 @@ export function ModelSelector({
             {m.nickname}
           </span>
 
-          {/* Debate-fit rating bar */}
-          <span className="mt-1.5 flex items-center gap-2">
+          {/* Debate-skill rating bar (title explains the 0–100 score) */}
+          <span
+            className="mt-1.5 flex items-center gap-2"
+            title={d.setup.models.debateFitHelp}
+          >
             <span className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
               {d.setup.models.debateFit}
             </span>
@@ -371,7 +357,7 @@ export function ModelSelector({
                 style={{ width: `${m.debateRating}%` }}
               />
             </span>
-            <span className="font-mono text-xs font-bold">{m.debateRating}</span>
+            <span className="font-mono text-xs font-bold">{m.debateRating}/100</span>
           </span>
 
           {noWeb ? (

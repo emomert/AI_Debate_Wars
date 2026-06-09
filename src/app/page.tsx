@@ -7,6 +7,7 @@
  * "Try a Sample" (→ straight into a ready-made arena match).
  */
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 
@@ -15,7 +16,7 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
-import { getSampleTopics, TONE_OPTIONS } from "@/lib/constants";
+import { getSampleTopics, pickSampleTopics, TONE_OPTIONS } from "@/lib/constants";
 import {
   useArena,
   toSelectedModel,
@@ -87,7 +88,14 @@ export default function HomePage() {
   const { setConfig, setSession, availability } = useArena();
   const d = useT();
   const { locale } = useLocale();
-  const sampleTopics = getSampleTopics(locale);
+  // Home shows a bigger, freshly-shuffled spread of examples each visit
+  // (SSR-stable initial slice, reshuffled on mount to avoid a hydration mismatch).
+  const [sampleTopics, setSampleTopics] = useState<string[]>(() =>
+    getSampleTopics(locale).slice(0, 14),
+  );
+  useEffect(() => {
+    setSampleTopics(pickSampleTopics(locale, 14));
+  }, [locale]);
 
   // Consistent staggered fade-up so every section animates in on load.
   const fade = (delay: number) => ({

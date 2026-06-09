@@ -72,6 +72,8 @@ export function createDebateSession(config: DebateConfig): DebateSession {
     language,
     tone: config.tone,
     customTone: config.customTone,
+    customToneA: config.customToneA,
+    customToneB: config.customToneB,
     deepDebate: config.deepDebate,
     responseLength: config.responseLength,
     roundCount: config.roundCount,

@@ -56,9 +56,9 @@ export function RoundSelector({ value, onChange, disabled = false }: RoundSelect
           >
             {/* Reserved top row keeps all cards the same height; only the
                 recommended option fills it with a badge. */}
-            <div className="mb-0.5 flex h-4 items-center justify-center">
+            <div className="mb-1 flex h-5 items-center justify-center">
               {opt.recommended && !disabled ? (
-                <span className="whitespace-nowrap rounded-badge border-2 border-ink bg-arcade-yellow px-1.5 text-[9px] font-extrabold uppercase leading-none tracking-wide text-night">
+                <span className="whitespace-nowrap rounded-badge border-2 border-ink bg-arcade-yellow px-2 py-0.5 text-[11px] font-extrabold uppercase leading-none tracking-wide text-night">
                   ★ {d.setup.rules.recommended}
                 </span>
               ) : null}

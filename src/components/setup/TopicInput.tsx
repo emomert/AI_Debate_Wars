@@ -11,10 +11,14 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { getSampleTopics, TOPIC_MAX_LENGTH, TOPIC_MIN_LENGTH } from "@/lib/constants";
+import {
+  getSampleTopics,
+  pickSampleTopics,
+  TOPIC_MAX_LENGTH,
+  TOPIC_MIN_LENGTH,
+} from "@/lib/constants";
 import { cn } from "@/lib/utils/cn";
 import { Badge } from "@/components/game/Badge";
-import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { checkTopic } from "@/lib/api/debateClient";
 import type { TopicCheckResult } from "@/lib/debate/topicCheck";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
@@ -33,7 +37,14 @@ export function TopicInput({ value, onChange, error, availability }: TopicInputP
   const d = useT();
   const t = d.setup.topic;
   const { locale } = useLocale();
-  const sampleTopics = getSampleTopics(locale);
+  // A fresh shuffled handful of examples each visit (SSR-stable initial slice,
+  // reshuffled on mount to avoid a hydration mismatch).
+  const [sampleTopics, setSampleTopics] = useState<string[]>(() =>
+    getSampleTopics(locale).slice(0, 6),
+  );
+  useEffect(() => {
+    setSampleTopics(pickSampleTopics(locale, 6));
+  }, [locale]);
 
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<TopicCheckResult | null>(null);
@@ -89,6 +100,26 @@ export function TopicInput({ value, onChange, error, availability }: TopicInputP
 
   return (
     <div>
+      {/* "Improve my topic" — a tilted sticker pinned to the panel's top-right
+          corner (anchors to the relative GamePanel; flat, no drop shadow). */}
+      {helperAvailable ? (
+        <button
+          type="button"
+          onClick={runCheck}
+          disabled={!canCheck}
+          aria-label={t.check}
+          className={cn(
+            "absolute -right-2 -top-3 z-20 rotate-6 rounded-btn border-3 border-ink bg-arcade-purple px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide text-white transition",
+            "focus-visible:outline-3 focus-visible:outline-offset-2",
+            canCheck
+              ? "hover:-rotate-2 hover:bg-arcade-purple/90"
+              : "cursor-not-allowed opacity-50 grayscale",
+          )}
+        >
+          {checking ? t.checking : t.check}
+        </button>
+      ) : null}
+
       <div className="mb-2 flex items-center justify-between gap-2">
         <label htmlFor="topic" className="font-heading text-lg font-extrabold">
           {t.label}
@@ -125,18 +156,10 @@ export function TopicInput({ value, onChange, error, availability }: TopicInputP
         </p>
       ) : null}
 
-      {/* AI topic helper */}
+      {/* AI topic helper — the trigger button is a tilted corner sticker (added
+          near the top of this component); here we only render its results. */}
       {helperAvailable ? (
         <div className="mt-3">
-          <ArcadeButton
-            variant="judge-purple"
-            size="sm"
-            onClick={runCheck}
-            disabled={!canCheck}
-          >
-            {checking ? t.checking : t.check}
-          </ArcadeButton>
-
           {checkError ? (
             <p className="mt-2 text-sm font-bold text-arcade-red">{t.checkError}</p>
           ) : null}

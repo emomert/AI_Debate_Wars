@@ -57,9 +57,9 @@ export function ResponseLengthSelector({
           >
             {/* Reserved top row keeps all chips aligned; only the recommended
                 option fills it with a badge. */}
-            <div className="mb-0.5 flex h-3.5 items-center justify-center">
+            <div className="mb-1 flex h-5 items-center justify-center">
               {opt.recommended && !disabled ? (
-                <span className="whitespace-nowrap rounded-badge border-2 border-ink bg-arcade-yellow px-1 text-[8px] font-extrabold uppercase leading-none tracking-wide text-night">
+                <span className="whitespace-nowrap rounded-badge border-2 border-ink bg-arcade-yellow px-1.5 py-0.5 text-[10px] font-extrabold uppercase leading-none tracking-wide text-night">
                   ★ {d.setup.rules.recommended}
                 </span>
               ) : null}

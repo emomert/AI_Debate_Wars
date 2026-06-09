@@ -98,12 +98,13 @@ export default async function ProfilePage() {
         <p className="mt-1 text-sm text-ink/60">{user.email}</p>
       </div>
 
-      {/* Stats */}
+      {/* Stats — only completed matches are ever saved, so `total` is the
+          completed count. */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label={d.profile.stats.matches} value={String(stats.total)} accent />
+        <Stat label={d.profile.stats.completed} value={String(stats.total)} accent />
         <Stat label={d.profile.stats.totalSpent} value={formatCost(stats.totalCost)} />
-        <Stat label={d.profile.stats.debates} value={String(stats.debates)} />
-        <Stat label={d.profile.stats.deepDebates} value={String(stats.deep)} />
+        <Stat label={d.profile.stats.roundsFought} value={String(stats.totalRounds)} />
+        <Stat label={d.profile.stats.fightersTried} value={String(stats.uniqueFighters)} />
       </div>
       <div className="mt-2">
         <Stat label={d.profile.stats.mostUsedFighter} value={stats.topFighter ?? "—"} />

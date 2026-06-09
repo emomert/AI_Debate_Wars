@@ -11,10 +11,10 @@ export const profile = {
   },
   heading: "Arenanız",
   stats: {
-    matches: "Maçlar",
+    completed: "Tamamlanan",
     totalSpent: "Toplam harcama",
-    debates: "Münazaralar",
-    deepDebates: "Derin Münazaralar",
+    roundsFought: "Dövüşülen tur",
+    fightersTried: "Denenen yarışmacı",
     mostUsedFighter: "En çok kullanılan yarışmacı",
   },
   winsByFighter: "🏆 Yarışmacıya göre galibiyetler",

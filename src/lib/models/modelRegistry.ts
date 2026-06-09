@@ -110,6 +110,35 @@ export function getModelById(id: string): ModelCatalogEntry | undefined {
   return MODEL_CATALOG.find((m) => m.id === id);
 }
 
+/**
+ * A short, curated "recommended fighters" set shown by default in each brand's
+ * picker — the rest of that brand's models live behind a "Show all" expander so
+ * the list isn't an overwhelming wall of models. Chosen to span the range (a
+ * flagship, a fast mid-tier, a cheap option) per brand; for free brands it's the
+ * standout model. Brands with only a couple of models show them all anyway.
+ */
+export const RECOMMENDED_MODEL_IDS: ReadonlySet<string> = new Set<string>([
+  // OpenAI — flagship · fast mid · cheap
+  "gpt-5.5",
+  "gpt-5.4-mini",
+  "gpt-4o-mini",
+  // DeepSeek (only two — both)
+  "deepseek-v4-pro",
+  "deepseek-v4-flash",
+  // Free brands — the standout per brand
+  "qwen/qwen3-next-80b-a3b-instruct:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "moonshotai/kimi-k2.6:free",
+  "z-ai/glm-4.5-air:free",
+  "google/gemma-4-31b-it:free",
+  "openai/gpt-oss-120b:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+  "poolside/laguna-m.1:free",
+  "liquid/lfm-2.5-1.2b-instruct:free",
+]);
+
 /** A selectable brand tab + the backend that runs its models. */
 export interface BrandInfo {
   brand: string;

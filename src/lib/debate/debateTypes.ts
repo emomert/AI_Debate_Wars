@@ -184,8 +184,11 @@ export interface DebateSession {
    */
   language?: Locale;
   tone: DebateTone;
-  /** Free-text tone, set when tone === "custom". */
+  /** Free-text tone, set when tone === "custom" — the shared default for both fighters. */
   customTone?: string;
+  /** Optional per-fighter custom tone overrides (custom mode). Each falls back to customTone. */
+  customToneA?: string;
+  customToneB?: string;
   /** Deep Debate: web-searched, cited, fixed-template turns (req: separate from tone). */
   deepDebate: boolean;
   responseLength: ResponseLength;
@@ -221,8 +224,11 @@ export interface DebateConfig {
   modelB: SelectedModel;
   roundCount: RoundCount;
   tone: DebateTone;
-  /** Free-text tone, set when tone === "custom". */
+  /** Free-text tone, set when tone === "custom" — the shared default for both fighters. */
   customTone?: string;
+  /** Optional per-fighter custom tone overrides (custom mode). Each falls back to customTone. */
+  customToneA?: string;
+  customToneB?: string;
   /** Deep Debate: web search + citations + fixed template (separate from tone). */
   deepDebate: boolean;
   responseLength: ResponseLength;

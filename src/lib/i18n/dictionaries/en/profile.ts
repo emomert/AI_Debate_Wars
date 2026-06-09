@@ -11,10 +11,10 @@ export const profile = {
   },
   heading: "Your Arena",
   stats: {
-    matches: "Matches",
+    completed: "Completed",
     totalSpent: "Total spent",
-    debates: "Debates",
-    deepDebates: "Deep Debates",
+    roundsFought: "Rounds fought",
+    fightersTried: "Fighters tried",
     mostUsedFighter: "Most used fighter",
   },
   winsByFighter: "🏆 Wins by fighter",
