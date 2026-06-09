@@ -11,21 +11,49 @@ import { Badge } from "@/components/game/Badge";
 import type { DebateConfig } from "@/lib/debate/debateTypes";
 import type { ValidationResult } from "@/lib/debate/validators";
 import { TONE_OPTIONS } from "@/lib/constants";
+import { getModelById, previewAutoJudge } from "@/lib/models/modelRegistry";
+import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 interface SetupSummaryCardProps {
   config: DebateConfig;
   validation: ValidationResult;
   onStart: () => void;
+  /** Which providers have keys — lets the card name the auto judge. */
+  availability?: ProviderAvailability | null;
 }
 
 export function SetupSummaryCard({
   config,
   validation,
   onStart,
+  availability,
 }: SetupSummaryCardProps) {
   const d = useT();
   const roundLabel = d.setup.rounds[config.roundCount]?.label;
+
+  // Name the judge in the match card: the chosen third model, or — for Auto —
+  // the same neutral model the server will pick (previewAutoJudge). Falls back
+  // to a generic label until availability resolves.
+  const judgeModel = !config.judge.enabled
+    ? null
+    : config.judge.mode === "thirdModel" && config.judge.model
+      ? getModelById(config.judge.model.modelId)
+      : previewAutoJudge(
+          availability
+            ? {
+                openai: availability.openai,
+                deepseek: availability.deepseek,
+                openrouter: availability.openrouter,
+              }
+            : null,
+          [config.modelA.modelId, config.modelB.modelId],
+        );
+  const judgeBadge = !config.judge.enabled
+    ? d.setup.summary.judgeOff
+    : judgeModel
+      ? `⚖️ ${judgeModel.displayName}`
+      : d.setup.summary.judgeOn;
   const toneEmoji = TONE_OPTIONS.find((t) => t.id === config.tone)?.emoji;
   const toneLabel =
     config.tone === "custom"
@@ -85,8 +113,12 @@ export function SetupSummaryCard({
           <Badge color="blue" size="sm">
             {config.pace === "auto" ? d.setup.summary.fast : d.setup.summary.normal}
           </Badge>
-          <Badge color={config.judge.enabled ? "purple" : "white"} size="sm">
-            {config.judge.enabled ? d.setup.summary.judgeOn : d.setup.summary.judgeOff}
+          <Badge
+            color={config.judge.enabled ? "purple" : "white"}
+            size="sm"
+            className="max-w-[12rem] truncate"
+          >
+            {judgeBadge}
           </Badge>
         </div>
       </div>

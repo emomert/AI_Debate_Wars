@@ -9,7 +9,9 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 
 import {
+  DEFAULT_LOCALE,
   LOCALE_COOKIE,
+  MULTILOCALE_ENABLED,
   detectLocaleFromAcceptLanguage,
   isLocale,
   type Locale,
@@ -17,6 +19,10 @@ import {
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionaries";
 
 export async function getLocale(): Promise<Locale> {
+  // Turkish hidden for now — pin to English regardless of any stale cookie or
+  // the browser's Accept-Language (see MULTILOCALE_ENABLED).
+  if (!MULTILOCALE_ENABLED) return DEFAULT_LOCALE;
+
   const cookieStore = await cookies();
   const fromCookie = cookieStore.get(LOCALE_COOKIE)?.value;
   if (isLocale(fromCookie)) return fromCookie;

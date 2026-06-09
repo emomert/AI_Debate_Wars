@@ -2,28 +2,96 @@
 
 /**
  * TopicInput — large playful topic box with sample chips, a live character
- * count, and an inline error state.
+ * count, an inline error state, and an AI "Improve my topic" helper.
+ *
+ * The helper sends the topic to a cheap fast model (server route /api/topic/check)
+ * that judges whether it's a strong, two-sided debate topic and — when it isn't —
+ * suggests sharper ready-to-use alternatives the user can apply with one tap.
  */
 
-import { getSampleTopics, TOPIC_MAX_LENGTH } from "@/lib/constants";
+import { useEffect, useRef, useState } from "react";
+
+import { getSampleTopics, TOPIC_MAX_LENGTH, TOPIC_MIN_LENGTH } from "@/lib/constants";
 import { cn } from "@/lib/utils/cn";
+import { Badge } from "@/components/game/Badge";
+import { ArcadeButton } from "@/components/game/ArcadeButton";
+import { checkTopic } from "@/lib/api/debateClient";
+import type { TopicCheckResult } from "@/lib/debate/topicCheck";
+import type { ProviderAvailability } from "@/lib/state/ArenaContext";
+import { playSound } from "@/lib/audio/soundManager";
 import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 
 interface TopicInputProps {
   value: string;
   onChange: (value: string) => void;
   error?: string;
+  /** Which providers have keys — gates the AI helper (null = optimistic). */
+  availability?: ProviderAvailability | null;
 }
 
-export function TopicInput({ value, onChange, error }: TopicInputProps) {
+export function TopicInput({ value, onChange, error, availability }: TopicInputProps) {
   const d = useT();
+  const t = d.setup.topic;
   const { locale } = useLocale();
   const sampleTopics = getSampleTopics(locale);
+
+  const [checking, setChecking] = useState(false);
+  const [result, setResult] = useState<TopicCheckResult | null>(null);
+  const [checkError, setCheckError] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Cancel any in-flight check on unmount.
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  // The helper needs at least one provider key. `availability` is null until
+  // /api/health resolves, so stay optimistic and show the button until proven
+  // otherwise.
+  const helperAvailable =
+    !availability ||
+    availability.openai ||
+    availability.deepseek ||
+    availability.openrouter;
+
+  const canCheck = value.trim().length >= TOPIC_MIN_LENGTH && !checking;
+
+  const runCheck = async () => {
+    if (!canCheck) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setChecking(true);
+    setCheckError(false);
+    setResult(null);
+    playSound("buttonClick");
+    try {
+      const res = await checkTopic(value.trim(), locale, controller.signal);
+      if (!controller.signal.aborted) setResult(res);
+    } catch {
+      if (!controller.signal.aborted) setCheckError(true);
+    } finally {
+      if (!controller.signal.aborted) setChecking(false);
+    }
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    playSound("buttonClick");
+    onChange(suggestion);
+    setResult(null);
+    setCheckError(false);
+  };
+
+  const verdictBadge =
+    result?.verdict === "good"
+      ? { color: "green" as const, label: t.verdictStrong }
+      : result?.verdict === "unclear"
+        ? { color: "orange" as const, label: t.verdictUnclear }
+        : { color: "orange" as const, label: t.verdictWeak };
+
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <label htmlFor="topic" className="font-heading text-lg font-extrabold">
-          {d.setup.topic.label}
+          {t.label}
         </label>
         <span
           className={cn(
@@ -41,7 +109,7 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
         onChange={(e) => onChange(e.target.value)}
         rows={3}
         maxLength={TOPIC_MAX_LENGTH + 40}
-        placeholder={d.setup.topic.placeholder}
+        placeholder={t.placeholder}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? "topic-error" : undefined}
         className={cn(
@@ -57,9 +125,70 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
         </p>
       ) : null}
 
+      {/* AI topic helper */}
+      {helperAvailable ? (
+        <div className="mt-3">
+          <ArcadeButton
+            variant="judge-purple"
+            size="sm"
+            onClick={runCheck}
+            disabled={!canCheck}
+          >
+            {checking ? t.checking : t.check}
+          </ArcadeButton>
+
+          {checkError ? (
+            <p className="mt-2 text-sm font-bold text-arcade-red">{t.checkError}</p>
+          ) : null}
+
+          {result ? (
+            <div className="mt-2 rounded-card border-3 border-ink bg-surface p-3 shadow-hard-sm">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge color={verdictBadge.color} size="sm">
+                    {verdictBadge.label}
+                  </Badge>
+                  {result.assessment ? (
+                    <span className="text-sm text-ink/75">{result.assessment}</span>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setResult(null)}
+                  className="shrink-0 rounded-btn border-2 border-ink/30 px-1.5 text-[11px] font-bold text-ink/55 transition hover:border-ink hover:text-ink focus-visible:outline-3 focus-visible:outline-offset-2"
+                >
+                  {t.dismiss}
+                </button>
+              </div>
+
+              {result.suggestions.length > 0 ? (
+                <div className="mt-2.5">
+                  <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-ink/50">
+                    {t.suggestionsLabel}
+                  </p>
+                  <div className="flex flex-col gap-1.5">
+                    {result.suggestions.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => applySuggestion(s)}
+                        aria-label={t.useSuggestionAria(s)}
+                        className="rounded-btn border-3 border-ink bg-paper px-2.5 py-1.5 text-left text-sm font-semibold transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mt-3">
         <p className="mb-2 text-xs font-bold uppercase tracking-wide text-ink/50">
-          {d.setup.topic.quickExamples}
+          {t.quickExamples}
         </p>
         <div className="flex flex-wrap gap-2">
           {sampleTopics.map((topic, i) => (
@@ -78,7 +207,6 @@ export function TopicInput({ value, onChange, error }: TopicInputProps) {
           ))}
         </div>
       </div>
-
     </div>
   );
 }

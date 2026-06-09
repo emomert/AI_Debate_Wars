@@ -9,6 +9,8 @@ import type {
   DebateSession,
   DebateVerdict,
 } from "@/lib/debate/debateTypes";
+import type { TopicCheckResult } from "@/lib/debate/topicCheck";
+import type { Locale } from "@/lib/i18n/config";
 import type { AppErrorCode } from "@/lib/utils/errors";
 
 /** POST /api/debate/turn — generate exactly one AI turn. */
@@ -28,6 +30,16 @@ export interface GenerateVerdictRequest {
 
 export interface GenerateVerdictResponse {
   verdict: DebateVerdict;
+}
+
+/** POST /api/topic/check — AI sanity-check / improve a proposed debate topic. */
+export interface TopicCheckRequest {
+  topic: string;
+  language?: Locale;
+}
+
+export interface TopicCheckResponse {
+  result: TopicCheckResult;
 }
 
 /** GET /api/health — which providers are usable right now. */

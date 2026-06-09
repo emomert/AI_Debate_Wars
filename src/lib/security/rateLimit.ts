@@ -21,7 +21,7 @@ import "server-only";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ProviderError } from "@/lib/utils/errors";
 
-type RouteKind = "turn" | "verdict";
+type RouteKind = "turn" | "verdict" | "topic";
 
 const num = (v: string | undefined, fallback: number): number => {
   const n = Number(v);
@@ -33,6 +33,8 @@ const WINDOW_SECONDS = num(process.env.RL_WINDOW_SECONDS, 60);
 const PER_MIN: Record<RouteKind, number> = {
   turn: num(process.env.RL_TURN_PER_MIN, 8),
   verdict: num(process.env.RL_VERDICT_PER_MIN, 4),
+  // Topic checks are cheap + fast, so a more generous cap (still flood-proof).
+  topic: num(process.env.RL_TOPIC_PER_MIN, 12),
 };
 const GLOBAL_DAILY_CAP_USD = num(process.env.SPEND_GLOBAL_DAILY_USD, 10);
 const IP_DAILY_CAP_USD = num(process.env.SPEND_IP_DAILY_USD, 1);

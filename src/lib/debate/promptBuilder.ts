@@ -62,6 +62,8 @@ export const JUDGE_SYSTEM_PROMPT = `You are the judge of a structured AI debate.
 
 Your task is to evaluate the COMPLETED exchange and decide it — not to continue it, and not to stay neutral.
 
+You judge BLIND: the two sides are shown to you only as "Debater A" and "Debater B". You are NOT told which AI model wrote which side, and you must not guess or assume — score purely on the strength of the arguments in the transcript.
+
 Rules:
 - In Debate Mode, pick the stronger side and JUSTIFY the decision: name the specific arguments that won it and explain why the other side's were weaker. Your reasoning must clearly favor the side you chose — it is a verdict, not a balanced recap of the debate.
 - Identify the strongest and the weakest argument from each side.
@@ -121,8 +123,14 @@ export function buildSystemPrompt(
 // Built-in tone presets. "custom" is handled separately (free text).
 const TONE_INSTRUCTIONS: Record<Exclude<DebateTone, "custom">, string> = {
   serious: "Use a serious, balanced, and analytical tone.",
+  // Genuinely savage — built to feel like a takedown, not a polite disagreement.
+  // The aggression is aimed squarely at the ARGUMENT, never the person, so it
+  // stays publishable while pushing hard.
   aggressive:
-    "Use a sharp, confrontational debate tone. Attack weak reasoning directly, but do not insult the user or the opponent.",
+    "Use a ruthless, combative, take-no-prisoners debate tone — go for the throat. " +
+    "Tear the opponent's case apart: expose every logical fallacy, hidden assumption, double standard, and gap in evidence, and call them out by name with biting, punchy, high-energy language. " +
+    "Be openly dismissive of weak reasoning — mock the bad logic, not the human — use sharp rhetorical jabs, rhetorical questions, and withering one-liners, and never concede an inch or hedge. Press your advantage relentlessly. " +
+    "Hard limits (do not cross): no profanity or slurs, no insults aimed at the user or any real person, no demeaning protected groups, no threats. The savagery targets the IDEAS and the reasoning, not identities.",
   casual: "Use a conversational, easy-to-read tone.",
 };
 
@@ -182,6 +190,27 @@ function formatTranscript(session: DebateSession): string {
       const who = speakerName(session, m.speaker);
       const stance = m.stance ? ` · ${m.stance}` : "";
       return `[Round ${m.roundNumber ?? "?"} · ${who} (${m.role}${stance})]\n${m.content}`;
+    })
+    .join("\n\n");
+}
+
+/**
+ * ANONYMIZED transcript for the judge (req: the judge must not know which model
+ * wrote which side). Model A becomes "Debater A", Model B becomes "Debater B" —
+ * the role and stance stay (they describe the SIDE, not the model identity), so
+ * the judge can still reason about the actual debate. The score keys returned by
+ * the judge (scoreModelA / scoreModelB) map back positionally: A → Model A.
+ */
+function formatJudgeTranscript(session: DebateSession): string {
+  const anon = (speaker: DebateMessage["speaker"]): string =>
+    speaker === "modelA" ? "Debater A" : speaker === "modelB" ? "Debater B" : "Judge";
+  if (session.messages.length === 0) {
+    return "(No messages — nothing to judge.)";
+  }
+  return session.messages
+    .map((m) => {
+      const stance = m.stance ? ` · ${m.stance}` : "";
+      return `[Round ${m.roundNumber ?? "?"} · ${anon(m.speaker)} (${m.role}${stance})]\n${m.content}`;
     })
     .join("\n\n");
 }
@@ -301,11 +330,12 @@ export function buildTurnPrompt(
  * parse every provider identically.
  */
 export function buildJudgePrompt(session: DebateSession): string {
-  const transcript = formatTranscript(session);
+  // Blind: anonymized transcript, and we never tell the judge the model names.
+  const transcript = formatJudgeTranscript(session);
   const modeLabel = session.mode === "debate" ? "Debate Mode" : "Discussion Mode";
   const winnerRule =
     session.mode === "debate"
-      ? `"winner" must be one of "modelA", "modelB", or "tie".`
+      ? `"winner" must be one of "modelA", "modelB", or "tie" (use "modelA" for Debater A, "modelB" for Debater B).`
       : `"winner" must be "not_applicable" (this is a discussion, not a contest).`;
 
   return [
@@ -313,7 +343,8 @@ export function buildJudgePrompt(session: DebateSession): string {
     ``,
     `Mode:\n${modeLabel}`,
     ``,
-    `Model A is "${session.modelA.displayName}". Model B is "${session.modelB.displayName}".`,
+    `Two anonymous debaters argued: "Debater A" and "Debater B". You do NOT know which AI model is which, and you must not try to identify them — judge only the arguments.`,
+    `Whenever you refer to a side, use the EXACT label "Debater A" or "Debater B" (written exactly like that, with a space, never "Side A", "Speaker A", "Debater-A", "the first debater", or any other phrasing).`,
     ``,
     `Transcript:\n${transcript}`,
     ``,
@@ -321,18 +352,19 @@ export function buildJudgePrompt(session: DebateSession): string {
     `{`,
     `  "winner": string,                 // ${winnerRule}`,
     `  "winnerArgument": string,         // the winning side's single most decisive argument, in one sentence (empty string for a tie or a discussion)`,
-    `  "reasoning": string,              // 2-4 sentences explaining WHY the winner won: which specific arguments were more convincing and where the other side fell short. Clearly favor the chosen side — a verdict, not a neutral summary. Wrap the 2-4 most decisive phrases in **double asterisks** for emphasis.`,
-    `  "strongestModelA": string,        // strongest argument from Model A`,
-    `  "strongestModelB": string,        // strongest argument from Model B`,
-    `  "weakestModelA": string,          // weakest point or risk in Model A's case`,
-    `  "weakestModelB": string,          // weakest point or risk in Model B's case`,
-    `  "scoreModelA": number,            // 0-100`,
-    `  "scoreModelB": number             // 0-100, scoreModelA + scoreModelB = 100`,
+    `  "reasoning": string,              // 2-4 sentences explaining WHY the winner won: which specific arguments were more convincing and where the other side fell short. Clearly favor the chosen side — a verdict, not a neutral summary. Refer to the sides as "Debater A" / "Debater B". Wrap the 2-4 most decisive phrases in **double asterisks** for emphasis.`,
+    `  "strongestModelA": string,        // strongest argument from Debater A`,
+    `  "strongestModelB": string,        // strongest argument from Debater B`,
+    `  "weakestModelA": string,          // weakest point or risk in Debater A's case`,
+    `  "weakestModelB": string,          // weakest point or risk in Debater B's case`,
+    `  "scoreModelA": number,            // 0-100 for Debater A`,
+    `  "scoreModelB": number             // 0-100 for Debater B, scoreModelA + scoreModelB = 100`,
     `}`,
     `Do not continue the debate. Do not invent claims not present in the transcript.`,
     ...(session.language === "tr"
       ? [
           `Write every string VALUE in the JSON in Turkish (Türkçe), in fluent natural Turkish. Keep the JSON KEYS exactly as written above, in English.`,
+          `Even in Turkish, keep the two side labels written EXACTLY as "Debater A" and "Debater B" (do not translate them to "Tartışmacı" or any other word) — they are replaced with the real names afterward.`,
         ]
       : []),
   ].join("\n");

@@ -10,12 +10,15 @@ import type {
   GenerateTurnResponse,
   GenerateVerdictResponse,
   HealthResponse,
+  TopicCheckResponse,
 } from "@/lib/api/contracts";
 import type {
   DebateMessage,
   DebateSession,
   DebateVerdict,
 } from "@/lib/debate/debateTypes";
+import type { TopicCheckResult } from "@/lib/debate/topicCheck";
+import type { Locale } from "@/lib/i18n/config";
 import { ProviderError, type AppErrorCode } from "@/lib/utils/errors";
 
 async function postJson<T>(
@@ -69,6 +72,19 @@ export async function generateVerdict(
     signal,
   );
   return data.verdict;
+}
+
+export async function checkTopic(
+  topic: string,
+  language: Locale,
+  signal?: AbortSignal,
+): Promise<TopicCheckResult> {
+  const data = await postJson<TopicCheckResponse>(
+    "/api/topic/check",
+    { topic, language },
+    signal,
+  );
+  return data.result;
 }
 
 export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse> {

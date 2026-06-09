@@ -17,7 +17,11 @@ import { openaiProvider } from "@/lib/providers/openaiProvider";
 import { deepseekProvider } from "@/lib/providers/deepseekProvider";
 import { openRouterProvider } from "@/lib/providers/openRouterProvider";
 import { ProviderError, type AppErrorCode } from "@/lib/utils/errors";
-import { MODEL_CATALOG, type Backend } from "@/lib/models/modelRegistry";
+import {
+  MODEL_CATALOG,
+  PREFERRED_JUDGE_IDS,
+  type Backend,
+} from "@/lib/models/modelRegistry";
 import { isInjectedSearchConfigured } from "@/lib/search/searchRegistry";
 import type { DebateSession } from "@/lib/debate/debateTypes";
 
@@ -95,16 +99,9 @@ export function providerAvailability() {
   };
 }
 
-// Preferred neutral judges per backend (cheap + capable), tried before falling
-// back to "any non-fighter model on that backend".
-const PREFERRED_JUDGES: Record<Backend, string[]> = {
-  openai: ["gpt-4.1-mini", "gpt-4o-mini", "gpt-4.1"],
-  deepseek: ["deepseek-v4-flash", "deepseek-v4-pro"],
-  openrouter: [
-    "qwen/qwen3-next-80b-a3b-instruct:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-  ],
-};
+// Preferred neutral judges per backend live in the model registry
+// (PREFERRED_JUDGE_IDS) so the server resolver and the client preview agree.
+const PREFERRED_JUDGES = PREFERRED_JUDGE_IDS;
 
 /**
  * Resolve the neutral "auto" judge based on which keys are present, NEVER

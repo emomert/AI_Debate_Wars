@@ -48,12 +48,15 @@ export interface RoundOption {
   count: RoundCount;
   label: string;
   blurb: string;
+  /** Surfaced with a "Recommended" badge in the picker. */
+  recommended?: boolean;
 }
 
 export const ROUND_OPTIONS: RoundOption[] = [
-  { count: 3, label: "Quick Match", blurb: "Fast & punchy" },
-  { count: 5, label: "Standard Match", blurb: "Balanced depth" },
-  { count: 7, label: "Deep Match", blurb: "Full tournament" },
+  { count: 3, label: "Quick Match", blurb: "Fast & punchy", recommended: true },
+  { count: 5, label: "Ranked Match", blurb: "More back-and-forth" },
+  // 7 avoids the word "Deep" so it never reads as the separate Deep Debate mode.
+  { count: 7, label: "Championship", blurb: "Full tournament" },
 ];
 
 export interface ToneOption {
@@ -87,10 +90,12 @@ export interface LengthOption {
   id: ResponseLength;
   label: string;
   blurb: string;
+  /** Surfaced with a "Recommended" badge in the picker. */
+  recommended?: boolean;
 }
 
 export const LENGTH_OPTIONS: LengthOption[] = [
-  { id: "short", label: "Short", blurb: "100–160 words" },
+  { id: "short", label: "Short", blurb: "100–160 words", recommended: true },
   { id: "medium", label: "Medium", blurb: "180–300 words" },
   { id: "long", label: "Long", blurb: "350–600 words" },
 ];
@@ -102,71 +107,38 @@ export interface JudgeModeOption {
   warns?: boolean;
 }
 
+// Only the two NEUTRAL judge options are offered. The "Model A / Model B
+// judges" modes still exist in the JudgeMode type (for backward-compat with
+// matches saved before this change) but are no longer selectable in the UI.
 export const JUDGE_MODE_OPTIONS: JudgeModeOption[] = [
   { id: "auto", label: "Auto Judge", blurb: "Neutral third model picks a winner" },
   { id: "thirdModel", label: "Pick a Judge", blurb: "Choose a neutral third model" },
-  {
-    id: "modelA",
-    label: "Model A Judges",
-    blurb: "Less neutral — A was in the fight",
-    warns: true,
-  },
-  {
-    id: "modelB",
-    label: "Model B Judges",
-    blurb: "Less neutral — B was in the fight",
-    warns: true,
-  },
 ];
 
 /**
  * Example topics shown on Home and Setup to lower the blank-page friction.
- * A deliberate mix of QUESTIONS (great for either mode) and bold direct THESES
- * (a flat claim like "Sauron is not the real villain…" that a fighter can be
- * told to attack or defend — ideal for Debate Mode).
+ * A short, curated set — each is a sharp, clearly two-sided claim that drops
+ * straight into a great debate (no vague prompts, no in-jokes that only land
+ * for some users). Quality over quantity: a few strong starters beat a long
+ * scroll of filler.
  */
 export const SAMPLE_TOPICS: string[] = [
-  // Questions
-  "Should universities ban AI tools?",
-  "Is remote work better than office work?",
-  "Does AI regulation slow down innovation?",
-  "Is a 4-day work week good for the economy?",
-  "Should Turkey invest more in nuclear energy?",
-  "Should social media have a minimum age limit?",
-  // Bold theses (a flat claim to attack or defend — best in Debate Mode)
-  "Sauron is not the real villain of The Lord of the Rings.",
-  "Pineapple absolutely belongs on pizza.",
   "Social media has done more harm than good.",
-  "Batman would beat Iron Man in a fair fight.",
+  "AI will create more jobs than it destroys.",
+  "Remote work beats working from an office.",
+  "Universities should ban AI writing tools.",
   "Humans will live on Mars within 50 years.",
-  "Tabs are better than spaces.",
-  "Money can buy happiness.",
-  "Cereal is a soup.",
-  "A hot dog is a sandwich.",
-  // Idea / discussion
-  "Evaluate my startup idea: a food-waste marketplace for restaurants.",
+  "Pineapple belongs on pizza.",
 ];
 
 /** Turkish sample topics (shown on Home + Setup when the UI is in Turkish). */
 export const SAMPLE_TOPICS_TR: string[] = [
-  // Sorular
-  "Üniversiteler yapay zekâ araçlarını yasaklamalı mı?",
-  "Uzaktan çalışma, ofiste çalışmaktan daha mı iyi?",
-  "Yapay zekâ düzenlemeleri inovasyonu yavaşlatır mı?",
-  "Haftada 4 günlük çalışma ekonomi için iyi mi?",
-  "Türkiye nükleer enerjiye daha fazla yatırım yapmalı mı?",
-  "Sosyal medyaya yaş sınırı getirilmeli mi?",
-  // İddialar (savunulacak ya da çürütülecek net tezler — Münazara Modu için ideal)
-  "Sauron, Yüzüklerin Efendisi'nin asıl kötü adamı değildir.",
-  "Ananas kesinlikle pizzanın üzerine yakışır.",
   "Sosyal medya faydadan çok zarar getirdi.",
-  "Adil bir dövüşte Batman, Iron Man'i yenerdi.",
+  "Yapay zekâ yok ettiğinden daha fazla iş yaratacak.",
+  "Uzaktan çalışma, ofiste çalışmaktan daha iyidir.",
+  "Üniversiteler yapay zekâ yazım araçlarını yasaklamalı.",
   "İnsanlar 50 yıl içinde Mars'ta yaşayacak.",
-  "Sekme (tab) boşluktan daha iyidir.",
-  "Para mutluluğu satın alabilir.",
-  "Sosis sandviç bir tür sandviçtir.",
-  // Fikir / tartışma
-  "Girişim fikrimi değerlendir: restoranlar için bir gıda-atığı pazaryeri.",
+  "Ananas pizzanın üzerine yakışır.",
 ];
 
 /** Sample topics for the active UI locale. */

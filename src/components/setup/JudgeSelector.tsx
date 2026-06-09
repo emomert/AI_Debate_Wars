@@ -7,7 +7,7 @@
  */
 
 import { JUDGE_MODE_OPTIONS } from "@/lib/constants";
-import type { ModelCatalogEntry } from "@/lib/models/modelRegistry";
+import { previewAutoJudge, type ModelCatalogEntry } from "@/lib/models/modelRegistry";
 import type { JudgeConfig, JudgeMode, ModelRef } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
 import { ModelSelector } from "@/components/setup/ModelSelector";
@@ -59,6 +59,25 @@ export function JudgeSelector({
     value.mode === "thirdModel" &&
     !!value.model &&
     fighterModelIds.includes(value.model.modelId);
+
+  // Which neutral model the "auto" judge will be — mirrors the server's pick so
+  // the user sees it up front (#10). Null until /api/health resolves availability.
+  const autoJudge =
+    value.enabled && value.mode === "auto"
+      ? previewAutoJudge(
+          availability
+            ? {
+                openai: availability.openai,
+                deepseek: availability.deepseek,
+                openrouter: availability.openrouter,
+              }
+            : null,
+          fighterModelIds,
+        )
+      : null;
+  // Rare degenerate case (only fighters available on the one backend): the auto
+  // pick is itself a fighter, so warn it's not fully neutral.
+  const autoJudgeIsFighter = !!autoJudge && fighterModelIds.includes(autoJudge.id);
 
   return (
     <div>
@@ -146,6 +165,38 @@ export function JudgeSelector({
             </p>
           ) : null}
 
+          {/* Auto Judge — reveal which neutral model will score the match (#10). */}
+          {value.mode === "auto" ? (
+            <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-3">
+              {autoJudge ? (
+                <div className="flex items-start gap-2.5">
+                  <span aria-hidden className="text-2xl leading-none">
+                    {autoJudge.avatar}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-heading text-sm font-extrabold">
+                      {d.setup.judge.autoPickPrefix} {autoJudge.displayName}
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-0.5 text-xs",
+                        autoJudgeIsFighter
+                          ? "font-semibold text-arcade-orange"
+                          : "text-ink/60",
+                      )}
+                    >
+                      {autoJudgeIsFighter
+                        ? d.setup.judge.warnParticipated
+                        : d.setup.judge.autoNeutralNote}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-ink/65">{d.setup.judge.autoResolving}</p>
+              )}
+            </div>
+          ) : null}
+
           {value.mode === "thirdModel" ? (
             <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-3">
               <ModelSelector
@@ -162,6 +213,13 @@ export function JudgeSelector({
               ) : null}
             </div>
           ) : null}
+
+          {/* Always reassure: the judge scores blind — it never learns which
+              model wrote which side (#12). */}
+          <div className="rounded-card border-3 border-ink/15 bg-arcade-blue/10 p-3">
+            <p className="font-heading text-sm font-extrabold">{d.setup.judge.blindTitle}</p>
+            <p className="mt-0.5 text-xs text-ink/70">{d.setup.judge.blindNote}</p>
+          </div>
         </div>
       )}
     </div>

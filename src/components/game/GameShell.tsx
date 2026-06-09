@@ -12,6 +12,7 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { MULTILOCALE_ENABLED } from "@/lib/i18n/config";
 import { DottedBackground } from "@/components/game/DottedBackground";
 import { SoundToggle } from "@/components/game/SoundToggle";
 import { MusicToggle } from "@/components/game/MusicToggle";
@@ -87,26 +88,19 @@ export function GameShell({
             wide ? "max-w-7xl" : "max-w-5xl",
           )}
         >
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 items-center">
             <Logo />
-            <Link
-              href="/report"
-              className="hidden items-center gap-1 rounded-btn border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase tracking-wide transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2 sm:inline-flex"
-            >
-              📊 {d.shell.techReport}
-            </Link>
-            <Link
-              href="/report"
-              aria-label={d.shell.techReportAria}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-btn border-3 border-ink bg-surface text-sm transition hover:bg-arcade-yellow focus-visible:outline-3 focus-visible:outline-offset-2 sm:hidden"
-            >
-              📊
-            </Link>
           </div>
-          <div className="flex items-center gap-2">
-            {headerExtras}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {headerExtras ? (
+              <>
+                {headerExtras}
+                {/* Hairline divider between page-specific HUD and global controls. */}
+                <span aria-hidden className="mx-0.5 hidden h-6 w-px bg-ink/15 sm:block" />
+              </>
+            ) : null}
             {authEnabled ? <AuthButton /> : null}
-            <LanguageToggle />
+            {MULTILOCALE_ENABLED ? <LanguageToggle /> : null}
             <MusicToggle />
             <SoundToggle />
             <HelpButton />
@@ -150,6 +144,10 @@ export function GameShell({
             <span aria-hidden className="text-ink/30">·</span>
             <Link href="/privacy" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
               {d.legal.privacy}
+            </Link>
+            <span aria-hidden className="text-ink/30">·</span>
+            <Link href="/report" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
+              {d.shell.techReport}
             </Link>
           </p>
         </footer>

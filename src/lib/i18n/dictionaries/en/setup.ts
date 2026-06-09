@@ -21,6 +21,7 @@ export const setup = {
     tone: "Tone",
     maxLength: "Max response length",
     pacing: "Pacing",
+    recommended: "Recommended",
     lockRounds: "🔒 3 in Deep Debate",
     lockStandard: "🔒 Standard",
     lockAuto: "🔒 Auto",
@@ -36,13 +37,23 @@ export const setup = {
     label: "🎤 Your Topic",
     placeholder: "e.g. Should universities ban AI tools?",
     quickExamples: "Quick examples",
+    // AI topic checker
+    check: "✨ Improve my topic",
+    checking: "Checking…",
+    checkError: "Couldn't reach the topic helper — please try again.",
+    verdictStrong: "Strong topic",
+    verdictWeak: "Could be sharper",
+    verdictUnclear: "Needs more focus",
+    suggestionsLabel: "Try one of these instead:",
+    useSuggestionAria: (s: string) => `Use this topic: ${s}`,
+    dismiss: "Dismiss",
   },
 
   // RoundSelector option labels/blurbs, keyed by round count
   rounds: {
     3: { label: "Quick Match", blurb: "Fast & punchy" },
-    5: { label: "Standard Match", blurb: "Balanced depth" },
-    7: { label: "Deep Match", blurb: "Full tournament" },
+    5: { label: "Ranked Match", blurb: "More back-and-forth" },
+    7: { label: "Championship", blurb: "Full tournament" },
   } as Record<number, { label: string; blurb: string }>,
 
   // ToneSelector option labels (keyed by id) + custom input
@@ -97,6 +108,14 @@ export const setup = {
     warnThirdFighting:
       "⚠️ This judge is also fighting in the match, so the verdict may be less neutral.",
     judgeModelLabel: "Judge model",
+    // Auto Judge — surface which neutral model will score the match (#10)
+    autoPickPrefix: "Judge:",
+    autoNeutralNote: "Chosen automatically — always a neutral model that isn't one of your two fighters.",
+    autoResolving: "A neutral model is chosen automatically when the match starts.",
+    // Blind judging reassurance (#12)
+    blindTitle: "🙈 Blind judging",
+    blindNote:
+      "The judge never sees which model wrote which side — it scores the two debaters anonymously, and we reveal who was who only after the verdict.",
     // Judge mode option labels/blurbs (keyed by id)
     modes: {
       auto: { label: "Auto Judge", blurb: "Neutral third model picks a winner" },

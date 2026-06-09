@@ -98,6 +98,19 @@ export default function SetupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.mode]);
 
+  // "Model A / Model B judges" was removed (only neutral judges now). Coerce a
+  // stale persisted choice to Auto so the judge picker never shows nothing
+  // selected.
+  useEffect(() => {
+    if (
+      config.judge.enabled &&
+      (config.judge.mode === "modelA" || config.judge.mode === "modelB")
+    ) {
+      setConfig({ judge: { ...config.judge, mode: "auto", model: undefined } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.judge.mode, config.judge.enabled]);
+
   // Swap which fighter is A vs B (keep slot colors: A blue, B red).
   const swapFighters = () => {
     playSound("buttonClick");
@@ -134,6 +147,7 @@ export default function SetupPage() {
               value={config.topic}
               onChange={(topic) => setConfig({ topic })}
               error={topicError}
+              availability={availability}
             />
           </GamePanel>
 
@@ -267,6 +281,7 @@ export default function SetupPage() {
               config={config}
               validation={validation}
               onStart={handleStart}
+              availability={availability}
             />
             <div className="mt-3 text-center">
               <ArcadeButton

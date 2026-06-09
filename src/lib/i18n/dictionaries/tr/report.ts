@@ -1,6 +1,10 @@
 /** Turkish — Technical report page. Must mirror ../en/report.ts. */
 export const report = {
   title: "Teknik Rapor",
+  toolbar: {
+    print: "🖨️ Raporu Kaydet / Yazdır",
+    home: "⌂ Ana sayfa",
+  },
   intro: {
     lead: "Debator perde arkasında nasıl çalışıyor — maçlarınızı yürüten kodun ta kendisinden canlı olarak. Aşağıdaki istemler ",
     actual1: "gerçek",

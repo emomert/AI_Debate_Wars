@@ -11,6 +11,14 @@ export const LOCALES = ["en", "tr"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = "en";
+
+/**
+ * Master switch for the multi-language experience. Turkish is HIDDEN for now:
+ * the language toggle is not rendered and every locale resolver pins to English,
+ * so the (still-bundled) Turkish dictionaries lie dormant. Flip this to `true`
+ * to bring the toggle + Turkish back with zero other code changes.
+ */
+export const MULTILOCALE_ENABLED = false;
 export const LOCALE_COOKIE = "debator_locale";
 /** One year — a language choice should be sticky. */
 export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -27,6 +35,7 @@ export function isLocale(value: unknown): value is Locale {
 export function detectLocaleFromAcceptLanguage(
   header: string | null | undefined,
 ): Locale {
+  if (!MULTILOCALE_ENABLED) return DEFAULT_LOCALE; // Turkish hidden for now
   if (!header) return DEFAULT_LOCALE;
   const first = header.split(",")[0]?.trim().toLowerCase() ?? "";
   return first.startsWith("tr") ? "tr" : DEFAULT_LOCALE;
@@ -39,6 +48,7 @@ export function detectLocaleFromAcceptLanguage(
  * the language it should run in.
  */
 export function readClientLocale(): Locale {
+  if (!MULTILOCALE_ENABLED) return DEFAULT_LOCALE; // Turkish hidden for now
   if (typeof document === "undefined") return DEFAULT_LOCALE;
   const match = document.cookie.match(/(?:^|;\s*)debator_locale=([^;]+)/);
   const value = match?.[1];

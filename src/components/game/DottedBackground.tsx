@@ -10,7 +10,7 @@ export function DottedBackground() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10"
+      className="pointer-events-none fixed inset-0 -z-10 print:hidden"
       style={{
         background:
           "radial-gradient(80% 60% at 50% 0%, rgba(255,217,26,0.10), transparent 70%), radial-gradient(70% 60% at 100% 100%, rgba(139,92,246,0.08), transparent 70%)",

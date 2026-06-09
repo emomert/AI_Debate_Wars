@@ -11,6 +11,7 @@
  */
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { GameShell } from "@/components/game/GameShell";
@@ -193,7 +194,25 @@ export default function ReportPage() {
   return (
     <GameShell wide>
       <div className="mb-6">
-        <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{d.report.title}</h1>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{d.report.title}</h1>
+          {/* Standalone-report actions (hidden when printing). */}
+          <div className="flex shrink-0 items-center gap-2 print:hidden">
+            <Link
+              href="/"
+              className="rounded-btn border-3 border-ink bg-surface px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
+            >
+              {d.report.toolbar.home}
+            </Link>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="rounded-btn border-3 border-ink bg-arcade-yellow px-3 py-1.5 text-xs font-extrabold uppercase tracking-wide text-night transition hover:-translate-y-0.5 focus-visible:outline-3 focus-visible:outline-offset-2"
+            >
+              {d.report.toolbar.print}
+            </button>
+          </div>
+        </div>
         <p className="mt-2 max-w-3xl text-ink/70">
           {d.report.intro.lead}
           <em>{d.report.intro.actual1}</em>

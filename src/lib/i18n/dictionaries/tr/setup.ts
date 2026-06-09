@@ -21,6 +21,7 @@ export const setup = {
     tone: "Üslup",
     maxLength: "En fazla yanıt uzunluğu",
     pacing: "Tempo",
+    recommended: "Önerilen",
     lockRounds: "🔒 Derin Münazara'da 3",
     lockStandard: "🔒 Standart",
     lockAuto: "🔒 Otomatik",
@@ -36,13 +37,23 @@ export const setup = {
     label: "🎤 Konunuz",
     placeholder: "örn. Üniversiteler yapay zekâ araçlarını yasaklamalı mı?",
     quickExamples: "Hızlı örnekler",
+    // AI topic checker
+    check: "✨ Konumu geliştir",
+    checking: "Kontrol ediliyor…",
+    checkError: "Konu yardımcısına ulaşılamadı — lütfen tekrar deneyin.",
+    verdictStrong: "Güçlü konu",
+    verdictWeak: "Daha keskin olabilir",
+    verdictUnclear: "Daha fazla odak gerek",
+    suggestionsLabel: "Bunlardan birini deneyin:",
+    useSuggestionAria: (s: string) => `Bu konuyu kullan: ${s}`,
+    dismiss: "Kapat",
   },
 
   // RoundSelector option labels/blurbs, keyed by round count
   rounds: {
     3: { label: "Hızlı Maç", blurb: "Hızlı ve vurucu" },
-    5: { label: "Standart Maç", blurb: "Dengeli derinlik" },
-    7: { label: "Derin Maç", blurb: "Tam turnuva" },
+    5: { label: "Dereceli Maç", blurb: "Daha fazla karşılıklı atışma" },
+    7: { label: "Şampiyona", blurb: "Tam turnuva" },
   } as Record<number, { label: string; blurb: string }>,
 
   // ToneSelector option labels (keyed by id) + custom input
@@ -97,6 +108,12 @@ export const setup = {
     warnThirdFighting:
       "⚠️ Bu hakem aynı zamanda maçta yarışıyor, bu yüzden karar daha az tarafsız olabilir.",
     judgeModelLabel: "Hakem modeli",
+    autoPickPrefix: "Hakem:",
+    autoNeutralNote: "Otomatik seçilir — her zaman iki yarışmacınızdan biri olmayan tarafsız bir model.",
+    autoResolving: "Maç başladığında tarafsız bir model otomatik olarak seçilir.",
+    blindTitle: "🙈 Kör değerlendirme",
+    blindNote:
+      "Hakem hangi modelin hangi tarafı yazdığını asla görmez — iki yarışmacıyı isimsiz olarak puanlar ve kimin kim olduğunu yalnızca karardan sonra açıklarız.",
     // Judge mode option labels/blurbs (keyed by id)
     modes: {
       auto: { label: "Otomatik Hakem", blurb: "Tarafsız üçüncü model kazananı seçer" },

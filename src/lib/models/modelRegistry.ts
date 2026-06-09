@@ -234,6 +234,62 @@ export function modelSupportsWebSearch(
   return deepSearchStrategy(modelId) === "native" || injectedSearchReady;
 }
 
+/**
+ * Preferred neutral auto-judge ids per backend (cheap + capable), tried before
+ * "any non-fighter model on that backend". SHARED by the server resolver
+ * (providerRegistry.resolveAutoJudge) and the client preview (previewAutoJudge)
+ * so both pick the same judge.
+ */
+export const PREFERRED_JUDGE_IDS: Record<Backend, string[]> = {
+  openai: ["gpt-4.1-mini", "gpt-4o-mini", "gpt-4.1"],
+  deepseek: ["deepseek-v4-flash", "deepseek-v4-pro"],
+  openrouter: [
+    "qwen/qwen3-next-80b-a3b-instruct:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+  ],
+};
+
+/**
+ * Client-safe PREVIEW of the neutral "auto" judge. Mirrors `resolveAutoJudge`'s
+ * selection (key-preference order → first preferred non-fighter → first other
+ * non-fighter on that backend) but takes availability as plain data instead of
+ * reading process.env, so the Setup UI can show which model will judge. Returns
+ * null when availability is unknown or nothing neutral resolves — the caller
+ * then shows a generic "picked automatically" note.
+ */
+export function previewAutoJudge(
+  available: { openai: boolean; deepseek: boolean; openrouter: boolean } | null,
+  fighterIds: string[],
+): ModelCatalogEntry | null {
+  if (!available) return null;
+  const fighters = new Set(fighterIds.filter(Boolean));
+  const order: Backend[] = [];
+  if (available.openai) order.push("openai");
+  if (available.deepseek) order.push("deepseek");
+  if (available.openrouter) order.push("openrouter");
+
+  for (const backend of order) {
+    for (const id of PREFERRED_JUDGE_IDS[backend]) {
+      if (!fighters.has(id)) {
+        const entry = getModelById(id);
+        if (entry) return entry;
+      }
+    }
+    const neutral = MODEL_CATALOG.find(
+      (m) => m.providerId === backend && !fighters.has(m.id),
+    );
+    if (neutral) return neutral;
+  }
+
+  // Degenerate: every candidate on every available backend is a fighter. Mirror
+  // the server (resolveAutoJudge), which still appoints a fighter so the verdict
+  // runs — the caller is expected to flag the pick as non-neutral.
+  if (order.length > 0) {
+    return getModelById(PREFERRED_JUDGE_IDS[order[0]][0]) ?? null;
+  }
+  return null;
+}
+
 export const COST_TIER_LABEL: Record<CostTier, string> = {
   free: "FREE",
   low: "$",

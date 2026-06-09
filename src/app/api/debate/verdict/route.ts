@@ -130,6 +130,25 @@ export async function POST(req: Request): Promise<NextResponse> {
       session.modelA.displayName,
       session.modelB.displayName,
     );
+
+    // The judge evaluated BLIND — it only saw "Debater A" / "Debater B" (see
+    // buildJudgePrompt). Now that judging is done, reveal the identities by
+    // mapping those labels back to the real model names in the human-facing
+    // text. The prompt pins the exact "Debater A/B" label, but models still
+    // drift (hyphen, "Speaker", "Side", Turkish "Tartışmacı"), so the match is
+    // deliberately broad to keep an anonymized label from ever reaching the UI.
+    const sideLabel = (side: "A" | "B"): RegExp =>
+      new RegExp(`\\b(?:Debater|Debaters|Speaker|Side|Tartışmacı|Münazaracı)[\\s\\-]*${side}\\b`, "gi");
+    const deanonymize = (text: string): string =>
+      text
+        .replace(sideLabel("A"), session.modelA.displayName)
+        .replace(sideLabel("B"), session.modelB.displayName);
+    parsed.summary = deanonymize(parsed.summary);
+    parsed.winnerArgument = deanonymize(parsed.winnerArgument);
+    parsed.strongestModelA = deanonymize(parsed.strongestModelA);
+    parsed.strongestModelB = deanonymize(parsed.strongestModelB);
+    parsed.weakestModelA = deanonymize(parsed.weakestModelA);
+    parsed.weakestModelB = deanonymize(parsed.weakestModelB);
     const estimated = !result.usage;
     const usage =
       result.usage ??

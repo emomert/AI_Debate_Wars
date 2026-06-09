@@ -55,6 +55,15 @@ export function ResponseLengthSelector({
                 : "bg-surface hover:bg-arcade-yellow hover:text-night",
             )}
           >
+            {/* Reserved top row keeps all chips aligned; only the recommended
+                option fills it with a badge. */}
+            <div className="mb-0.5 flex h-3.5 items-center justify-center">
+              {opt.recommended && !disabled ? (
+                <span className="whitespace-nowrap rounded-badge border-2 border-ink bg-arcade-yellow px-1 text-[8px] font-extrabold uppercase leading-none tracking-wide text-night">
+                  ★ {d.setup.rules.recommended}
+                </span>
+              ) : null}
+            </div>
             <div className="font-heading text-sm font-extrabold uppercase">
               {copy.label}
             </div>

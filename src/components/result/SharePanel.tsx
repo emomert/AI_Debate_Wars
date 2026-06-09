@@ -14,6 +14,12 @@ import { useEffect, useRef, useState } from "react";
 import type { DebateSession } from "@/lib/debate/debateTypes";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
+import {
+  XIcon,
+  WhatsAppIcon,
+  RedditIcon,
+  LinkedInIcon,
+} from "@/components/result/ShareIcons";
 import { renderVerdictBlob } from "@/lib/share/verdictImage";
 import { encodeSharePayload, sharePayloadFromSession } from "@/lib/share/shareLink";
 import { formatCost } from "@/lib/utils/format";
@@ -216,19 +222,31 @@ export function SharePanel({ session }: { session: DebateSession }) {
         </div>
       ) : null}
 
-      {/* Social + link */}
+      {/* Social + link — real platform logos on each share button. */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("x")}>
-          {t.post}
+          <span className="flex items-center gap-1.5">
+            <XIcon />
+            {t.post}
+          </span>
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("whatsapp")}>
-          {t.whatsapp}
+          <span className="flex items-center gap-1.5">
+            <WhatsAppIcon />
+            {t.whatsapp}
+          </span>
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("reddit")}>
-          {t.reddit}
+          <span className="flex items-center gap-1.5">
+            <RedditIcon />
+            {t.reddit}
+          </span>
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={() => openShare("linkedin")}>
-          {t.linkedin}
+          <span className="flex items-center gap-1.5">
+            <LinkedInIcon />
+            {t.linkedin}
+          </span>
         </ArcadeButton>
         <ArcadeButton variant="neutral-white" size="sm" onClick={copyLink}>
           {flash === "link" ? t.linkCopied : t.copyLink}

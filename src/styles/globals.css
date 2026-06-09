@@ -167,3 +167,17 @@ html[lang="tr"] .font-display {
     animation-iteration-count: infinite !important;
   }
 }
+
+/* Print: strip the arcade chrome so a printed / "Save as PDF" page (e.g. the
+   Tech Report's Save / Print action) is clean, white and ink-friendly — only
+   the page body content prints, never the sticky header, footer or dotted
+   background. */
+@media print {
+  header,
+  footer {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+}
