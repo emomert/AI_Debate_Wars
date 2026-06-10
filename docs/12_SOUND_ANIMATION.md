@@ -1,136 +1,36 @@
 # 12 — Sound and Animation
 
+> Updated 2026-06-10. Source of truth: `src/lib/audio/soundManager.ts` and
+> `src/styles/globals.css`.
+
 ## Goal
 
-Sound and animation should make the product feel alive without distracting from reading.
+Sound and animation make the product feel alive without distracting from reading.
 
-## Sound Defaults
+## Sound System (as built)
 
-- Sound muted by default.
-- User must manually enable sound.
-- Save preference in local storage.
-- No autoplay background music without interaction.
+**Synth-first:** all SFX are short, arcade-style chiptune blips generated with the Web Audio API — no required audio assets. Real files in `public/music/` can override any key.
 
-## Sound Effects
+- **SFX are muted by default**; the toggle persists to localStorage.
+- **Background music defaults ON** (a deliberate positive default) — a generative looping synth (Dm7 → G7 → Cmaj7 → Am7, 16s loop) mastered very soft (0.03), with an optional `public/music/background.mp3` override. It pauses when the tab is hidden and resumes on visibility.
+- The AudioContext is created lazily on the first user gesture, so nothing autoplays before interaction (browser policy compliant).
+- **Verdict drum roll:** a looping suspense cue while the judge deliberates; `playVerdictRoll()` returns a promise so the verdict reveal is timed to the roll's end.
 
-Recommended short sound effects:
-
-1. button click
-2. mode select
-3. model selected
-4. debate start
-5. round start
-6. model starts typing
-7. model finishes response
-8. cost counter update
-9. judge enters
-10. verdict reveal
-11. error
-
-## Sound Manager
-
-Create a `soundManager.ts`.
-
-Responsibilities:
-
-- load sound files
-- play by key
-- mute/unmute
-- save preference
-- prevent overlapping annoying sounds
-- expose `playSound("buttonClick")`
+SFX keys: `buttonClick`, `modeSelect`, `modelSelected`, `debateStart`, `roundStart`, `typingStart`, `turnComplete`, `costTick`, `judgeEnter`, `verdictReveal`, `next`, `error`.
 
 ## Animation Principles
 
-Animations should be:
+Quick, snappy, tactile, purposeful. Avoid slow transitions, distracting background motion, unreadable moving text, and simultaneous bouncing everywhere.
 
-- quick
-- snappy
-- tactile
-- purposeful
+## Core Animations
 
-Avoid:
-
-- slow page transitions
-- distracting background motion
-- unreadable moving text
-- too much simultaneous bouncing
-
-## Required Animations
-
-### Button Press
-
-- hover lift
-- active depress
-- shadow changes
-
-### Card Entrance
-
-- small upward slide
-- opacity from 0 to 1
-- duration 150–250ms
-
-### Thinking State
-
-- pulsing dots
-- active model card glow
-- optional avatar bounce
-
-### Streaming Text
-
-- text appears token by token or sentence by sentence
-- blinking cursor
-- no layout jump if possible
-
-### Round Transition
-
-- round badge animates
-- short “Round 2” reveal
-- optional sound
-
-### Verdict Reveal
-
-- judge card pops in
-- badge animation
-- optional confetti
-- cost summary count-up
+- **Button press:** hover lift, active depress with shadow reduction.
+- **Card entrance:** small upward slide + fade, 150–250ms.
+- **Thinking state:** pulsing dots, active fighter glow, rotating playful thinking messages (large pool, slow shuffle).
+- **Typewriter reveal:** text appears progressively with a blinking caret; no layout jump.
+- **Round transition:** round badge reveal with optional sound.
+- **Verdict reveal:** drum roll → judge card pop-in → score count-up.
 
 ## Reduced Motion
 
-Respect user preference for **decorative** motion only. The live-typing
-experience (JS typewriter reveal, blinking caret, thinking dots, status pulse)
-is the core product and plays identically for every visitor — it is NOT gated
-on the media query. Mirror `src/styles/globals.css`:
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms;
-    transition-duration: 0.01ms;
-  }
-  /* Exempt the live-typing companions — they are the product experience. */
-  .animate-caret-blink {
-    animation-duration: 1.05s;
-    animation-iteration-count: infinite;
-  }
-  .animate-thinking-bounce {
-    animation-duration: 1.2s;
-    animation-iteration-count: infinite;
-  }
-  .animate-pulse {
-    animation-duration: 2s;
-    animation-iteration-count: infinite;
-  }
-}
-```
-
-## Animation Acceptance Criteria
-
-Sound and animation are acceptable if:
-
-- interface feels lively
-- reading remains comfortable
-- sound can be disabled
-- reduced motion is respected for decorative animations (typewriter reveal,
-  caret blink, thinking dots, and status pulse intentionally still play)
-- no animation blocks core functionality
+Respect `prefers-reduced-motion` for **decorative** motion only. The live-typing experience (typewriter reveal, caret blink, thinking dots, status pulse) is the core product and plays identically for every visitor — it is intentionally NOT gated on the media query. `globals.css` flattens all animations under the media query and then explicitly re-exempts `.animate-caret-blink`, `.animate-thinking-bounce`, and `.animate-pulse`.

@@ -1,258 +1,104 @@
 # 01 — Product Requirements Document
 
+> Updated 2026-06-10 to describe the product as built. The original MVP-era PRD
+> (Discussion Mode, mock providers, two-provider scope) is superseded.
+
 ## Product Name
 
-AI Debate Arena
+Debator (AI Debate Arena)
 
 ## Problem
 
-Users often want to evaluate ideas, compare AI models, or explore both sides of an argument. Current AI chat interfaces are not designed for structured multi-model debate. They usually produce one answer at a time, and model comparison tools are often technical, static, and boring.
+Users want to evaluate ideas, compare AI models, or explore both sides of an argument. Chat interfaces produce one answer at a time, and model comparison tools are technical, static, and boring. Debator makes structured two-model debate engaging, transparent (costs visible), and useful (judge verdicts, citations).
 
-There is an opportunity to create an engaging, gamified tool that lets users:
+## Core Features (as built)
 
-- compare AI models
-- stress-test ideas
-- generate opposing viewpoints
-- receive a judge verdict
-- understand token/cost implications
-- enjoy the process visually
+### Topic Input + AI Topic Check
 
-## Product Goal
+- Large topic input with sample topics and validation.
+- "Improve topic" button: a cheap model (`/api/topic/check`) rates the topic (good / weak / unclear) and suggests up to 3 sharper alternatives.
 
-Create a website where users can configure a structured AI debate or discussion between two models and watch it unfold in a playful arcade-like interface.
+### Fighters (Model Selection)
 
-## MVP Goals
+- Two fighters chosen from a catalog of 56+ models across three providers:
+  - **OpenAI** (GPT-5.x, GPT-4.x families)
+  - **DeepSeek** (V4 Pro, V4 Flash)
+  - **OpenRouter** (21+ free models: Qwen, Llama, Kimi, GLM, Gemma, …)
+- Each model card shows brand, family, nickname, color, cost tier (FREE / $ / $$ / $$$), and a debate-suitability rating.
+- A/B sides can be swapped; the picker groups models by brand and family.
 
-The MVP should prove that:
+### Match Rules
 
-1. Users understand the concept quickly.
-2. The arcade-style UI makes AI model comparison more engaging.
-3. Structured rounds prevent infinite loops and repetitive model behavior.
-4. Judge Mode provides a satisfying end state.
-5. Cost tracking increases trust and transparency.
-6. The architecture can support OpenAI, DeepSeek, and later OpenRouter.
+- **Rounds:** 3 (Quick Match), 5 (Ranked Match), or 7 (Championship). Each maps to a deterministic round plan; no infinite mode exists.
+- **Tone:** serious, aggressive, casual, or custom free text — configurable per fighter.
+- **Response length:** short (100–160 words), medium (180–300), long (350–600).
+- **Pace:** manual (user clicks each turn) or auto-play.
 
-## Core Features
+### Deep Debate (web search)
 
-### Feature 1 — Topic Input
+- Optional. Fighters receive injected web-search results and must cite sources as numbered references ([1], [2], …).
+- Default "unified" mode: the app runs Brave searches for every fighter so citations are comparable across brands. "Hybrid" mode (`DEEP_SEARCH_MODE=hybrid`) lets OpenRouter models search natively via `:online`.
+- Citation chips in the UI open a source viewer; orphan markers are stripped server-side.
 
-Users must be able to enter a topic, question, claim, or idea.
+### Judge Mode
 
-Examples:
+- Options: no judge, **auto** (a neutral, cheap-but-capable model is selected automatically), or a user-picked **third model**.
+- Using fighter A or B as judge was removed from the UI for neutrality (types remain for backward compatibility).
+- The judge evaluates the transcript **blind** (model names hidden) and returns a decisive verdict: winner, 0–100 scores, reasoning, strongest/weakest arguments per side.
+- The judge can be changed and the match re-judged from the result screen.
 
-- “Should AI tools be allowed in universities?”
-- “Is remote work better than office work?”
-- “Evaluate my startup idea: a food waste marketplace.”
-- “Should Turkey invest more in nuclear energy?”
+### Live Debate Page
 
-Requirements:
+- Top HUD: topic, round counter, fighters, total cost, sound toggle, stop button.
+- Fighter cards with thinking/speaking states; rotating playful "thinking" messages.
+- Typewriter text reveal per turn; cost badge (cost • tokens • latency) under each message.
+- Synth SFX and generative background music (toggleable).
 
-- Textarea or large input box
-- Suggested topic examples
-- Minimum length validation
-- Clear placeholder text
-- Playful visual styling
+### Result, Sharing, History
 
-### Feature 2 — Mode Selection
+- Result page with verdict reveal (drum roll), match summary, and total cost.
+- **Stateless share links:** the verdict is base64url-encoded into the URL (`/s?d=...`) — no database needed. Links auto-unfurl with a generated 1200×630 OG image (`/api/og`).
+- **Optional accounts** (Supabase: magic link + Google). Signed-in users can save matches and see history + headline stats on `/profile`. The app is fully usable signed out.
 
-Users can select between two modes:
+### Cost Tracking
 
-#### Debate Mode
+- Per-message: input/output tokens, cached-input savings, search fees, latency, USD cost.
+- Pricing is verified against provider pricing pages and lives in `src/lib/cost/pricing.ts`; prompts are ordered to be cache-friendly.
+- Session totals in the HUD and result page.
 
-Two models take opposing sides.
+### Abuse / Cost Protection
 
-- Model A: Pro
-- Model B: Against
+- Per-IP rate limits on turn, verdict, and topic-check routes.
+- Global and per-IP daily spend caps. All checks run before any paid provider call. See `docs/11_SECURITY_RATE_LIMITS.md`.
 
-The models should not agree too easily. They may acknowledge valid points, but they should defend their assigned side.
+### Other Pages
 
-#### Discussion Mode
+- `/about`, `/privacy`, `/terms` — legal pages.
+- `/report` — living technical report: the real prompts, model catalog, and pricing rendered from the same source files the API routes use.
 
-Two models take complementary roles.
+## Internationalization
 
-Default roles:
+- English is the launch language. Turkish UI, dictionaries, prompt addendum, and Turkish-fluency model filtering are fully built but hidden behind `MULTILOCALE_ENABLED = false`.
 
-- Model A: Supportive Strategist
-- Model B: Critical Evaluator
+## Error Handling
 
-The goal is not to “win,” but to improve the user’s idea or decision.
+Normalized error codes (missing key, timeout, provider error, rate limited, …) surface as playful but useful messages, with retries on transient provider failures.
 
-### Feature 3 — Model Selection
+## Out of Scope (current)
 
-Users select Model A and Model B.
+- Real streaming (turns return as one response; the typewriter reveal is client-side)
+- Payments / subscriptions (planned — see `docs/18_RELEASE_REQUIREMENTS.md`)
+- Multiplayer, leaderboards, public galleries
+- Discussion Mode (removed from UI)
+- Custom user system prompts (prompts are framework-locked by design)
 
-Initial supported providers:
+## UX Philosophy
 
-- OpenAI
-- DeepSeek
+The product should create the feeling of:
 
-Future support:
-
-- OpenRouter
-- Anthropic
-- Google Gemini
-- Mistral
-- Groq
-- local models
-
-Each model card should display:
-
-- provider
-- model name
-- nickname/personality
-- color corner
-- estimated cost label
-- strengths
-
-Example:
-
-- GPT-4.1 — “The Polished Strategist”
-- DeepSeek Chat — “The Sharp Challenger”
-
-### Feature 4 — Round Count
-
-Users choose a finite number of rounds:
-
-- 3 rounds: Quick Match
-- 5 rounds: Standard Match
-- 7 rounds: Deep Match
-
-No infinite default loop should exist.
-
-Each selected round count maps to a deterministic debate plan.
-
-### Feature 5 — Tone Selection
-
-Users choose a tone:
-
-- Serious
-- Funny
-- Academic
-- Aggressive
-- Casual
-- Startup-style
-- Legal-style
-- Investor-style
-
-Tone affects prompts but should not break the debate structure.
-
-### Feature 6 — Judge Mode
-
-Judge Mode is optional.
-
-Options:
-
-- No judge
-- Auto judge
-- Use Model A as judge
-- Use Model B as judge
-- Select third model as judge
-
-Recommendation:
-
-- Default: Judge enabled
-- Default judge: cost-efficient capable model
-- UI warning: using Model A or Model B as judge may be less neutral
-
-Judge output includes:
-
-- short summary
-- strongest argument from each side
-- weakest argument from each side
-- winner or stronger side
-- practical conclusion
-- optional scorecard
-
-### Feature 7 — Live Debate Page
-
-The live debate page should show:
-
-- debate title/topic
-- selected models
-- current round
-- current speaker
-- total cost
-- total tokens
-- timeline of messages
-- typewriter/streaming text
-- cost badge under each message
-- stop button
-- sound toggle
-- final verdict panel
-
-### Feature 8 — Cost Tracking
-
-Each AI response card should display:
-
-- model name
-- input tokens
-- output tokens
-- estimated cost
-- response latency
-
-The top bar should show:
-
-- total estimated cost
-- total messages
-- current round
-- debate status
-
-### Feature 9 — Error Handling
-
-The app should handle:
-
-- missing API key
-- provider timeout
-- provider error
-- invalid model
-- exceeded token limit
-- rate limit
-- user stops debate
-- judge generation failure
-
-Errors should look playful but be useful.
-
-Example:
-
-> The arena lights flickered. DeepSeek did not respond. Try again or switch models.
-
-## Out of Scope for MVP
-
-The MVP does not need:
-
-- user accounts
-- payments
-- saved debate history
-- public leaderboard
-- shareable URLs
-- database persistence
-- advanced analytics
-- real-time multiplayer
-- custom user-uploaded avatars
-- OpenRouter integration
-
-These can come later.
-
-## Success Criteria
-
-MVP is successful if:
-
-- A user can complete a 3-round debate end-to-end.
-- A user can complete a Discussion Mode session end-to-end.
-- Judge Mode produces a final verdict.
-- Cost tracking appears per message and in total.
-- The interface clearly feels gamified.
-- The debate does not loop infinitely.
-- Model provider logic is isolated from UI.
-- OpenAI and DeepSeek can be added without rewriting the debate engine.
-
-## Important UX Philosophy
-
-The product should create a feeling of:
-
-- “I am setting up a match.”
-- “I am watching two AI fighters.”
-- “The debate is progressing through rounds.”
-- “There will be a clear ending.”
-- “I can see what this costs.”
-- “This is fun, but still useful.”
+- "I am setting up a match."
+- "I am watching two AI fighters."
+- "The debate is progressing through rounds."
+- "There will be a clear ending."
+- "I can see what this costs."
+- "This is fun, but still useful."

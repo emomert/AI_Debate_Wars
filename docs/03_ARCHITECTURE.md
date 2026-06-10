@@ -1,358 +1,115 @@
 # 03 — Technical Architecture
 
+> Updated 2026-06-10 to match the implemented system.
+
 ## Architecture Summary
 
-AI Debate Arena should use a clean layered architecture:
+Layered architecture:
 
-1. UI Layer
-2. Debate Orchestration Layer
+1. UI Layer (React components, arcade design system)
+2. Debate Orchestration Layer (deterministic, client-driven)
 3. Prompt Construction Layer
-4. Provider Abstraction Layer
+4. Provider Abstraction Layer (OpenAI / DeepSeek / OpenRouter)
 5. Cost Tracking Layer
-6. API Routes / Backend Layer
+6. API Routes (server-side provider calls, rate limiting, spend caps)
+7. Optional persistence (Supabase: auth, match history, rate-limit/spend RPCs)
 
-The key architectural rule is:
+The key architectural rule:
 
-> UI components should never directly call OpenAI, DeepSeek, or any model provider.
+> UI components never call a model provider directly, and the debate engine never knows which provider is in use.
 
-## Recommended Stack
+## Stack
 
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- Framer Motion
-- API routes
-- Server-side provider calls
-- Local state for MVP
-- Optional later: Supabase/Postgres
-- Optional later: Redis rate limiting
+- Next.js App Router + TypeScript + Tailwind CSS + Framer Motion
+- Server-side provider calls in API routes (Vercel functions, `maxDuration` 60s)
+- Client state (`ArenaContext` + sessionStorage) for the live match
+- Supabase (optional) for auth, saved matches, rate limits, and spend ledger
+- Brave Search behind a search-provider interface for Deep Debate
 
-## Suggested Folder Structure
+## Actual Folder Structure
 
 ```txt
 /src
   app
-    page.tsx
-    setup
-      page.tsx
-    debate
-      page.tsx
-    result
-      page.tsx
+    page.tsx                 # home
+    setup/ debate/ result/   # match flow
+    s/                       # public share page (stateless, ?d= payload)
+    profile/ login/ auth/    # optional accounts
+    about/ privacy/ terms/   # legal
+    report/                  # living tech report (real prompts/pricing)
     api
-      debate
-        start
-          route.ts
-        turn
-          route.ts
-        verdict
-          route.ts
-      health
-        route.ts
-
+      debate/turn/route.ts      # one AI turn
+      debate/verdict/route.ts   # judge verdict
+      topic/check/route.ts      # AI topic check/improve
+      health/route.ts           # provider availability
+      og/route.tsx              # OG share image (edge)
   components
-    game
-      GameShell.tsx
-      DottedBackground.tsx
-      ArcadeButton.tsx
-      IconButton.tsx
-      SoundToggle.tsx
-      HelpButton.tsx
-      FloatingBadge.tsx
-      GamePanel.tsx
-
-    setup
-      TopicInput.tsx
-      ModeSelector.tsx
-      ModelSelector.tsx
-      RoundSelector.tsx
-      JudgeSelector.tsx
-      ToneSelector.tsx
-      SetupSummaryCard.tsx
-
-    debate
-      DebateArena.tsx
-      DebateTimeline.tsx
-      DebateMessageCard.tsx
-      AIModelCard.tsx
-      RoundCounter.tsx
-      CostBadge.tsx
-      ThinkingBubble.tsx
-      VerdictCard.tsx
-      DebateControls.tsx
-
-    result
-      FinalSummaryCard.tsx
-      ScoreBreakdown.tsx
-      SharePanel.tsx
-
+    game/ setup/ debate/ result/ profile/ legal/
   lib
-    debate
-      orchestrator.ts
-      roundPlans.ts
-      promptBuilder.ts
-      debateTypes.ts
-      validators.ts
-      sessionState.ts
-
-    providers
-      types.ts
-      openaiProvider.ts
-      deepseekProvider.ts
-      mockProvider.ts
-      providerRegistry.ts
-
-    cost
-      pricing.ts
-      calculateCost.ts
-      tokenUsage.ts
-
-    audio
-      soundManager.ts
-
-    utils
-      ids.ts
-      time.ts
-      errors.ts
-
+    debate/      # orchestrator, roundPlans, promptBuilder, debateTypes,
+                 # validators, verdictParser, citations, topicCheck
+    providers/   # types, openaiProvider, deepseekProvider, openRouterProvider,
+                 # openaiCompatible (shared base), providerRegistry
+    models/      # modelRegistry (catalog, cost tiers, ratings, capabilities)
+    cost/        # pricing, calculateCost
+    search/      # searchRegistry, braveSearch
+    supabase/    # env, client, server, middleware, matches
+    security/    # rateLimit (per-IP limits + spend caps via Supabase RPC)
+    share/       # shareLink (base64url verdict payload)
+    i18n/        # config, LocaleProvider, dictionaries/en + /tr
+    audio/       # soundManager (synth SFX + generative music)
+    state/       # ArenaContext
+    api/ utils/
   styles
-    globals.css
 ```
 
 ## Layer Responsibilities
 
 ### UI Layer
 
-Responsibilities:
+Renders setup, arena, result, share, and profile screens; triggers API calls; plays animation/sound. Must not know provider APIs, calculate pricing, build prompts, or decide round logic.
 
-- render setup form
-- render model selection
-- render debate timeline
-- render streamed content
-- render cost badges
-- render errors
-- trigger backend API calls
-- play animations and sounds
+### Debate Orchestration Layer (`lib/debate/orchestrator.ts`)
 
-Must not:
+- `createDebateSession(config)` builds the full deterministic turn list up front
+- `getNextTurn(session)` returns the first pending turn — the app, not the model, decides who speaks
+- `isDebateComplete` / `shouldGenerateJudge` gate completion and judging
 
-- know provider-specific APIs
-- calculate provider pricing directly
-- construct detailed model prompts
-- decide round logic
+There is no `/api/debate/start` route: the session is created client-side (it contains no secrets) and each turn is generated server-side. Validators on the server bound every field (`assertValidSession`, length caps) so a forged session cannot amplify costs unboundedly.
 
-### Debate Orchestration Layer
+### Prompt Construction Layer (`lib/debate/promptBuilder.ts`)
 
-Responsibilities:
+Builds system + turn + judge prompts from topic, role, stance, tone (per fighter, incl. custom), round objective, previous messages, response length, language addendum (Turkish), and Deep Debate addenda. One-turn-only and anti-repetition instructions are always included. The `/report` page renders prompts from these same functions.
 
-- generate debate plan
-- decide next turn
-- track current round
-- track speakers
-- stop when complete
-- trigger judge step if enabled
-- validate session state
+### Provider Abstraction Layer (`lib/providers/`)
 
-This layer is deterministic.
+- `Provider.generate(input)` — system/user prompt, temperature, max tokens, web-search flag, timeout, abort signal → content, usage, latency, finish reason, citations
+- `openaiCompatible.ts` shares the OpenAI-wire-format implementation across providers
+- `providerRegistry.ts`: lookup, `generateWithRetry` (exponential backoff on transient errors), `providerAvailability()`, `resolveAutoJudge(session)`
 
-It should never ask an LLM:
+### Cost Tracking Layer (`lib/cost/`)
 
-> What should happen next?
+Pricing table with cached-input rates; `calculateCost` returns input/output/cached-savings/search/total in USD. UI only displays the results it is given.
 
-### Prompt Construction Layer
+### Security Layer (`lib/security/rateLimit.ts`)
 
-Responsibilities:
+`enforceLimits(req, kind)` runs before any paid work on turn/verdict/topic routes; `recordSpend` after. Backed by Supabase RPCs (`rl_hit`, `spend_allowed`, `spend_record`); fails open when Supabase is absent so local dev works without keys.
 
-- build system prompt
-- build turn prompt
-- inject topic, role, stance, tone, round objective
-- include relevant previous messages
-- enforce response length
-- instruct model not to continue beyond one turn
+## State Strategy
 
-### Provider Abstraction Layer
-
-Responsibilities:
-
-- expose a common interface
-- call OpenAI, DeepSeek, or mock providers
-- normalize outputs
-- normalize usage data
-- support streaming where possible
-- surface provider-specific errors as app-level errors
-
-### Cost Tracking Layer
-
-Responsibilities:
-
-- store pricing table
-- calculate per-message cost
-- calculate total session cost
-- support unknown usage fallback
-- display estimated costs clearly
-
-## Provider Interface
-
-All providers should implement a common interface.
-
-```ts
-export type ProviderId = "openai" | "deepseek" | "openrouter" | "mock";
-
-export interface ModelConfig {
-  id: string;
-  provider: ProviderId;
-  displayName: string;
-  nickname: string;
-  inputCostPer1M: number;
-  outputCostPer1M: number;
-  supportsStreaming: boolean;
-  maxOutputTokens: number;
-}
-
-export interface GenerateTurnInput {
-  model: ModelConfig;
-  systemPrompt: string;
-  userPrompt: string;
-  temperature: number;
-  maxOutputTokens: number;
-  stream?: boolean;
-}
-
-export interface TokenUsage {
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-}
-
-export interface GenerateTurnResult {
-  content: string;
-  usage?: TokenUsage;
-  latencyMs: number;
-  finishReason?: string;
-  raw?: unknown;
-}
-```
-
-## API Routes
-
-### `/api/debate/start`
-
-Creates an initial debate session object and round plan.
-
-### `/api/debate/turn`
-
-Generates one model turn.
-
-Important:
-
-- This endpoint should generate exactly one AI response.
-- It should not run the full debate automatically in the first version unless explicitly designed.
-- It should receive current session state and return updated state/message.
-
-### `/api/debate/verdict`
-
-Generates final judge verdict if Judge Mode is enabled.
-
-## State Strategy for MVP
-
-For MVP, use client-side state for debate session data.
-
-Advantages:
-
-- faster development
-- no database needed
-- easier debugging
-
-Limitations:
-
-- refresh loses session
-- no history
-- no sharing
-- no auth-level controls
-
-Later, add database persistence.
-
-## Future Database Tables
-
-Potential tables:
-
-- users
-- debate_sessions
-- debate_messages
-- debate_verdicts
-- model_usage_events
-
-See `10_DATA_MODEL.md`.
-
-## Streaming Strategy
-
-Options:
-
-1. Simulated streaming from complete response
-2. Real provider streaming
-3. Server-Sent Events
-4. ReadableStream from API route
-
-Recommended implementation order:
-
-1. mock simulated streaming in UI
-2. non-streaming real provider call
-3. real streaming from backend
-
-## Security Requirements
-
-- API keys must only exist server-side.
-- API routes should validate input.
-- Use max token limits.
-- Use round limits.
-- Use rate limits before public launch.
-- Add password gate for private beta.
-- Never return raw provider error details to the client if they contain sensitive data.
-
-## Rate Limiting
-
-For private beta, minimum controls:
-
-- app access password
-- max rounds
-- max output tokens
-- provider timeout
-- basic IP-based rate limit if possible
-
-For public release:
-
-- user accounts
-- quota
-- per-user monthly usage
-- cost cap
-- abuse detection
+- Live match: client state + sessionStorage (refresh-safe on the same device).
+- Saved matches: explicit save to Supabase (`matches` table, RLS-protected) for signed-in users.
+- Share links: stateless — the verdict payload travels in the URL.
 
 ## Error Handling
 
-Use normalized errors.
+Normalized `AppErrorCode`s (`MISSING_API_KEY`, `PROVIDER_TIMEOUT`, `PROVIDER_ERROR`, `INVALID_MODEL`, `INVALID_SESSION`, `RATE_LIMITED`, `TOKEN_LIMIT_EXCEEDED`, …) with playful UI copy. Raw provider errors are never forwarded to the client.
 
-```ts
-export type AppErrorCode =
-  | "MISSING_API_KEY"
-  | "PROVIDER_TIMEOUT"
-  | "PROVIDER_ERROR"
-  | "INVALID_MODEL"
-  | "INVALID_SESSION"
-  | "RATE_LIMITED"
-  | "TOKEN_LIMIT_EXCEEDED"
-  | "UNKNOWN_ERROR";
-```
+## Architecture Invariants
 
-UI messages should be playful but clear.
-
-## Architecture Acceptance Criteria
-
-The architecture is acceptable if:
-
-- providers can be swapped without changing UI
-- OpenRouter can be added with minimal changes
-- debate flow is deterministic
-- costs are calculated outside UI components
-- API keys are never exposed
-- mock provider works without real API keys
-- debate can complete without infinite loops
+- Providers can be swapped without changing UI.
+- Debate flow is deterministic; no infinite loops are possible.
+- Costs are calculated outside UI components.
+- API keys exist server-side only.
+- Rate-limit and spend-cap checks precede every paid provider call.
+- The app degrades gracefully with no Supabase and with any subset of provider keys (`/api/health` drives the UI hints).

@@ -2,213 +2,111 @@
 
 ## Project Name
 
-AI Debate Arena
+Debator (AI Debate Arena)
 
 ## Product Summary
 
-AI Debate Arena is a gamified web application where users create structured debates or discussions between two AI models. Users choose a topic, select two AI models, configure the debate mode, choose the number of rounds, optionally enable a judge, and watch the models argue in a playful arcade-style interface.
-
-The product should feel like a browser-based mini-game, not a generic AI SaaS dashboard. The interface should be colorful, tactile, animated, and highly interactive, while the AI outputs should remain thoughtful, structured, and useful.
+Debator is a gamified web application where users make two AI models debate a topic in a structured, finite match. Users pick a topic, choose two fighters from a large model catalog, set the round count, tone, response length, and pace, optionally enable Deep Debate (web-search-grounded turns with citations) and a neutral AI judge, then watch the match unfold in an arcade-style interface with live per-turn cost tracking.
 
 The desired product feeling is:
 
 > Arcade interface, serious intelligence.
 
+## Current Status
+
+The product is feature-complete and polished, in pre-public-launch state.
+
+- **Debate Mode only** in the UI. Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface it without an explicit request.
+- **English-only UI for launch.** Turkish localization is fully built but hidden behind `MULTILOCALE_ENABLED = false` in `src/lib/i18n/config.ts`.
+- Remaining pre-launch work is tracked in `docs/18_RELEASE_REQUIREMENTS.md` and `docs/13_ROADMAP.md`.
+
 ## Core Product Principle
 
 The AI models must not control the debate flow.
 
-The application must control:
+The application controls:
 
-- who speaks next
-- which round is active
-- what the task of each round is
-- when the debate ends
-- whether a judge appears
-- which model acts as judge
+- who speaks next, which round is active, and the task of each round
+- when the debate ends (3/5/7 rounds, deterministic plan, no loops)
+- whether a judge appears and which model judges
 - how costs are calculated
 - when the session is complete
 
-The AI models only generate individual turn responses based on strict prompts.
+The AI models only generate individual turn responses based on strict prompts. The `/report` page renders the actual prompts, model catalog, and pricing from the same source files the API routes use — keep it that way so it cannot drift.
 
-## MVP Scope
+## Current Feature Set
 
-The MVP must include:
+- Topic input with AI topic check/improve (`/api/topic/check`, cheap model)
+- Two fighters from 56+ models across OpenAI, DeepSeek, and OpenRouter (free models)
+- 3 / 5 / 7 rounds (Quick Match / Ranked Match / Championship)
+- Tone per fighter: serious, aggressive, casual, or custom free text
+- Response length: short / medium / long; pace: manual or auto
+- Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode)
+- Optional judge: auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores
+- Per-message and total cost tracking, cache-aware pricing
+- Stateless share links (`/s?d=...`) with generated OG images (`/api/og`)
+- Optional Supabase auth (magic link + Google); match history and stats on `/profile`
+- Per-IP rate limits and global/per-IP daily spend caps (Supabase RPCs, fail-open)
+- Arcade UI: synth SFX, generative background music, sound toggle, mobile-responsive
+- Legal pages (`/about`, `/privacy`, `/terms`) and a living tech report (`/report`)
 
-- Topic input
-- Debate Mode
-- Discussion Mode
-- Two selectable AI models
-- Selectable round count: 3, 5, or 7
-- Optional Judge Mode
-- Optional third judge model
-- Live debate screen
-- Streaming or simulated streaming text
-- Per-message token and cost display
-- Total session cost display
-- Final verdict if judge is enabled
-- Arcade-style visual design
-- Sound toggle
-- Mobile-responsive layout
+## Repository Map
 
-## Initial Providers
-
-The first real implementation should support:
-
-- OpenAI
-- DeepSeek
-
-The provider architecture must allow adding OpenRouter later without rewriting debate logic.
+- `src/app/` — pages (home, setup, debate, result, s, profile, login, report, legal) and API routes (`api/debate/turn`, `api/debate/verdict`, `api/topic/check`, `api/health`, `api/og`)
+- `src/lib/debate/` — orchestrator, round plans, prompt builder, verdict parser, validators, citations, topic check
+- `src/lib/providers/` — provider interface + OpenAI / DeepSeek / OpenRouter implementations, registry with retry and auto-judge resolution
+- `src/lib/models/modelRegistry.ts` — model catalog (display info, cost tiers, debate ratings, Turkish support, web-search capability)
+- `src/lib/cost/` — pricing table (`pricing.ts`) and cost calculation
+- `src/lib/search/` — injected web search (Brave) behind a search-provider interface
+- `src/lib/supabase/` — auth clients, match persistence, stats
+- `src/lib/security/rateLimit.ts` — rate limits and spend caps
+- `src/lib/share/` — stateless share-link encoding
+- `src/lib/i18n/` — locale config, dictionaries (en/tr), providers
+- `src/lib/audio/soundManager.ts` — synth SFX and music
+- `src/lib/state/ArenaContext.tsx` — client session/config state
+- `docs/` — product and technical reference docs (see `docs/13_ROADMAP.md` for what's next)
 
 ## Required Architecture Rules
 
-- Never expose API keys on the frontend.
-- All model calls must go through backend API routes.
-- Provider integrations must use a shared provider interface.
-- Pricing must live in a configurable pricing file.
+- Never expose API keys on the frontend; all model calls go through backend API routes.
+- Provider integrations use the shared provider interface; the debate engine must not know which provider is in use.
+- Pricing lives in `src/lib/cost/pricing.ts`, never in UI components.
 - UI components must not contain provider-specific logic.
-- Debate orchestration must be separated from UI components.
-- Prompt construction must be separated from provider calls.
-- Round logic must be deterministic.
-- The system must prevent infinite debate loops by design.
-- The UI must support mock mode before real provider integration.
+- Debate orchestration is separated from UI; prompt construction is separated from provider calls.
+- Round logic is deterministic; infinite debates are impossible by design.
+- Rate limits and spend caps run BEFORE any paid provider work.
+- Supabase is optional: the app must keep working signed-out and without Supabase configured (limits fail open).
+- The `/report` page must keep rendering from the real source of truth (prompt builder, model registry, pricing).
 
-## Recommended Stack
+## Environment Variables
 
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- Framer Motion
-- Backend API routes
-- Provider abstraction layer
-- Local state for MVP
-- Optional later: Supabase or Postgres
+Providers: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
+Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD`, `DEEP_SEARCH_MODE` (`unified` | `hybrid`).
+Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
 
 ## Development Workflow
 
-Build the project in phases.
+The phased MVP build is complete. Work now happens in small, user-approved increments:
 
-### Phase 0 — Documentation Validation
-
-Read all files in `/docs`.
-
-Before writing code, summarize:
-
-- the product goal
-- MVP scope
-- design language
-- architecture plan
-- debate engine plan
-- API route plan
-- unresolved questions or assumptions
-
-Do not implement code until the plan is clear.
-
-### Phase 1 — Static UI
-
-Build the full UI using mock data only.
-
-No real AI API calls yet.
-
-The debate screen should simulate streamed AI responses with fake text so that the visual experience can be tested before backend integration.
-
-### Phase 2 — Mock Debate Engine
-
-Implement the debate orchestrator using mock providers.
-
-The system should be able to run a full 3, 5, or 7 round debate without real model calls.
-
-### Phase 3 — Real Provider Integration
-
-Add OpenAI and DeepSeek providers behind a common provider interface.
-
-The debate engine should not know which provider is being used.
-
-### Phase 4 — Streaming and Cost Tracking
-
-Add real streaming responses where possible.
-
-Track:
-
-- input tokens
-- output tokens
-- total tokens
-- estimated cost per message
-- total debate cost
-- response latency
-
-### Phase 5 — Polish
-
-Add:
-
-- sound effects
-- animated transitions
-- mobile responsiveness
-- error states
-- loading states
-- empty states
-- final share page
-- better model avatars
-- accessibility improvements
+- Propose and discuss notable changes before implementing them; do not auto-advance into adjacent work.
+- Run `npx tsc --noEmit` (and a build when relevant) before declaring a change done.
+- Update the relevant doc in `/docs` when behavior it describes changes.
 
 ## Design Direction
 
-The UI must feel like an arcade debate game.
+The UI must feel like an arcade debate game: dotted grid background, thick black borders, rounded cards, chunky hard shadows, bright colors, playful badges, tactile animated buttons, character-like model cards, cost and round counters, sound toggle. See `docs/02_DESIGN.md` for the full system.
 
-Use:
-
-- dotted grid background
-- thick black borders
-- rounded cards
-- chunky shadows
-- bright colors
-- playful badges
-- animated buttons
-- character-like AI model cards
-- cost counters
-- round counters
-- sound toggle
-- help button
-
-The UI must not look like:
-
-- a corporate SaaS dashboard
-- a plain chatbot
-- a generic AI wrapper
-- a documentation website
-- a serious enterprise tool
-
-## Important Implementation Notes
-
-The debate should never run as an uncontrolled loop.
-
-Each debate session should have a fixed debate plan generated before the first model response.
-
-Each turn should include:
-
-- debate mode
-- topic
-- current round
-- round objective
-- model role
-- assigned stance
-- previous relevant messages
-- tone
-- max response length
-- instruction not to continue beyond the current turn
+The UI must not look like a corporate SaaS dashboard, a plain chatbot, a generic AI wrapper, or a documentation website.
 
 ## Do Not Do
 
 Do not:
 
-- build a generic chatbot interface
-- let models decide the next speaker
-- allow unlimited back-and-forth by default
-- hardcode pricing inside UI components
-- expose API keys client-side
+- let models decide the next speaker or allow unlimited back-and-forth
+- hardcode pricing inside UI components or expose API keys client-side
 - mix provider logic with UI
-- create vague prompts
-- let models agree too easily in Debate Mode
-- let models repeat the same arguments across rounds
-- skip error handling
-- ignore mobile layout
+- create vague prompts, let models agree too easily, or let them repeat arguments across rounds
+- re-enable Discussion Mode or the Turkish UI without an explicit request
+- skip error handling or ignore the mobile layout
+- bypass the rate-limit/spend-cap checks on any route that calls a paid provider

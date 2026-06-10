@@ -1,132 +1,50 @@
 # 07 — Provider Integration
 
+> Updated 2026-06-10. Source of truth: `src/lib/providers/` and
+> `src/lib/models/modelRegistry.ts`.
+
 ## Goal
 
-Support OpenAI and DeepSeek in MVP with a provider abstraction that can later support OpenRouter.
+Three backends — **OpenAI**, **DeepSeek**, and **OpenRouter** — behind one provider interface. The debate engine never knows which provider is in use; it only calls `provider.generate(input)`.
 
-## Provider Rule
-
-The debate engine should never care whether the selected model comes from OpenAI, DeepSeek, OpenRouter, or a mock provider.
-
-It should only call:
+## Provider Interface (`types.ts`)
 
 ```ts
-provider.generate(input)
+generate(input: GenerateInput): Promise<GenerateResult>
 ```
 
-## Provider Registry
+- **Input:** system prompt, user prompt, temperature, max output tokens, web-search flag, timeout, abort signal, kind (`turn | judge`).
+- **Output:** content, token usage (incl. cached input), latency, finish reason, citations (when web search ran).
 
-Create a registry:
+`openaiCompatible.ts` implements the shared OpenAI-wire-format logic; the three providers configure it (base URL, key, model quirks).
 
-```ts
-export const providerRegistry = {
-  openai: openaiProvider,
-  deepseek: deepseekProvider,
-  mock: mockProvider
-};
-```
+## Backends
 
-## Model Registry
+| Backend | Env var | Models | Web search |
+|---|---|---|---|
+| OpenAI | `OPENAI_API_KEY` | GPT-5.x and GPT-4.x families | injected (app-run Brave) |
+| DeepSeek | `DEEPSEEK_API_KEY` | DeepSeek V4 Pro, V4 Flash | injected |
+| OpenRouter | `OPENROUTER_API_KEY` | 21+ free models (Qwen, Llama, Kimi, GLM, Gemma, …) | native `:online` (hybrid mode) or injected |
 
-Create a model list:
+There is **no mock provider** anymore — it was removed after real integration. Without keys, `/api/health` reports `no-keys` and the UI explains what's missing.
 
-```ts
-export const models = [
-  {
-    id: "gpt-4.1-mini",
-    provider: "openai",
-    displayName: "GPT-4.1 Mini",
-    nickname: "The Polished Strategist",
-    inputCostPer1M: 0,
-    outputCostPer1M: 0,
-    supportsStreaming: true,
-    maxOutputTokens: 4096
-  },
-  {
-    id: "deepseek-chat",
-    provider: "deepseek",
-    displayName: "DeepSeek Chat",
-    nickname: "The Sharp Challenger",
-    inputCostPer1M: 0,
-    outputCostPer1M: 0,
-    supportsStreaming: true,
-    maxOutputTokens: 4096
-  }
-];
-```
+## Registry (`providerRegistry.ts`)
 
-Pricing numbers should be filled from current provider pricing pages before real launch.
+- `getProvider(id)` — lookup by provider id.
+- `generateWithRetry(provider, input, attempts = 3, deadlineMs)` — exponential backoff on transient errors (`PROVIDER_ERROR`, `PROVIDER_TIMEOUT`, `RATE_LIMITED`).
+- `providerAvailability()` — which backends have keys (drives `/api/health`).
+- `resolveAutoJudge(session)` — picks a neutral judge by preference order over available backends.
 
-## OpenAI Provider
+## Model Registry (`modelRegistry.ts`)
 
-Responsibilities:
+The catalog (56+ models) carries display info (name, nickname, brand, family, color), `costTier` (`free | low | medium | high` → FREE/$/$$/$$$), a 0–100 debate-suitability rating, max output tokens, reasoning-effort caps, Turkish-fluency flag, and web-search capability. Helper functions group models by brand/family per locale and preview the auto-judge pick client-side.
 
-- read `OPENAI_API_KEY`
-- call OpenAI chat/completions or responses API
-- support streaming if possible
-- normalize usage
-- normalize errors
+## Error Normalization
 
-## DeepSeek Provider
+Provider-specific failures become app errors: missing key → `MISSING_API_KEY`, timeout → `PROVIDER_TIMEOUT`, invalid model → `INVALID_MODEL`, 429 → `RATE_LIMITED`, anything else → `PROVIDER_ERROR`.
 
-Responsibilities:
+## Invariants
 
-- read `DEEPSEEK_API_KEY`
-- call DeepSeek API
-- support streaming if possible
-- normalize usage
-- normalize errors
-
-## Mock Provider
-
-The mock provider is essential.
-
-It allows:
-
-- UI development without API keys
-- debate engine testing
-- predictable responses
-- offline demos
-
-Mock provider should simulate:
-
-- latency
-- streaming
-- token usage
-- cost
-
-## OpenRouter Future Integration
-
-OpenRouter should be added as another provider, not as a rewrite.
-
-Expected changes:
-
-- add `OPENROUTER_API_KEY`
-- add openRouterProvider
-- add models to model registry
-- update providerRegistry
-
-No UI rewrite should be needed.
-
-## Provider Error Normalization
-
-Provider-specific errors should become app errors.
-
-Examples:
-
-- missing API key -> `MISSING_API_KEY`
-- timeout -> `PROVIDER_TIMEOUT`
-- invalid model -> `INVALID_MODEL`
-- rate limit -> `RATE_LIMITED`
-- unknown provider error -> `PROVIDER_ERROR`
-
-## Provider Acceptance Criteria
-
-The provider layer is acceptable if:
-
-- mock provider works
-- OpenAI and DeepSeek use same interface
-- errors are normalized
-- usage/cost data is normalized
-- API keys are server-side only
-- adding OpenRouter requires minimal changes
+- All providers share the same interface; usage and cost data are normalized.
+- API keys are server-side only.
+- Adding a backend means: a provider module, registry entry, catalog entries, and pricing rows — no UI or engine rewrite.

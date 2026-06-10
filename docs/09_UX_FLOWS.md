@@ -1,207 +1,51 @@
 # 09 — UX Flows
 
+> Updated 2026-06-10 to the shipped flow.
+
 ## Primary Flow
 
-1. User lands on Home Page.
-2. User sees playful explanation and topic input.
-3. User enters topic.
-4. User selects Debate or Discussion Mode.
-5. User selects Model A and Model B.
-6. User selects round count.
-7. User selects tone.
-8. User configures Judge Mode.
-9. User clicks Start Match.
-10. Debate screen opens.
-11. App generates one turn at a time.
-12. User watches streamed responses.
-13. Costs update after each response.
-14. Debate completes.
-15. Judge verdict appears if enabled.
-16. User can restart, change setup, or share result later.
+1. User lands on the home page (arcade pitch, sample topics).
+2. User enters a topic — optionally runs the AI topic check to sharpen it.
+3. User picks two fighters (brand → family → model; swap A/B available).
+4. User sets the rules: rounds (3/5/7), tone per fighter, response length, pace (manual/auto), Deep Debate on/off.
+5. User configures the judge: none, auto (preview of the pick shown), or a chosen third model.
+6. Start Match → live arena.
+7. The app generates one turn at a time (auto-advances or waits for clicks per pace); typewriter reveal, playful thinking messages, SFX.
+8. Costs update after each turn; citations appear as chips in Deep Debate.
+9. After the final round, the judge deliberates (drum roll) and the verdict reveals.
+10. Result screen: verdict, scores, summary, total cost — with **share** (auto-unfurling link + image), **save to profile** (signed-in), **change judge & re-judge**, and rematch options.
 
-## Home Page UX
+## Page Notes
 
-Primary goal:
-
-- explain the product quickly
-- get the user to start a match
-
-Main elements:
-
-- logo/title
-- short tagline
-- topic input
-- mode preview
-- start button
-- sample topics
-- sound/help icons
-
-Suggested hero copy:
-
-```text
-Make AIs Fight Your Ideas
-Pick a topic, choose two models, set the rules, and watch the debate unfold.
-```
-
-CTA:
-
-```text
-START MATCH
-```
-
-Secondary CTA:
-
-```text
-TRY SAMPLE
-```
-
-## Setup UX
-
-Setup should feel like configuring a game match.
-
-Sections:
-
-1. Topic
-2. Mode
-3. Fighters
-4. Match Rules
-5. Judge
-6. Start
-
-Microcopy:
-
-- “Choose your fighters”
-- “Set the rules”
-- “Bring in a judge?”
-- “Start the match”
-
-## Debate Page UX
-
-The debate page should feel like an arena.
-
-Top HUD:
-
-- debate title
-- round counter
-- model names
-- total cost
-- sound toggle
-- stop button
-
-Main content:
-
-- model A card
-- model B card
-- timeline of messages
-
-During generation:
-
-- active model pulses
-- message card shows typing cursor
-- thinking bubble appears
-- optional typing sound
-
-After each turn:
-
-- message locks in
-- cost badge updates
-- round counter updates if needed
-
-## Verdict UX
-
-The verdict should feel like a final reveal.
-
-Elements:
-
-- “VERDICT” badge
-- judge model
-- one-sentence verdict
-- score or winner
-- strongest arguments
-- weakest points
-- practical conclusion
-- total cost
-- restart button
+- **Home:** hero, sample topics, "Use Debator" / "Try Sample" CTAs, About/Report/Profile links, sound toggle.
+- **Setup:** game-match configuration feel ("Choose your fighters", "Set the rules", "Bring in a judge?"); validation gates the start button; localized error copy.
+- **Arena:** top HUD (topic, round counter, total cost, sound, stop); fighter cards with idle/thinking/speaking states; full-width message timeline; sticky controls on mobile.
+- **Result:** dramatic verdict reveal; share panel generates the link/image client-side.
+- **Share page (`/s`):** public, stateless; renders the verdict from the URL payload with OG tags for unfurl.
+- **Profile:** match history (topic, fighters, winner, cost, date — click to reopen) + headline stats; delete one match or all.
+- **Login:** magic link + Google; framed as a perk ("save your matches"), never a gate.
 
 ## Error UX
 
-Errors should be friendly.
+Friendly, playful errors with real guidance:
 
-Examples:
+- Missing key → "The arena has no power source."
+- Provider timeout → "The fighter froze mid-round. Try again or switch models."
+- Rate limited / spend cap → "The arena is cooling down. Wait a moment before the next match."
 
-### Missing API Key
-
-```text
-The arena has no power source.
-Add your API key and try again.
-```
-
-### Provider Timeout
-
-```text
-The fighter froze mid-round.
-Try again or switch models.
-```
-
-### Rate Limited
-
-```text
-The arena is cooling down.
-Wait a moment before starting another match.
-```
+Transient provider errors retry automatically before surfacing.
 
 ## Empty States
 
-### No Topic
+- No topic → "Drop a topic into the arena first."
+- No fighters → "Choose two fighters before starting."
+- Judge disabled → "No judge selected. The debate will end after the final round."
+- Empty profile → prompt to play a first match.
 
-```text
-Drop a topic into the arena first.
-```
+## Mobile
 
-### No Model Selected
+Stacked setup cards, sticky start button, compact HUD, horizontal fighter cards, full-width messages, collapsible cost details, mobile-sized example chips.
 
-```text
-Choose two fighters before starting.
-```
+## Accessibility
 
-### Judge Disabled
-
-```text
-No judge selected. The debate will end after the final round.
-```
-
-## Mobile UX
-
-Mobile layout should prioritize readability.
-
-Recommendations:
-
-- stacked setup cards
-- sticky start button
-- compact HUD
-- horizontal model cards
-- full-width message cards
-- collapsible cost details
-
-## Accessibility UX
-
-Requirements:
-
-- all controls keyboard accessible
-- focus rings visible
-- reduced motion support for decorative animations (typewriter playback is
-  identical for everyone; only bounce/scale embellishments are flattened)
-- sound can be disabled
-- contrast strong enough
-- text readable on mobile
-
-## UX Acceptance Criteria
-
-The flow is acceptable if:
-
-- user understands what to do in less than 10 seconds
-- debate setup feels like game configuration
-- live debate has clear progress
-- final verdict gives closure
-- costs are visible but compact
-- errors are understandable
+Keyboard-accessible controls, visible focus rings, strong contrast, sound optional. Reduced motion flattens **decorative** animations only — the typewriter reveal, caret blink, thinking dots, and status pulse are the core product experience and play for everyone by design.

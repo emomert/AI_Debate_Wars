@@ -1,226 +1,73 @@
 # 06 — API Contracts
 
+> Updated 2026-06-10. Source of truth: `src/app/api/**/route.ts(x)` and the
+> shared types in `src/lib/debate/debateTypes.ts`.
+
 ## API Philosophy
 
-The frontend should communicate with backend API routes through typed request and response objects.
+The frontend talks to typed backend routes only; it never calls a model provider directly. There is **no `/api/debate/start`** — the session is created client-side by the orchestrator (it contains no secrets) and every route re-validates it server-side.
 
-The frontend should never directly call model provider APIs.
+## Routes
 
-## Route Overview
-
-MVP routes:
-
-- `POST /api/debate/start`
-- `POST /api/debate/turn`
-- `POST /api/debate/verdict`
-- `GET /api/health`
-
-Optional later:
-
-- `POST /api/debate/run`
-- `GET /api/models`
-- `POST /api/share`
-- `GET /api/debate/:id`
-
-## POST `/api/debate/start`
-
-Creates a debate session and deterministic round plan.
-
-### Request
-
-```ts
-export interface StartDebateRequest {
-  topic: string;
-  mode: "debate" | "discussion";
-  modelA: {
-    providerId: string;
-    modelId: string;
-  };
-  modelB: {
-    providerId: string;
-    modelId: string;
-  };
-  roundCount: 3 | 5 | 7;
-  tone: DebateTone;
-  responseLength: "short" | "medium" | "long";
-  judge: JudgeConfig;
-}
-```
-
-### Response
-
-```ts
-export interface StartDebateResponse {
-  session: DebateSession;
-}
-```
-
-### Validation
-
-Reject if:
-
-- topic is too short
-- round count is invalid
-- model provider is unsupported
-- judge config is invalid
-- model A or B is missing
-
-## POST `/api/debate/turn`
+### POST `/api/debate/turn`
 
 Generates exactly one AI turn.
 
-### Request
+- Validates the session (`assertValidSession`, `assertDeepTurnAllowed`, transcript consistency, string-length bounds).
+- Enforces per-IP rate limits and spend caps **before** any paid work.
+- Resolves the turn's model, builds prompts, calls the provider via the registry (with retry), runs Deep Debate search injection when enabled, computes cost.
+- Returns one `DebateMessage` with usage, cost breakdown, latency, and citations.
+- Not streaming — one full response per call. `maxDuration = 60` (reasoning models can take 20–40s).
+
+### POST `/api/debate/verdict`
+
+Generates the judge verdict, only after the debate is complete.
+
+- Resolves the judge (auto / third model), builds a blind judge prompt from the transcript, parses the response into a structured `DebateVerdict` (winner, 0–100 scores, reasoning, strongest/weakest arguments).
+- Rate-limited and spend-capped like `/turn`. `maxDuration = 60`.
+
+### POST `/api/topic/check`
+
+AI sanity-check / improvement of a proposed topic.
+
+- Uses a cheap, fast model (DeepSeek V4 Flash by default, falls back to OpenAI/OpenRouter).
+- Returns JSON: verdict (`good | weak | unclear`), assessment, up to 3 sharper alternatives.
+- Rate-limited; spend recorded. `maxDuration = 30`.
+
+### GET `/api/health`
+
+Reports which backends are configured, with no secrets:
 
 ```ts
-export interface GenerateTurnRequest {
-  session: DebateSession;
-  turnId: string;
-}
-```
-
-### Response
-
-```ts
-export interface GenerateTurnResponse {
-  message: DebateMessage;
-  updatedSession: DebateSession;
-}
-```
-
-### Streaming Version
-
-If streaming is implemented, response may use `ReadableStream`.
-
-Streaming event types:
-
-```ts
-type StreamEvent =
-  | { type: "start"; turnId: string; modelId: string }
-  | { type: "token"; content: string }
-  | { type: "usage"; usage: TokenUsage; cost: CostBreakdown }
-  | { type: "complete"; message: DebateMessage }
-  | { type: "error"; error: AppError };
-```
-
-## POST `/api/debate/verdict`
-
-Generates judge verdict.
-
-### Request
-
-```ts
-export interface GenerateVerdictRequest {
-  session: DebateSession;
-}
-```
-
-### Response
-
-```ts
-export interface GenerateVerdictResponse {
-  verdict: DebateVerdict;
-  updatedSession: DebateSession;
-}
-```
-
-## GET `/api/health`
-
-Returns system health.
-
-### Response
-
-```ts
-export interface HealthResponse {
+{
   ok: boolean;
-  providers: {
-    openai: boolean;
-    deepseek: boolean;
-  };
-  timestamp: string;
+  mode: "live" | "no-keys";
+  providers: { openai: boolean; deepseek: boolean; openrouter: boolean; webSearch: boolean };
 }
 ```
 
-## Shared Types
+The setup UI uses this to pick defaults and show hints.
 
-### DebateTone
+### GET `/api/og?d=<payload>`
 
-```ts
-export type DebateTone =
-  | "serious"
-  | "funny"
-  | "academic"
-  | "aggressive"
-  | "casual"
-  | "startup"
-  | "legal"
-  | "investor";
-```
+Dynamic 1200×630 Open Graph image for share links (edge runtime, Satori). Renders the base64url verdict payload; fetches brand fonts at render time with a safe fallback. No DB, no auth.
 
-### JudgeConfig
+## Share Payloads (not an API)
 
-```ts
-export interface JudgeConfig {
-  enabled: boolean;
-  mode: "none" | "auto" | "modelA" | "modelB" | "thirdModel";
-  model?: {
-    providerId: string;
-    modelId: string;
-  };
-}
-```
-
-### DebateVerdict
-
-```ts
-export interface DebateVerdict {
-  id: string;
-  sessionId: string;
-  judgeModelId: string;
-  content: string;
-  winner?: "modelA" | "modelB" | "tie" | "not_applicable";
-  summary: string;
-  strongestModelA?: string;
-  strongestModelB?: string;
-  weakestModelA?: string;
-  weakestModelB?: string;
-  practicalConclusion?: string;
-  usage?: TokenUsage;
-  cost?: CostBreakdown;
-  latencyMs?: number;
-  createdAt: string;
-}
-```
+Share links are stateless: `/s?d=<base64url JSON>` carries topic, fighter names, winner, scores, and reasoning (`src/lib/share/shareLink.ts`). Payloads are length- and charset-validated before decoding.
 
 ## Error Response
 
 ```ts
-export interface ApiErrorResponse {
-  error: {
-    code: AppErrorCode;
-    message: string;
-    details?: unknown;
-  };
-}
+{ error: { code: AppErrorCode; message: string } }
 ```
 
-## Frontend Handling
+`AppErrorCode`: `MISSING_API_KEY | PROVIDER_TIMEOUT | PROVIDER_ERROR | INVALID_MODEL | INVALID_SESSION | RATE_LIMITED | TOKEN_LIMIT_EXCEEDED | UNKNOWN_ERROR`. Raw provider errors are never forwarded.
 
-The frontend should:
+## Contract Invariants
 
-- show loading state while request is pending
-- show streaming state while content arrives
-- show partial content if streaming fails late
-- show friendly error messages
-- allow retrying failed turns
-- allow stopping debate
-
-## API Acceptance Criteria
-
-The API contract is acceptable if:
-
-- routes are typed
-- invalid input is rejected
-- provider-specific errors are normalized
-- one turn route generates only one turn
-- verdict route only runs after debate completion
-- frontend does not know provider internals
+- One turn route call generates exactly one turn.
+- The verdict route refuses incomplete debates.
+- Inputs are validated and bounded on every route.
+- Rate limiting and spend caps run before provider calls on every paid route.
+- The frontend never learns provider internals.

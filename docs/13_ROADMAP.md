@@ -1,97 +1,40 @@
 # 13 — Roadmap
 
-## MVP
+> Updated 2026-06-10. The original MVP and most of V1 have shipped. Detailed
+> launch requirements live in `docs/18_RELEASE_REQUIREMENTS.md`.
 
-Goal: prove the core product experience.
+## Shipped
 
-Features:
+- Full arcade UI (home, setup, arena, result) — mobile responsive, sound + music
+- Debate Mode with deterministic 3/5/7-round plans (Discussion Mode shipped, later removed from UI)
+- Three providers behind one interface: OpenAI, DeepSeek, OpenRouter (56+ models, free tier included)
+- Judge Mode: auto neutral judge or third model, blind decisive verdicts, re-judge from result
+- Deep Debate: web-search-grounded turns with citations (unified Brave search; hybrid OpenRouter `:online` mode)
+- AI topic check/improve
+- Cache-aware cost tracking with verified pricing; per-message and session totals
+- Stateless share links with generated OG images
+- Supabase auth (magic link + Google), match history + stats, match delete
+- Per-IP rate limits + global/per-IP daily spend caps
+- Legal pages (about, privacy, terms); living tech report (`/report`)
+- Turkish localization (built, hidden behind `MULTILOCALE_ENABLED`)
 
-- landing page
-- setup page
-- Debate Mode
-- Discussion Mode
-- 3/5/7 round selection
-- Model A and B selection
-- optional Judge Mode
-- mock provider
-- OpenAI provider
-- DeepSeek provider
-- live debate timeline
-- simulated or real streaming
-- cost badges
-- total cost counter
-- verdict card
-- arcade UI
-- sound toggle
-- mobile responsive layout
+## Next — Public Launch (see docs/18)
 
-## V1
+- Vercel Pro (Hobby prohibits commercial use; also raises `maxDuration`)
+- Provider dashboard spending caps (owner task)
+- Server-side session persistence / anti-forgery validation
+- Topic moderation pass before matches
+- Audio license confirmation; custom domain; error monitoring; CI
 
-Goal: make product usable by real users.
+## Then — Monetization (see docs/18 Tier 2)
 
-Features:
+- Pick the model: freemium subscriptions (recommended), ads, and/or bring-your-own-key
+- Stripe billing + quota gating mapped onto the existing FREE/$/$$/$$$ cost tiers
 
-- user authentication
-- saved debate history
-- shareable debate pages
-- OpenRouter integration
-- more models
-- improved pricing updates
-- better judge scorecards
-- export to markdown/PDF
-- public/private debate setting
-- rate limits
-- usage dashboard
+## Later Ideas
 
-## V2
-
-Goal: make it social and viral.
-
-Features:
-
-- public debate gallery
-- leaderboard
-- community voting
-- debate templates
-- prompt presets
-- custom roles
-- custom model avatars
-- challenge links
-- “rematch with different model”
-- clips for social media
-
-## V3
-
-Goal: platform expansion.
-
-Features:
-
-- team workspaces
-- classroom mode
-- debate tournaments
-- API access
-- advanced analytics
-- model benchmark dashboards
-- browser extension
-- integration with note-taking apps
-
-## Monetization Ideas
-
-Possible models:
-
-1. freemium with monthly credits
-2. pay-per-use
-3. subscription
-4. user-provided API keys
-5. team plan
-6. educational plan
-7. sponsored model battles
-
-## Roadmap Acceptance Criteria
-
-The roadmap is acceptable if:
-
-- MVP is simple enough to build
-- V1 adds retention
-- V2 adds virality
-- future provider expansion is realistic
+- Turkish launch (flip `MULTILOCALE_ENABLED`)
+- Public debate gallery, leaderboards, community voting
+- Debate templates, custom roles, rematch/swap-sides shortcuts
+- Tournaments, classroom mode, export to markdown/PDF
+- More providers (Anthropic, Google) — the provider layer already supports adding them without rewrites

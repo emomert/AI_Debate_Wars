@@ -1,154 +1,42 @@
 # 08 — Cost Tracking
 
+> Updated 2026-06-10. Source of truth: `src/lib/cost/pricing.ts` and
+> `src/lib/cost/calculateCost.ts`. The `/report` page renders the live pricing
+> table.
+
 ## Goal
 
-The app should make AI usage cost visible, understandable, and transparent.
-
-Every generated message should show estimated cost.
-
-The debate HUD should show total cost.
-
-## Why Cost Tracking Matters
-
-Cost visibility:
-
-- builds trust
-- helps users compare models
-- prevents surprise API spend
-- makes the game feel measurable
-- creates a score-like mechanic
+AI usage cost is visible, understandable, and transparent: every message shows its estimated cost, and the HUD shows the running session total.
 
 ## Cost Badge
 
-Each message card should show:
+Each message card shows compact cost data (`$0.0031 • 842 tok • 2.4s`); expanded detail shows input/output/cached tokens, per-component cost, and latency.
 
-```text
-$0.0031 • 842 tok • 2.4s
-```
+## Pricing (`pricing.ts`)
 
-Expanded detail can show:
+- Rates are **verified against official provider pricing pages** (last pass June 2026) and stored per model: input / cached-input / output USD per 1M tokens.
+- **Cached input discounts** are modeled: 90% for the GPT-5 family, 75% for GPT-4.1, 50% for GPT-4o; DeepSeek has separate cache-hit rates. Prompts are ordered stable-first so caches actually hit (see `docs/05_PROMPTING.md`).
+- OpenRouter free models are $0/$0.
+- Unknown models fall back to $0.5 input / $1.5 output per 1M.
+- Deep Debate adds a per-search fee: `DEEP_SEARCH_COST_USD` (~$0.005) for OpenRouter native search; injected Brave search costs `SEARCH_COST_USD` (default $0 on the free tier).
 
-- input tokens
-- output tokens
-- total tokens
-- input cost
-- output cost
-- model pricing
-- latency
+Pricing never lives in UI components.
 
-## Pricing Storage
+## Calculation (`calculateCost.ts`)
 
-Pricing must be stored in a configurable file.
+- `buildUsage(...)` constructs `TokenUsage` from the provider response, estimating from text length when the provider reports nothing (flagged as estimated in the UI).
+- `calculateCost(providerId, modelId, usage)` returns a `CostBreakdown`: inputCost, outputCost, cachedSavings, searchCost, totalCost (USD).
 
-Example:
+## Session Totals
 
-```ts
-export const modelPricing = {
-  "openai:gpt-4.1-mini": {
-    inputCostPer1M: 0,
-    outputCostPer1M: 0
-  },
-  "deepseek:deepseek-chat": {
-    inputCostPer1M: 0,
-    outputCostPer1M: 0
-  }
-};
-```
-
-Before production, fill with latest provider pricing.
-
-Do not hardcode pricing inside UI components.
-
-## Cost Formula
-
-```ts
-inputCost = (inputTokens / 1_000_000) * inputCostPer1M;
-outputCost = (outputTokens / 1_000_000) * outputCostPer1M;
-totalCost = inputCost + outputCost;
-```
-
-## CostBreakdown Type
-
-```ts
-export interface CostBreakdown {
-  inputCost: number;
-  outputCost: number;
-  totalCost: number;
-  currency: "USD";
-}
-```
-
-## Unknown Usage Fallback
-
-Some provider responses may not return token usage in streaming mode.
-
-Fallback options:
-
-1. estimate tokens from text length
-2. show “estimated”
-3. calculate after stream if provider returns usage at end
-
-UI should indicate:
-
-```text
-Estimated cost
-```
-
-when not exact.
-
-## Total Debate Cost
-
-Session should track:
-
-```ts
-export interface SessionCostSummary {
-  totalInputTokens: number;
-  totalOutputTokens: number;
-  totalTokens: number;
-  totalCost: number;
-  currency: "USD";
-}
-```
+The session aggregates total input/output tokens and total cost; shown in the HUD, the result page, and saved with the match.
 
 ## Cost Controls
 
-MVP should include:
-
-- max output tokens per response
-- max rounds
-- optional max session cost later
-- stop debate button
-
-Future controls:
-
-- per-user monthly limit
-- paywall
-- credit system
-- model price warnings
+- Max output tokens per turn and fixed round counts bound every match.
+- Per-IP rate limits and global/per-IP **daily spend caps** are enforced before any paid call, and every paid call records its spend (`docs/11_SECURITY_RATE_LIMITS.md`).
+- Stop button ends a match at any time.
 
 ## UX Rules
 
-Cost should be visible but not scary.
-
-Good:
-
-- compact badge
-- hover for detail
-- total cost in HUD
-- final cost summary
-
-Bad:
-
-- huge scary warnings
-- hiding costs
-- technical pricing tables on the main page
-
-## Cost Tracking Acceptance Criteria
-
-Cost tracking is acceptable if:
-
-- every message has cost metadata
-- total debate cost is visible
-- pricing is configurable
-- costs are not hardcoded in UI
-- unknown usage is handled gracefully
+Costs are visible but not scary: compact badges, expandable detail, HUD total, final summary. No huge warnings, no hidden costs, no raw pricing tables outside `/report`.

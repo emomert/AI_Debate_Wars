@@ -1,9 +1,11 @@
 # 19 · Login & Profiles Plan (Supabase)
 
-> Status: PLAN for discussion (2026-06-07). Nothing here is built yet. Decision
-> already made: build auth + profiles on **Supabase**. This doc is the shape to
-> agree on before any auth code lands. Related: [docs/18](18_RELEASE_REQUIREMENTS.md)
-> Tier 1 §4 (server-side persistence) — this work delivers that prerequisite.
+> Status: ✅ IMPLEMENTED (v1 scope shipped 2026-06; this doc is now the design
+> record). Phases 1–3 are live: auth shell (magic link + Google), match
+> persistence with RLS, and the profile page with history + stats, plus match
+> delete. Still open from §3 "Later": anti-forgery validation against stored
+> sessions, quota gating, and data export (see
+> [docs/18](18_RELEASE_REQUIREMENTS.md)).
 
 ---
 

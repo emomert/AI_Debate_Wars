@@ -1,175 +1,44 @@
 # 10 — Data Model
 
-## MVP State
+> Updated 2026-06-10. Source of truth: `src/lib/debate/debateTypes.ts` (client
+> types) and `src/lib/supabase/matches.ts` + the Supabase schema in
+> `docs/19_AUTH_PROFILES_PLAN.md` (persistence).
 
-MVP can use local client state.
+## State Strategy
 
-No database is required for first prototype.
+- **Live match:** client-side (`ArenaContext` + sessionStorage). No server record exists while a match runs; server routes re-validate and bound the client-supplied session on every call.
+- **Saved matches:** signed-in users explicitly save finished matches to Supabase (`matches` table, RLS-protected).
+- **Share links:** stateless — the verdict payload is base64url-encoded in the URL.
 
-However, data structures should be designed so persistence can be added later.
+## Core Client Types (`debateTypes.ts`)
 
-## Core Entities
+- `DebateConfig` — topic, mode, fighters, roundCount (3|5|7), tone per fighter (serious|aggressive|casual|custom), responseLength, pace (manual|auto), deepDebate, judge config, language.
+- `DebateSession` — config + deterministic `turns[]` + `messages[]` + optional `verdict` + `costSummary` + status (`setup | running | judging | complete | stopped | error`).
+- `DebateTurn` — round number/label, speaker, task, role, stance, modelId, status.
+- `DebateMessage` — content, usage (`TokenUsage` incl. cached input), `CostBreakdown` (input/output/cachedSavings/search/total), latency, `Citation[]`, status.
+- `DebateVerdict` — winner (`modelA | modelB | tie | not_applicable`), 0–100 scores, reasoning, strongest/weakest arguments per side, judge model, usage/cost.
 
-### DebateSession
+## Supabase Tables
 
-```ts
-export interface DebateSession {
-  id: string;
-  topic: string;
-  mode: "debate" | "discussion";
-  tone: DebateTone;
-  responseLength: "short" | "medium" | "long";
-  roundCount: 3 | 5 | 7;
-  judge: JudgeConfig;
-  modelA: SelectedModel;
-  modelB: SelectedModel;
-  turns: DebateTurn[];
-  messages: DebateMessage[];
-  verdict?: DebateVerdict;
-  costSummary: SessionCostSummary;
-  status: "setup" | "running" | "judging" | "complete" | "stopped" | "error";
-  createdAt: string;
-  updatedAt: string;
-}
-```
+### `profiles`
 
-### SelectedModel
+One row per user, mirrors `auth.users` (id, display_name, created_at). RLS: own row only.
 
-```ts
-export interface SelectedModel {
-  providerId: string;
-  modelId: string;
-  displayName: string;
-  nickname: string;
-  color: "blue" | "red" | "yellow" | "purple";
-}
-```
+### `matches`
 
-### DebateTurn
+One row per saved match: `id, user_id, app_session_id, topic, mode, round_count, model_a, model_b, winner, total_cost, deep_debate, session (jsonb), created_at`.
 
-```ts
-export interface DebateTurn {
-  id: string;
-  roundNumber: number;
-  roundLabel: string;
-  speaker: "modelA" | "modelB" | "judge";
-  task: string;
-  role: string;
-  stance?: "pro" | "against";
-  modelId: string;
-  status: "pending" | "streaming" | "complete" | "error";
-}
-```
+- `session` stores the full `DebateSession` snapshot so the schema doesn't churn as types evolve; reopening rehydrates it into `ArenaContext`.
+- Promoted columns power the history list and stats without parsing blobs; `computeStats(rows)` derives totals, win counts, top fighter, mode split, Deep Debate usage.
+- RLS: a user reads/writes only their own rows; size caps mirror the server validators.
 
-### DebateMessage
+### Rate-limit / spend RPCs
 
-```ts
-export interface DebateMessage {
-  id: string;
-  sessionId: string;
-  turnId: string;
-  speaker: "modelA" | "modelB" | "judge";
-  providerId: string;
-  modelId: string;
-  role: string;
-  stance?: "pro" | "against";
-  roundNumber?: number;
-  roundLabel?: string;
-  content: string;
-  usage?: TokenUsage;
-  cost?: CostBreakdown;
-  latencyMs?: number;
-  status: "streaming" | "complete" | "error";
-  createdAt: string;
-}
-```
+`rl_hit` (fixed-window per-IP counters), `spend_allowed` and `spend_record` (global + per-IP daily USD ledger). See `docs/11_SECURITY_RATE_LIMITS.md`.
 
-## Future Database Tables
+## Invariants
 
-### users
-
-- id
-- email
-- created_at
-- plan
-- monthly_quota_usd
-- monthly_used_usd
-
-### debate_sessions
-
-- id
-- user_id
-- topic
-- mode
-- tone
-- response_length
-- round_count
-- judge_config_json
-- model_a_json
-- model_b_json
-- status
-- total_cost
-- total_tokens
-- created_at
-- updated_at
-
-### debate_messages
-
-- id
-- session_id
-- turn_id
-- speaker
-- provider_id
-- model_id
-- role
-- stance
-- round_number
-- round_label
-- content
-- input_tokens
-- output_tokens
-- total_tokens
-- total_cost
-- latency_ms
-- status
-- created_at
-
-### debate_verdicts
-
-- id
-- session_id
-- judge_provider_id
-- judge_model_id
-- content
-- winner
-- summary
-- strongest_model_a
-- strongest_model_b
-- weakest_model_a
-- weakest_model_b
-- practical_conclusion
-- total_cost
-- created_at
-
-### model_usage_events
-
-- id
-- user_id
-- session_id
-- provider_id
-- model_id
-- input_tokens
-- output_tokens
-- total_tokens
-- total_cost
-- created_at
-
-## Data Model Acceptance Criteria
-
-The data model is acceptable if:
-
-- MVP can run locally
-- future persistence is straightforward
-- each message can store usage and cost
-- verdict is separate from normal messages
-- session status is explicit
+- Each message stores its own usage and cost.
+- The verdict is separate from turn messages.
+- Session status is explicit at every stage.
+- The app remains fully functional with no database configured (matches just aren't saved; limits fail open).

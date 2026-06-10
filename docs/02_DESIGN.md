@@ -401,15 +401,14 @@ Hero should feel like a game start screen.
 
 Fields:
 
-- topic
-- mode
-- model A
-- model B
+- topic (with AI topic check)
+- model A / model B (swappable fighters)
 - round count
-- tone
-- judge mode
-- judge model if needed
+- tone (per fighter, incl. custom)
 - max response length
+- pace (manual / auto)
+- Deep Debate toggle
+- judge mode + judge model if needed
 
 Use cards with clear sections.
 
@@ -467,22 +466,12 @@ Use Framer Motion.
 
 ## Sound Design
 
-Sound should be optional and muted by default.
-
-Suggested sounds:
-
-- button click
-- round start
-- model starts speaking
-- model finishes speaking
-- error
-- verdict reveal
+See `docs/12_SOUND_ANIMATION.md` for the implemented system (synth-first SFX, generative background music, verdict drum roll).
 
 Rules:
 
-- No autoplay music without user interaction.
-- Always show sound toggle.
-- Save sound preference in local storage.
+- SFX are muted by default; music defaults on but never plays before the first user gesture.
+- Always show the sound toggle; persist preferences in localStorage.
 - Keep sounds short and lightweight.
 
 ## Microcopy Style
