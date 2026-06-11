@@ -20,6 +20,7 @@ import { ToneSelector } from "@/components/setup/ToneSelector";
 import { ResponseLengthSelector } from "@/components/setup/ResponseLengthSelector";
 import { DeepDebateToggle } from "@/components/setup/DeepDebateToggle";
 import { PaceSelector } from "@/components/setup/PaceSelector";
+import { VoiceToggle } from "@/components/setup/VoiceToggle";
 import { JudgeSelector } from "@/components/setup/JudgeSelector";
 import { SetupSummaryCard } from "@/components/setup/SetupSummaryCard";
 
@@ -266,6 +267,12 @@ export default function SetupPage() {
                   value={config.pace}
                   onChange={(pace) => setConfig({ pace })}
                 />
+              </div>
+              <div>
+                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
+                  {d.setup.rules.voice}
+                </p>
+                <VoiceToggle />
               </div>
             </div>
           </GamePanel>

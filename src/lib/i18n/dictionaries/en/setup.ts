@@ -21,6 +21,7 @@ export const setup = {
     tone: "Tone",
     maxLength: "Max response length",
     pacing: "Pacing",
+    voice: "Fighter voices",
     recommended: "Recommended",
     lockRounds: "🔒 3 in Deep Debate",
     lockStandard: "🔒 Standard",
@@ -65,6 +66,12 @@ export const setup = {
     // Hidden easter-egg tone (5 rapid clicks on Aggressive).
     unhinged: { label: "Unhinged" },
   } as Record<string, { label: string }>,
+  // VoiceToggle option labels/blurbs (synced with the arena HUD 🔊 chip)
+  voice: {
+    off: { label: "Off", blurb: "Read the turns yourself" },
+    on: { label: "Voice on", blurb: "Turns are read aloud — switch any time in the arena" },
+  },
+
   toneCustom: {
     describe: "Describe the tone (applies to both fighters)",
     placeholder: "e.g. witty courtroom lawyer, calm professor, sports commentator…",

@@ -21,6 +21,7 @@ export const setup = {
     tone: "Üslup",
     maxLength: "En fazla yanıt uzunluğu",
     pacing: "Tempo",
+    voice: "Yarışmacı sesleri",
     recommended: "Önerilen",
     lockRounds: "🔒 Derin Münazara'da 3",
     lockStandard: "🔒 Standart",
@@ -65,6 +66,12 @@ export const setup = {
     // Gizli sürpriz ton (Agresif'e art arda 5 tıklama).
     unhinged: { label: "Çıldırmış" },
   } as Record<string, { label: string }>,
+  // VoiceToggle seçenek etiketleri/açıklamaları (arena HUD 🔊 çipiyle eşitlenir)
+  voice: {
+    off: { label: "Kapalı", blurb: "Turları kendiniz okuyun" },
+    on: { label: "Ses açık", blurb: "Turlar sesli okunur — arenada istediğiniz an değiştirin" },
+  },
+
   toneCustom: {
     describe: "Üslubu tarif edin (her iki yarışmacıya uygulanır)",
     placeholder: "örn. nüktedan duruşma avukatı, sakin profesör, spor spikeri…",
