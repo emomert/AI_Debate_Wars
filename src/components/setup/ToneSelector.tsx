@@ -80,6 +80,9 @@ export function ToneSelector({
     if (value === "unhinged") setUnhingedUnlocked(true);
   }, [value]);
   const aggressiveClicksRef = useRef<number[]>([]);
+  // Bumped to re-trigger the chip's shake animation (key change → remount) on
+  // unlock and on every (re)selection of the unhinged tone.
+  const [shakeNonce, setShakeNonce] = useState(0);
 
   const handleToneClick = (tone: DebateTone) => {
     if (disabled) return;
@@ -89,6 +92,7 @@ export function ToneSelector({
       aggressiveClicksRef.current = clicks;
       if (clicks.length >= 5) {
         setUnhingedUnlocked(true);
+        setShakeNonce((n) => n + 1);
         try {
           window.sessionStorage.setItem(UNLOCK_KEY, "1");
         } catch {
@@ -99,7 +103,12 @@ export function ToneSelector({
         return;
       }
     }
-    playSound("buttonClick");
+    if (tone === "unhinged") {
+      setShakeNonce((n) => n + 1);
+      playSound("modeSelect");
+    } else {
+      playSound("buttonClick");
+    }
     onChange(tone);
   };
 
@@ -180,7 +189,9 @@ export function ToneSelector({
           const isUnhinged = opt.id === "unhinged";
           return (
             <button
-              key={opt.id}
+              // The shake nonce is in the unhinged chip's key so re-selecting it
+              // remounts the node and replays the one-shot shake animation.
+              key={isUnhinged ? `unhinged-${shakeNonce}` : opt.id}
               type="button"
               role="radio"
               aria-checked={selected}
@@ -192,8 +203,12 @@ export function ToneSelector({
                 "focus-visible:outline-3 focus-visible:outline-offset-2",
                 disabled && !selected && "cursor-not-allowed opacity-50",
                 disabled && selected && "cursor-not-allowed",
-                // The secret chip drops in full-width with danger styling.
+                // The secret chip drops in full-width with danger styling + an
+                // angry rattle each time it unlocks or is (re)selected (nonce>0
+                // so it doesn't rattle on a passive page load when already
+                // unlocked).
                 isUnhinged && "col-span-2 justify-center uppercase tracking-wide sm:col-span-4",
+                isUnhinged && shakeNonce > 0 && "animate-shake",
                 isUnhinged ? "border-arcade-red" : "border-ink",
                 selected
                   ? isUnhinged

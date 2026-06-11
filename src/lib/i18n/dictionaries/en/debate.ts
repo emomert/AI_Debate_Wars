@@ -148,6 +148,8 @@ export const debate = {
     play: "🔊 Play",
     stop: "⏹ Stop",
     costLabel: "Voice synthesis cost this match",
+    skip: "⏭ Skip",
+    skipLabel: "Skip — show the full answer now and stop the voice",
   },
 
   // DebateControls buttons

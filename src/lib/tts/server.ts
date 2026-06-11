@@ -20,7 +20,7 @@ const REQUEST_TIMEOUT_MS = 30_000;
 function ttsSpeed(): number {
   const n = Number(process.env.TTS_SPEED);
   if (Number.isFinite(n) && n >= 0.25 && n <= 4) return n;
-  return 1.15;
+  return 1.3;
 }
 
 export function isServerTtsConfigured(): boolean {

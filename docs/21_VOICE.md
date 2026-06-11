@@ -72,7 +72,12 @@ gravitas. Legacy `tts-1` models reject `instructions`, so it's omitted there.
 - `TTS_PROVIDER` — `none` disables; otherwise on whenever `OPENAI_API_KEY`
   is set
 - `TTS_OPENAI_MODEL` — OpenAI speech model (default `gpt-4o-mini-tts`)
-- `TTS_SPEED` — voice playback rate, 0.25–4.0 (default 1.15; the typewriter
+- `TTS_SPEED` — voice playback rate, 0.25–4.0 (default 1.3; the typewriter
   paces to the resulting audio length, so this also speeds the text reveal)
+
+A **Skip** control (HUD, shown while a turn is typing) instantly reveals the
+full answer and stops the voice via `runner.skipTurn()` + `voicePlayer.stop()`.
+Turning the HUD voice toggle back ON while a turn is on screen replays it, so
+"open voice again" continues out loud.
 - `TTS_COST_USD_PER_1M` — price override for the HUD/ledger (default 15)
 - `RL_TTS_PER_MIN` — per-IP rate limit (default 20)

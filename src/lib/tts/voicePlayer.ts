@@ -50,10 +50,11 @@ export interface PreparedSpeech {
 
 type Listener<T> = (value: T) => void;
 
-/** Rough Web Speech duration estimate (~165 wpm) so text can pace to it too. */
+/** Rough Web Speech duration estimate (~210 wpm at the ~1.3× rate) so the text
+ *  reveal paces to it too. */
 function estimateSpeechMs(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1200, Math.round((words / 165) * 60_000));
+  return Math.max(1000, Math.round((words / 210) * 60_000));
 }
 
 class VoicePlayer {

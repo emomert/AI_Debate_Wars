@@ -200,6 +200,10 @@ export function useDebateRunner(
 
   // Manual-pacing gate: when set, the loop is paused waiting for next()/auto.
   const gateRef = useRef<(() => void) | null>(null);
+  // Per-turn "skip" controller: aborting it fast-forwards the typewriter to the
+  // full text (the voice is stopped separately by the caller). Set only while a
+  // turn is streaming; null otherwise.
+  const skipRef = useRef<AbortController | null>(null);
   const paceRef = useRef<DebatePace>(initialSession.pace);
   const [pace, setPaceState] = useState<DebatePace>(initialSession.pace);
 
@@ -230,6 +234,11 @@ export function useDebateRunner(
     retryRef.current = true; // skip the gate for the turn we're retrying
     setState((prev) => ({ ...prev, error: null, phase: "thinking" }));
     setRunToken((t) => t + 1);
+  }, []);
+
+  /** Fast-forward the current turn's typewriter to the full text immediately. */
+  const skipTurn = useCallback(() => {
+    skipRef.current?.abort();
   }, []);
 
   /** Advance past a manual-pacing pause (the "Next turn" / "Reveal verdict" button). */
@@ -269,7 +278,7 @@ export function useDebateRunner(
     const persist = (status: SessionStatus) =>
       onPersistRef.current?.(snapshot(working, status));
 
-    async function typewriter(content: string, targetMs?: number) {
+    async function typewriter(content: string, targetMs?: number, skipSignal?: AbortSignal) {
       const total = content.length;
       // Deliberately NOT gated on prefers-reduced-motion: the typewriter is the
       // core experience and a text reveal isn't vestibular-trigger motion, so
@@ -295,6 +304,11 @@ export function useDebateRunner(
 
       while (shown < total) {
         if (signal.aborted) throw new DOMException("aborted", "AbortError");
+        // Skip pressed → reveal the whole turn instantly and stop typing.
+        if (skipSignal?.aborted) {
+          setState((p) => ({ ...p, streamingText: content }));
+          return;
+        }
 
         revealed = Math.min(total, revealed + charsPerFrame);
         const next = Math.floor(revealed);
@@ -474,11 +488,14 @@ export function useDebateRunner(
           }));
           // Start the voice and the typewriter together; pace the reveal to the
           // speech so words land as they're spoken. The next turn waits for the
-          // voice to finish (Fast pacing stays polite).
+          // voice to finish (Fast pacing stays polite). A per-turn skip controller
+          // lets the user fast-forward the text + voice (see skipTurn()).
+          const skip = new AbortController();
+          skipRef.current = skip;
           const speechDone = prepared ? prepared.play() : null;
-          await typewriter(message.content, prepared?.durationMs ?? undefined);
+          await typewriter(message.content, prepared?.durationMs ?? undefined, skip.signal);
           if (signal.aborted) return;
-          if (speechDone) {
+          if (speechDone && !skip.signal.aborted) {
             try {
               await speechDone;
             } catch {
@@ -486,6 +503,7 @@ export function useDebateRunner(
             }
             if (signal.aborted) return;
           }
+          skipRef.current = null;
 
           setState((p) => ({
             ...p,
@@ -623,5 +641,6 @@ export function useDebateRunner(
     retry,
     next,
     setPace,
+    skipTurn,
   };
 }

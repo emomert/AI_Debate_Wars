@@ -50,6 +50,9 @@ interface DebateHUDProps {
   onToggleVoice: () => void;
   /** Running server-TTS spend this session (0 = free tier / nothing spoken). */
   voiceCostUsd: number;
+  /** Skip = finish the turn's text instantly + stop voice (shown while typing). */
+  canSkip: boolean;
+  onSkip: () => void;
 }
 
 function DebateHUDComponent({
@@ -66,6 +69,8 @@ function DebateHUDComponent({
   voiceEnabled,
   onToggleVoice,
   voiceCostUsd,
+  canSkip,
+  onSkip,
 }: DebateHUDProps) {
   const d = useT();
   const status = { text: d.debate.hud.phase[phase], color: PHASE_COLOR[phase] };
@@ -133,6 +138,16 @@ function DebateHUDComponent({
           >
             {voiceEnabled ? d.debate.voice.hudOn : d.debate.voice.hudOff}
           </button>
+          {canSkip ? (
+            <button
+              type="button"
+              onClick={onSkip}
+              aria-label={d.debate.voice.skipLabel}
+              className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
+            >
+              {d.debate.voice.skip}
+            </button>
+          ) : null}
         </div>
 
         <motion.div

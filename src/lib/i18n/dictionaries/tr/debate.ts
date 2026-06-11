@@ -148,6 +148,8 @@ export const debate = {
     play: "🔊 Oynat",
     stop: "⏹ Durdur",
     costLabel: "Bu maçtaki ses sentezi maliyeti",
+    skip: "⏭ Atla",
+    skipLabel: "Atla — tüm yanıtı şimdi göster ve sesi durdur",
   },
 
   // DebateControls buttons

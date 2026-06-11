@@ -45,21 +45,21 @@ export interface WebSpeechProfile {
   rate: number;
 }
 
-// Rates run a touch brisk to match the server voices (~1.15×) so turns don't drag.
+// Rates run brisk to match the server voices (~1.3×) so turns don't drag.
 export const WEB_SPEECH_PROFILES: Record<Speaker, WebSpeechProfile> = {
   modelA: {
     preferredNames: ["Google US English", "Microsoft Guy", "Microsoft David", "Daniel"],
     pitch: 0.9,
-    rate: 1.15,
+    rate: 1.3,
   },
   modelB: {
     preferredNames: ["Google UK English Female", "Microsoft Aria", "Microsoft Zira", "Samantha"],
     pitch: 1.15,
-    rate: 1.13,
+    rate: 1.28,
   },
   judge: {
     preferredNames: ["Google UK English Male", "Microsoft Ryan", "Microsoft George", "Arthur"],
     pitch: 0.78,
-    rate: 1.05,
+    rate: 1.18,
   },
 };

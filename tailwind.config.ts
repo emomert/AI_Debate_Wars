@@ -74,10 +74,20 @@ const config: Config = {
           "0%, 80%, 100%": { transform: "translateY(0)", opacity: "0.4" },
           "40%": { transform: "translateY(-4px)", opacity: "1" },
         },
+        // Angry rattle for the hidden UNHINGED tone when it unlocks.
+        shake: {
+          "0%, 100%": { transform: "translateX(0) rotate(0deg)" },
+          "15%": { transform: "translateX(-5px) rotate(-1.5deg)" },
+          "30%": { transform: "translateX(5px) rotate(1.5deg)" },
+          "45%": { transform: "translateX(-4px) rotate(-1deg)" },
+          "60%": { transform: "translateX(4px) rotate(1deg)" },
+          "75%": { transform: "translateX(-2px) rotate(-0.5deg)" },
+        },
       },
       animation: {
         "caret-blink": "caret-blink 1.05s ease-in-out infinite",
         "thinking-bounce": "thinking-bounce 1.2s ease-in-out infinite",
+        shake: "shake 0.55s ease-in-out",
       },
     },
   },

@@ -147,7 +147,31 @@ function ArenaInner({
       voicePlayer.prepare(m, speakOptsRef.current, signal),
     [],
   );
-  const toggleVoice = useCallback(() => voicePlayer.toggle(), []);
+
+  // Note: the runner's typewriter intentionally ignores reduced-motion so every
+  // visitor gets the same playback; `reduce` only tones down decorative motion.
+  const runner = useDebateRunner(session, { onPersist, prepareSpeech });
+
+  // The message currently being typed out, for replay-on-re-enable.
+  const activeMessageRef = useRef<DebateMessage | null>(null);
+  activeMessageRef.current = runner.activeMessage;
+
+  // Turning voice back ON while a turn is on screen replays it, so "open the
+  // voice again" actually continues out loud instead of staying silent until
+  // the next turn.
+  const toggleVoice = useCallback(() => {
+    const nowOn = voicePlayer.toggle();
+    if (nowOn && activeMessageRef.current) {
+      voicePlayer.replay(activeMessageRef.current, speakOptsRef.current);
+    }
+  }, []);
+
+  // Skip: instantly finish the typewriter AND stop the voice, then move on.
+  const skip = useCallback(() => {
+    voicePlayer.stop();
+    runner.skipTurn();
+  }, [runner.skipTurn]);
+
   const voiceFor = useCallback(
     (m: DebateMessage) => ({
       playing: speakingId === m.id,
@@ -158,10 +182,6 @@ function ArenaInner({
     }),
     [speakingId],
   );
-
-  // Note: the runner's typewriter intentionally ignores reduced-motion so every
-  // visitor gets the same playback; `reduce` only tones down decorative motion.
-  const runner = useDebateRunner(session, { onPersist, prepareSpeech });
   const doneVerdict = session.verdict ?? runner.verdict;
   // When the match is done, the persisted session cost is authoritative (an
   // in-arena re-judge updates it but not the runner's frozen internal verdict).
@@ -301,6 +321,8 @@ function ArenaInner({
         voiceEnabled={voiceEnabled}
         onToggleVoice={toggleVoice}
         voiceCostUsd={voiceCostUsd}
+        canSkip={runner.phase === "streaming"}
+        onSkip={skip}
       />
 
       {/* Topic bar */}
