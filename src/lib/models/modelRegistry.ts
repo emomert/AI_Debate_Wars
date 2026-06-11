@@ -319,8 +319,10 @@ export function previewAutoJudge(
   return null;
 }
 
+// "free" renders as a plain price tier ($0), not a FREE call-out — open-weight
+// models are presented like any other fighter (product decision, June 2026).
 export const COST_TIER_LABEL: Record<CostTier, string> = {
-  free: "FREE",
+  free: "$0",
   low: "$",
   medium: "$$",
   high: "$$$",

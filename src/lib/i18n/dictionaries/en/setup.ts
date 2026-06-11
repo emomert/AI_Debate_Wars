@@ -130,10 +130,10 @@ export const setup = {
 
   // ModelSelector
   models: {
-    freeModels: "🆓 Free models",
-    freeBrands: "Free brands",
+    freeModels: "🌐 More brands",
+    freeBrands: "More brands",
     ready: "ready",
-    freeVia: "Free via OpenRouter · ",
+    freeVia: "Served via OpenRouter · ",
     needsOpenRouterKey: "needs OPENROUTER_API_KEY",
     zeroCost: "$0 to run",
     picked: "Picked",
@@ -166,6 +166,6 @@ export const setup = {
     judgeOn: "⚖️ Judge on",
     judgeOff: "No judge",
     start: "▶ Start the Match",
-    footnote: "Live models · OpenRouter brands are free with a key",
+    footnote: "Live models · OpenRouter brands run on one shared key",
   },
 };

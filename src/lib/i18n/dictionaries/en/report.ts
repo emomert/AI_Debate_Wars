@@ -15,16 +15,34 @@ export const report = {
     tail: " pricing table. Nothing on this page is a screenshot that can go stale.",
   },
 
+  // Sticky section navigation (scrollspy chips).
+  nav: {
+    aria: "Report sections",
+    offer: "Offer",
+    control: "Control",
+    providers: "Providers",
+    roster: "Roster",
+    prompts: "Prompts",
+    pipeline: "Deep Debate",
+    turnDemo: "Turn demo",
+    cost: "Costs",
+    stack: "Stack",
+  },
+  copyLink: {
+    title: "Copy a direct link to this section",
+    copied: "Link copied",
+  },
+
   // 1 · What we offer
   offer: {
     title: "1 · What we offer",
     debate: {
       heading: "🥊 Debate Mode",
-      body: "Two AI models argue opposite sides of your topic across 3–7 fixed rounds — openings, rebuttals, closings. An optional third model judges the match and declares a winner with scores.",
+      body: "Two AI models argue opposite sides of your topic across 3–7 fixed rounds — openings, rebuttals, closings. You pick the fighters, the tone, the pace and the length.",
     },
-    discussion: {
-      heading: "💬 Discussion Mode",
-      body: "The same engine, cooperative: one model builds on your idea, the other stress-tests it. The judge (optional) extracts insights and next steps instead of picking a winner.",
+    judge: {
+      heading: "⚖️ AI Judge",
+      body: "An optional third model judges the finished match blind — summary, strongest and weakest arguments, scores per fighter, and a decisive winner. The app picks a neutral judge automatically, or you choose one.",
     },
     deep: {
       heading: "🌐 Deep Debate",
@@ -34,14 +52,22 @@ export const report = {
       "Per-turn token usage, latency and an honest running cost are always on screen — the arcade look is the interface, cost transparency is the contract.",
   },
 
-  // 2 · Who controls the match
+  // 2 · Who controls the match (interactive flow diagram)
   control: {
     title: "2 · The app controls the match — never the models",
+    hint: "Click a step to read what really happens at that stage.",
     step1: {
+      node: "Validate",
       title: "Setup is validated twice",
       body: "The Start button gates on client-side validation; the server re-validates every request independently (topic length, enums, fighter ids, round caps, Deep Debate limits) — a forged request can't buy more than the UI allows.",
     },
+    gate: {
+      node: "Limits",
+      title: "Rate limits & spend caps run before any model is called",
+      body: "Every paid route first checks per-IP rate limits and the global and per-IP daily spend caps. Only a request that passes the gate reaches a provider — and if the limit backend is unreachable, the check fails open so the product keeps working.",
+    },
     step2: {
+      node: "Plan",
       title: "A fixed turn plan is built before anyone speaks",
       body: (rounds: number, fighterTurns: number, judge: boolean) =>
         `The orchestrator expands your config into the complete list of turns up front — who speaks, in which round, with what task. With ${rounds} rounds that is ${fighterTurns} fighter turns${
@@ -49,16 +75,19 @@ export const report = {
         }. Models cannot add, skip or reorder turns.`,
     },
     step3: {
+      node: "One turn",
       title: "One API call generates exactly one turn",
       bodyPre: "The browser calls ",
       bodyPost:
         " with the session and the next turn id. The server checks it really is the next pending turn, builds the prompts, calls the provider once, computes the cost, and returns a single message. No loops, no agent autonomy.",
     },
     step4: {
+      node: "Ground",
       title: "Deep Debate searches before prompting",
       body: "On deep turns the server first runs a web search (Brave) on your topic and injects the numbered results into the prompt as the model's only allowed evidence. Citation markers that don't match a real source are stripped; sources the model never cited aren't claimed.",
     },
     step5: {
+      node: "Judge",
       title: "The judge runs once, at the end",
       bodyPre: "When every round is complete, ",
       bodyPost:
@@ -77,7 +106,7 @@ export const report = {
     openaiNotes: "Chat Completions API, streaming-capable",
     deepseekUsed: "DeepSeek V4 fighters & judges",
     deepseekNotes: "OpenAI-compatible endpoint",
-    openrouterUsed: "22 free open-weight fighters (Qwen, Llama, …)",
+    openrouterUsed: "Open-weight fighters under their own brands (Qwen, Llama, Kimi, …)",
     openrouterNotes: "$0 token cost; hidden reasoning capped for fast turns",
     braveUsed: "Deep Debate web research (all fighters)",
     braveNotes: "Only the debate topic is sent as the query — never the transcript",
@@ -85,13 +114,29 @@ export const report = {
       "🔒 All keys live only on the server (Vercel env vars). The browser talks exclusively to our own API routes; no key or provider call ever runs client-side. (The prompt templates are deliberately public — you're reading them live in section 5.) A pluggable search registry means the search engine (and its per-query fee) is swappable by configuration, not code.",
   },
 
-  // 4 · Model roster
+  // 4 · Model roster (interactive fighter cards)
   roster: {
     title: "4 · The fighter roster (live catalogue)",
-    freeVia: "free via OpenRouter",
+    via: "via",
+    filterAll: "All brands",
+    sortRating: "Top rated",
+    sortCatalog: "Catalogue order",
+    count: (n: number) => `${n} fighters`,
+    ratingTitle: "Debate rating",
+    tapHint: "Click a fighter for full details and its real per-token pricing.",
+    detailFamily: "Family",
+    detailBackend: "Backend",
+    detailMaxOut: "Max output",
+    detailStreaming: "Streaming",
+    yes: "Yes",
+    no: "No",
+    detailPricing: "Pricing / 1M tokens",
+    detailInput: "in",
+    detailCached: "cached",
+    detailOutput: "out",
     footerPre:
       "Ratings are our debate-fit score (0–100). The OpenAI list is verified against the live ",
-    footerPost: " endpoint; the free roster is a snapshot of OpenRouter's catalogue.",
+    footerPost: " endpoint; the OpenRouter roster is a snapshot of their catalogue.",
   },
 
   // 5 · Prompt playground
@@ -102,11 +147,6 @@ export const report = {
     introEm: "precisely",
     intro2: " what your setting does to the model's instructions.",
     knobTopic: "Topic — becomes the “Topic or idea:” line (and the Deep Debate search query)",
-    knobMode: "Mode — swaps the entire base system prompt + roles & stances",
-    modeDebate: "🥊 Debate",
-    modeDiscussion: "💬 Discussion",
-    modeWordDebate: "debate",
-    modeWordDiscussion: "discussion",
     knobToneLocked: "Tone — locked to Serious in Deep Debate",
     knobTone: "Tone — rewrites the “Tone:” instruction line",
     knobCustomTone: "Custom tone (sanitized + capped at 80 chars, wrapped in a guard sentence)",
@@ -119,9 +159,15 @@ export const report = {
     knobDeep: "Deep Debate — appends the research addendum + injects numbered web sources",
     deepOff: "Off",
     deepOn: "🌐 On",
-    knobPreview: "Preview turn — same template, different round task & speaker",
-    systemLabel: (mode: string, deep: boolean) =>
-      `System prompt — ${mode} mode${deep ? " + Deep Debate addendum" : ""}`,
+    timelineLabel:
+      "The match timeline — the deterministic turn plan, built before anyone speaks. Click a turn to preview its prompt",
+    timelineJudge: "⚖️ Verdict",
+    timelineRound: (n: number) => `Round ${n}`,
+    copy: "📋 Copy",
+    copied: "✓ Copied",
+    tokensApprox: (n: number) => `≈ ${n} tokens`,
+    systemLabel: (deep: boolean) =>
+      `System prompt — debate mode${deep ? " + Deep Debate addendum" : ""}`,
     turnLabel: (round: number, roundLabel: string, model: string, deep: boolean) =>
       `Turn prompt — round ${round} (“${roundLabel}”), ${model}${
         deep ? " — with injected web sources" : ""
@@ -133,9 +179,10 @@ export const report = {
     judgeLabel: "Judge prompt — strict JSON contract so every provider parses identically",
   },
 
-  // 6 · Deep Debate pipeline
+  // 6 · Deep Debate pipeline (interactive flow diagram)
   pipeline: {
     title: "6 · Deep Debate, step by step",
+    hint: "Click a stage to see what it does.",
     step1: {
       title: "Search",
       body: "The server queries the search engine (Brave) with your topic and normalizes the top results into numbered sources: title, URL, snippet. Engine, result count and per-query fee are configuration, not code.",
@@ -183,14 +230,41 @@ export const report = {
     colInput: "$ / 1M input",
     colCached: "$ / 1M cached",
     colOutput: "$ / 1M output",
+    explorer: {
+      filterPlaceholder: "Filter by model or brand…",
+      count: (shown: number, total: number) => `${shown} of ${total} models`,
+      barNote: "Bars compare output price on a log scale.",
+      empty: "No models match that filter.",
+      sortHint: "Click a price column to sort by it; click the model column for catalogue order.",
+    },
     note1: (input: string, output: string) =>
-      `· Any OpenRouter :free model bills $0; unlisted models fall back to $${input}/$${output} per 1M.`,
+      `· Open-weight models served via OpenRouter bill $0; unlisted models fall back to $${input}/$${output} per 1M.`,
     note2: (search: string) =>
       `· Deep Debate searches are free on the default engine; in hybrid mode OpenRouter native search adds ~$${search}/turn, shown as a 🔎 line in the cost breakdown.`,
     note3:
       "· Standard, cached and output rates verified against the providers' official pages (June 2026). gpt-5.3-chat-latest has no published rate and is priced at its nearest confirmed neighbor (no cache discount assumed).",
     note4:
       "· Cache-aware: when the provider reports cache-hit input tokens (a ♻️ on the cost badge), they bill at the cached rate above — so the cost is the real bill, not an over-estimate.",
+    estimator: {
+      title: "🎮 Estimate a match",
+      intro:
+        "A rough upper-bound estimate computed from the same pricing table — real matches bill the provider-reported usage, which is usually lower.",
+      fighterA: "Fighter A",
+      fighterB: "Fighter B",
+      rounds: "Rounds",
+      roundsLocked: "Rounds — locked to 3 in Deep Debate",
+      length: "Response length",
+      lengthLocked: "Length — fixed Deep template (1500 tokens)",
+      deep: "Deep Debate",
+      judgeKnob: "AI Judge",
+      on: "On",
+      off: "Off",
+      total: "Estimated match total",
+      turnsLine: (n: number) => `${n} fighter turns`,
+      judgeLine: (name: string) => `Judge · ${name}`,
+      disclaimer:
+        "Assumes ~70% of the per-turn token cap is used and the transcript grows each round. Cache discounts make real bills lower still.",
+    },
   },
 
   // 9 · Stack & configuration
@@ -205,11 +279,15 @@ export const report = {
       "· Per-turn deadline budget keeps every call inside the platform's 60s limit",
     ],
     configHeading: "Server configuration",
+    badgeCore: "core",
+    badgeOptional: "optional",
     configBackends: "model backends",
     configBraveSearch: "Deep Debate web search",
     configSearchProvider: "search engine id (default: brave)",
     configSearchCost: "per-query fee shown in the HUD (default 0)",
     configDeepMode: "\"hybrid\" routes OpenRouter fighters to native :online search",
+    configSupabase: "sign-in, match history, community hub — the app fully works without it",
+    configLimits: "per-IP rate limits + global/per-IP daily spend caps (fail open)",
     configFooter:
       "Scaling levers are environment variables — paid search tiers, alternate engines and search routing need a dashboard change, not a deploy.",
   },

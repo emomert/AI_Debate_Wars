@@ -1,9 +1,9 @@
 # 05 — Prompting System
 
-> Updated 2026-06-10. Source of truth: `src/lib/debate/promptBuilder.ts` and
+> Updated 2026-06-11. Source of truth: `src/lib/debate/promptBuilder.ts` and
 > `src/lib/debate/topicCheck.ts`. The `/report` page renders the **actual live
-> prompts** for any mode/round/tone/length combination — use it instead of
-> trusting any doc snapshot.
+> prompts** for any round/tone/length combination (Debate Mode, matching the
+> launch UI) — use it instead of trusting any doc snapshot.
 
 ## Prompting Goal
 

@@ -82,8 +82,8 @@ export function ModelSelector({
   const [activeBrand, setActiveBrand] = useState<string>(
     selected?.brand ?? BRANDS[0]?.brand ?? "OpenAI",
   );
-  // Free (OpenRouter) brands live behind a collapsible menu — there are many of
-  // them. Open it by default if the current pick is one of them.
+  // OpenRouter brands live behind a collapsible "More brands" menu — there are
+  // many of them. Open it by default if the current pick is one of them.
   const [freeOpen, setFreeOpen] = useState<boolean>(
     selected?.providerId === "openrouter",
   );
@@ -188,7 +188,7 @@ export function ModelSelector({
         ) : null}
       </div>
 
-      {/* Step 1 — brand tabs (free OpenRouter brands behind a collapsible menu) */}
+      {/* Step 1 — brand tabs (OpenRouter brands behind a collapsible menu) */}
       <div className="mb-2 flex flex-wrap items-center gap-2" role="tablist" aria-label={`${label} brand`}>
         {primaryBrands.map((b) => renderTab(b))}
         {freeBrands.length > 0 ? (
@@ -375,7 +375,7 @@ export function ModelSelector({
           ) : null}
         </span>
 
-        <Badge color={m.costTier === "free" ? "green" : "white"} size="sm">
+        <Badge color="white" size="sm">
           {COST_TIER_LABEL[m.costTier]}
         </Badge>
       </button>

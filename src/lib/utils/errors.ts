@@ -95,12 +95,12 @@ export function friendlyMessage(code: AppErrorCode): { title: string; body: stri
     case "DAILY_LIMIT_REACHED":
       return {
         title: "The arena hit today's limit",
-        body: "Debator caps how much it can spend per day to keep the lights on. The limit's reached for now — come back tomorrow, or pick free models (they don't count against it).",
+        body: "Debator caps how much it can spend per day to keep the lights on. The limit's reached for now — come back tomorrow, or pick open-weight models (they bill $0 and don't count against it).",
       };
     case "INSUFFICIENT_CREDITS":
       return {
         title: "This fighter is out of coins",
-        body: "The provider account is out of credits for this model. Add credits, or pick a free model in setup.",
+        body: "The provider account is out of credits for this model. Add credits, or pick an open-weight model in setup — they bill $0.",
       };
     case "INVALID_MODEL":
       return {

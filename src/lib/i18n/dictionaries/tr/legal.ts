@@ -15,7 +15,7 @@ export const legal = {
     sections: [
       { heading: "Arcade arayüzü, ciddi zekâ", body: "Görünüm eğlenceli bir tarayıcı mini oyunu; çıktı ise düşünceli ve yapılandırılmış kalır. Kimin konuşacağına, hangi turda olunduğuna, ne zaman biteceğine ve bir hakemin görünüp görünmeyeceğine modeller değil, uygulama karar verir." },
       { heading: "Bir maç nasıl işler", body: "Bir konu ve iki yarışmacı seçin, tur sayısını ve üslubu belirleyin, isterseniz bir hakem ekleyin. Her tur, katı bir istemle teker teker üretilir; böylece münazaralar asla sonsuza dek sürmez. Derin Münazara, kaynak gösterilen canlı web araştırması ekler." },
-      { heading: "Modeller ve maliyet", body: "Yarışmacılar OpenAI, DeepSeek ve OpenRouter üzerinden ücretsiz açık ağırlıklı modellerden gelir. Her tur, token'larını ve tahmini maliyetini gösterir; toplam tutar her zaman ekrandadır." },
+      { heading: "Modeller ve maliyet", body: "Yarışmacılar OpenAI, DeepSeek ve OpenRouter üzerinden sunulan açık ağırlıklı modellerden gelir. Her tur, token'larını ve tahmini maliyetini gösterir; toplam tutar her zaman ekrandadır." },
       { heading: "Diller", body: "Debator İngilizce ve Türkçe olarak sunulur — üstteki menüden istediğiniz an geçebilir, münazaraları seçtiğiniz dilde yürütebilirsiniz." },
     ],
   },

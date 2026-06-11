@@ -17,7 +17,7 @@ export const legal = {
     sections: [
       { heading: "Arcade interface, serious intelligence", body: "The look is a playful browser mini-game; the output stays thoughtful and structured. The app — never the models — controls who speaks, which round it is, when it ends, and whether a judge appears." },
       { heading: "How a match works", body: "Pick a topic and two fighters, choose the rounds and tone, and optionally bring in a judge. Each turn is generated one at a time under a strict prompt, so debates never loop forever. Deep Debate adds live web research with cited sources." },
-      { heading: "Models & cost", body: "Fighters come from OpenAI, DeepSeek, and free open-weight models via OpenRouter. Every turn shows its tokens and estimated cost, and the running total is always on screen." },
+      { heading: "Models & cost", body: "Fighters come from OpenAI, DeepSeek, and open-weight models served via OpenRouter. Every turn shows its tokens and estimated cost, and the running total is always on screen." },
       { heading: "Languages", body: "Debator is available in English and Turkish — switch any time from the header, and debates run in the language you choose." },
     ],
   },

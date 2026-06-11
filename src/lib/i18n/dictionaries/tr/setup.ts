@@ -128,10 +128,10 @@ export const setup = {
 
   // ModelSelector
   models: {
-    freeModels: "🆓 Ücretsiz modeller",
-    freeBrands: "Ücretsiz markalar",
+    freeModels: "🌐 Diğer markalar",
+    freeBrands: "Diğer markalar",
     ready: "hazır",
-    freeVia: "OpenRouter üzerinden ücretsiz · ",
+    freeVia: "OpenRouter üzerinden sunulur · ",
     needsOpenRouterKey: "OPENROUTER_API_KEY gerektirir",
     zeroCost: "çalıştırması $0",
     picked: "Seçildi",
@@ -164,6 +164,6 @@ export const setup = {
     judgeOn: "⚖️ Hakem açık",
     judgeOff: "Hakem yok",
     start: "▶ Maçı Başlatın",
-    footnote: "Canlı modeller · OpenRouter markaları bir anahtarla ücretsizdir",
+    footnote: "Canlı modeller · OpenRouter markaları tek bir ortak anahtarla çalışır",
   },
 };

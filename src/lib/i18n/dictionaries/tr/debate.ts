@@ -74,7 +74,7 @@ export const debate = {
     },
     INSUFFICIENT_CREDITS: {
       title: "Bu yarışmacının jetonu bitti",
-      body: "Sağlayıcı hesabının bu model için kredisi kalmadı. Kredi ekleyin ya da kurulumda ücretsiz bir model seçin.",
+      body: "Sağlayıcı hesabının bu model için kredisi kalmadı. Kredi ekleyin ya da kurulumda $0 faturalandırılan açık ağırlıklı bir model seçin.",
     },
     INVALID_MODEL: {
       title: "Bu yarışmacı kadroda yok",
@@ -98,7 +98,7 @@ export const debate = {
     },
     DAILY_LIMIT_REACHED: {
       title: "Arena bugünkü sınırına ulaştı",
-      body: "Debator, ışıkları açık tutmak için günlük harcamasını sınırlar. Şimdilik sınıra ulaşıldı — yarın tekrar gelin ya da bu sınıra dahil olmayan ücretsiz modelleri seçin.",
+      body: "Debator, ışıkları açık tutmak için günlük harcamasını sınırlar. Şimdilik sınıra ulaşıldı — yarın tekrar gelin ya da bu sınıra dahil olmayan, $0 faturalandırılan açık ağırlıklı modelleri seçin.",
     },
     PROVIDER_ERROR: {
       title: "Arena ışıkları titredi",

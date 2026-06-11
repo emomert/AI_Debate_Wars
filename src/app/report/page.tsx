@@ -18,6 +18,13 @@ import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { Badge } from "@/components/game/Badge";
 import { DebateMessageCard } from "@/components/debate/DebateMessageCard";
+import { SectionNav } from "@/components/report/SectionNav";
+import { FlowDiagram } from "@/components/report/FlowDiagram";
+import { FighterRoster } from "@/components/report/FighterRoster";
+import { PricingExplorer } from "@/components/report/PricingExplorer";
+import { RoundTimeline } from "@/components/report/RoundTimeline";
+import { CostEstimator } from "@/components/report/CostEstimator";
+import { BrandLogo } from "@/components/report/BrandLogo";
 
 import {
   buildJudgePrompt,
@@ -26,19 +33,13 @@ import {
   lengthPreset,
 } from "@/lib/debate/promptBuilder";
 import { createDebateSession } from "@/lib/debate/orchestrator";
-import {
-  BRANDS,
-  COST_TIER_LABEL,
-  familiesForBrand,
-} from "@/lib/models/modelRegistry";
-import { modelPricing, FALLBACK_PRICE } from "@/lib/cost/pricing";
+import { FALLBACK_PRICE } from "@/lib/cost/pricing";
 import { DEEP_SEARCH_COST_USD } from "@/lib/debate/citations";
 import { TONE_OPTIONS } from "@/lib/constants";
 import { defaultFighters, toSelectedModel } from "@/lib/state/ArenaContext";
 import type {
   Citation,
   DebateConfig,
-  DebateMode,
   DebateTone,
   ResponseLength,
   RoundCount,
@@ -48,11 +49,37 @@ import { cn } from "@/lib/utils/cn";
 /* ---------------------------------- bits ---------------------------------- */
 
 function PromptBlock({ label, text }: { label: string; text: string }) {
+  const d = useT();
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    void navigator.clipboard?.writeText(text);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
     <div>
-      <p className="mb-1 font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50">
-        {label}
-      </p>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-ink/50">
+          {label}
+        </p>
+        <div className="flex items-center gap-2 print:hidden">
+          <span className="font-mono text-[10px] text-ink/40">
+            {d.report.playground.tokensApprox(Math.round(text.length / 4))}
+          </span>
+          <button
+            type="button"
+            onClick={copy}
+            className={cn(
+              "rounded-btn border-2 border-ink px-2 py-0.5 text-[10px] font-extrabold transition",
+              copied ? "bg-arcade-green text-night" : "bg-surface hover:bg-arcade-yellow hover:text-night",
+            )}
+          >
+            {copied ? d.report.playground.copied : d.report.playground.copy}
+          </button>
+        </div>
+      </div>
       <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-card border-3 border-ink bg-night p-3.5 font-mono text-[11px] leading-relaxed text-green-300 shadow-hard-sm">
         {text}
       </pre>
@@ -97,17 +124,34 @@ function Knob({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
+/** Panel title with a copy-deep-link button (#anchor) next to it. */
+function AnchorTitle({ id, title }: { id: string; title: string }) {
+  const d = useT();
+  const [copied, setCopied] = useState(false);
   return (
-    <li className="flex gap-3">
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow font-display text-base text-night shadow-hard-sm">
-        {n}
-      </span>
-      <div className="min-w-0">
-        <p className="font-heading text-sm font-extrabold">{title}</p>
-        <p className="text-sm text-ink/70">{children}</p>
-      </div>
-    </li>
+    <span className="inline-flex flex-wrap items-center gap-2">
+      {title}
+      <button
+        type="button"
+        title={copied ? d.report.copyLink.copied : d.report.copyLink.title}
+        aria-label={d.report.copyLink.title}
+        onClick={() => {
+          void navigator.clipboard?.writeText(
+            `${window.location.origin}${window.location.pathname}#${id}`,
+          );
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1500);
+        }}
+        className={cn(
+          "rounded-btn border-2 px-1.5 text-sm font-bold transition print:hidden",
+          copied
+            ? "border-ink bg-arcade-green text-night"
+            : "border-ink/30 text-ink/40 hover:border-ink hover:text-ink",
+        )}
+      >
+        {copied ? "✓" : "#"}
+      </button>
+    </span>
   );
 }
 
@@ -134,11 +178,6 @@ const SAMPLE_SOURCES: Citation[] = [
   },
 ];
 
-/** Show 2 decimals, but up to 3 so sub-cent rates (e.g. $0.435) aren't rounded. */
-function priceText(n: number): string {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
-}
-
 /* ---------------------------------- page ---------------------------------- */
 
 export default function ReportPage() {
@@ -146,7 +185,6 @@ export default function ReportPage() {
   // Prompt playground state — mirrors the real Setup rules (deep locks
   // rounds to 3, tone to serious, length to the fixed template).
   const [topic, setTopic] = useState("Should social media platforms verify user age?");
-  const [mode, setMode] = useState<DebateMode>("debate");
   const [tone, setTone] = useState<DebateTone>("serious");
   const [customTone, setCustomTone] = useState("like an excited sports commentator");
   const [length, setLength] = useState<ResponseLength>("medium");
@@ -162,7 +200,7 @@ export default function ReportPage() {
     const { a, b } = defaultFighters();
     const config: DebateConfig = {
       topic: topic.trim() || "Should social media platforms verify user age?",
-      mode,
+      mode: "debate",
       modelA: toSelectedModel(a, "blue"),
       modelB: toSelectedModel(b, "red"),
       roundCount: effectiveRounds,
@@ -174,11 +212,11 @@ export default function ReportPage() {
       judge: { enabled: true, mode: "auto" },
     };
     return createDebateSession(config);
-  }, [topic, mode, effectiveTone, customTone, length, effectiveRounds, deep]);
+  }, [topic, effectiveTone, customTone, length, effectiveRounds, deep]);
 
   const fighterTurns = session.turns.filter((t) => t.speaker !== "judge");
   const turn = fighterTurns[Math.min(turnIdx, fighterTurns.length - 1)];
-  const systemPrompt = buildSystemPrompt(mode, deep);
+  const systemPrompt = buildSystemPrompt("debate", deep);
   const turnPrompt = buildTurnPrompt(session, turn, deep ? SAMPLE_SOURCES : undefined);
   const judgePrompt = buildJudgePrompt(session);
 
@@ -187,13 +225,66 @@ export default function ReportPage() {
     ...lengthPreset(l),
   }));
 
-  // Localized mode word for the prompt-block labels (debate/discussion).
-  const modeWord =
-    mode === "debate" ? d.report.playground.modeWordDebate : d.report.playground.modeWordDiscussion;
+  const sections = [
+    { id: "offer", label: d.report.nav.offer },
+    { id: "control", label: d.report.nav.control },
+    { id: "providers", label: d.report.nav.providers },
+    { id: "roster", label: d.report.nav.roster },
+    { id: "prompts", label: d.report.nav.prompts },
+    { id: "pipeline", label: d.report.nav.pipeline },
+    { id: "turn-demo", label: d.report.nav.turnDemo },
+    { id: "cost", label: d.report.nav.cost },
+    { id: "stack", label: d.report.nav.stack },
+  ];
+
+  const providerRows = [
+    {
+      brand: "OpenAI",
+      used: d.report.providers.openaiUsed,
+      envKey: "OPENAI_API_KEY",
+      notes: d.report.providers.openaiNotes,
+    },
+    {
+      brand: "DeepSeek",
+      used: d.report.providers.deepseekUsed,
+      envKey: "DEEPSEEK_API_KEY",
+      notes: d.report.providers.deepseekNotes,
+    },
+    {
+      brand: "OpenRouter",
+      used: d.report.providers.openrouterUsed,
+      envKey: "OPENROUTER_API_KEY",
+      notes: d.report.providers.openrouterNotes,
+    },
+    {
+      brand: "Brave Search",
+      used: d.report.providers.braveUsed,
+      envKey: "BRAVE_SEARCH_API_KEY",
+      notes: d.report.providers.braveNotes,
+    },
+  ];
+
+  const configEntries = [
+    {
+      name: "OPENAI_API_KEY / DEEPSEEK_API_KEY / OPENROUTER_API_KEY",
+      desc: d.report.stack.configBackends,
+      core: true,
+    },
+    { name: "BRAVE_SEARCH_API_KEY", desc: d.report.stack.configBraveSearch, core: false },
+    { name: "SEARCH_PROVIDER", desc: d.report.stack.configSearchProvider, core: false },
+    { name: "SEARCH_COST_USD", desc: d.report.stack.configSearchCost, core: false },
+    { name: "DEEP_SEARCH_MODE", desc: d.report.stack.configDeepMode, core: false },
+    {
+      name: "NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY",
+      desc: d.report.stack.configSupabase,
+      core: false,
+    },
+    { name: "RL_* / SPEND_*", desc: d.report.stack.configLimits, core: false },
+  ];
 
   return (
     <GameShell wide>
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="font-display text-4xl tracking-tight sm:text-5xl">{d.report.title}</h1>
           {/* Standalone-report actions (hidden when printing). */}
@@ -224,409 +315,448 @@ export default function ReportPage() {
         </p>
       </div>
 
+      <SectionNav sections={sections} ariaLabel={d.report.nav.aria} />
+
       <div className="space-y-6">
         {/* 1 · What is Debator */}
-        <GamePanel title={d.report.offer.title}>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-card border-3 border-ink bg-surface p-3">
-              <p className="font-heading text-sm font-extrabold">{d.report.offer.debate.heading}</p>
-              <p className="mt-1 text-sm text-ink/70">{d.report.offer.debate.body}</p>
+        <div id="offer" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="offer" title={d.report.offer.title} />}>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-card border-3 border-ink bg-surface p-3">
+                <p className="font-heading text-sm font-extrabold">{d.report.offer.debate.heading}</p>
+                <p className="mt-1 text-sm text-ink/70">{d.report.offer.debate.body}</p>
+              </div>
+              <div className="rounded-card border-3 border-ink bg-surface p-3">
+                <p className="font-heading text-sm font-extrabold">{d.report.offer.judge.heading}</p>
+                <p className="mt-1 text-sm text-ink/70">{d.report.offer.judge.body}</p>
+              </div>
+              <div className="rounded-card border-3 border-ink bg-arcade-purple/15 p-3">
+                <p className="font-heading text-sm font-extrabold">{d.report.offer.deep.heading}</p>
+                <p className="mt-1 text-sm text-ink/70">{d.report.offer.deep.body}</p>
+              </div>
             </div>
-            <div className="rounded-card border-3 border-ink bg-surface p-3">
-              <p className="font-heading text-sm font-extrabold">{d.report.offer.discussion.heading}</p>
-              <p className="mt-1 text-sm text-ink/70">{d.report.offer.discussion.body}</p>
-            </div>
-            <div className="rounded-card border-3 border-ink bg-arcade-purple/15 p-3">
-              <p className="font-heading text-sm font-extrabold">{d.report.offer.deep.heading}</p>
-              <p className="mt-1 text-sm text-ink/70">{d.report.offer.deep.body}</p>
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-ink/70">{d.report.offer.footer}</p>
-        </GamePanel>
+            <p className="mt-3 text-sm text-ink/70">{d.report.offer.footer}</p>
+          </GamePanel>
+        </div>
 
-        {/* 2 · Who controls the match */}
-        <GamePanel title={d.report.control.title}>
-          <ol className="space-y-3">
-            <Step n={1} title={d.report.control.step1.title}>
-              {d.report.control.step1.body}
-            </Step>
-            <Step n={2} title={d.report.control.step2.title}>
-              {d.report.control.step2.body(
-                effectiveRounds,
-                effectiveRounds * 2,
-                session.judge.enabled,
-              )}
-            </Step>
-            <Step n={3} title={d.report.control.step3.title}>
-              {d.report.control.step3.bodyPre}
-              <code className="font-mono text-xs">/api/debate/turn</code>
-              {d.report.control.step3.bodyPost}
-            </Step>
-            <Step n={4} title={d.report.control.step4.title}>
-              {d.report.control.step4.body}
-            </Step>
-            <Step n={5} title={d.report.control.step5.title}>
-              {d.report.control.step5.bodyPre}
-              <code className="font-mono text-xs">/api/debate/verdict</code>
-              {d.report.control.step5.bodyPost}
-            </Step>
-          </ol>
-        </GamePanel>
+        {/* 2 · Who controls the match — interactive turn lifecycle */}
+        <div id="control" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="control" title={d.report.control.title} />}>
+            <FlowDiagram
+              hint={d.report.control.hint}
+              steps={[
+                {
+                  key: "validate",
+                  icon: "✅",
+                  node: d.report.control.step1.node,
+                  title: d.report.control.step1.title,
+                  body: d.report.control.step1.body,
+                },
+                {
+                  key: "limits",
+                  icon: "🚦",
+                  node: d.report.control.gate.node,
+                  title: d.report.control.gate.title,
+                  body: d.report.control.gate.body,
+                },
+                {
+                  key: "plan",
+                  icon: "📋",
+                  node: d.report.control.step2.node,
+                  title: d.report.control.step2.title,
+                  body: d.report.control.step2.body(
+                    effectiveRounds,
+                    effectiveRounds * 2,
+                    session.judge.enabled,
+                  ),
+                },
+                {
+                  key: "turn",
+                  icon: "🎯",
+                  node: d.report.control.step3.node,
+                  title: d.report.control.step3.title,
+                  body: (
+                    <>
+                      {d.report.control.step3.bodyPre}
+                      <code className="font-mono text-xs">/api/debate/turn</code>
+                      {d.report.control.step3.bodyPost}
+                    </>
+                  ),
+                },
+                {
+                  key: "ground",
+                  icon: "🌐",
+                  node: d.report.control.step4.node,
+                  title: d.report.control.step4.title,
+                  body: d.report.control.step4.body,
+                },
+                {
+                  key: "judge",
+                  icon: "⚖️",
+                  node: d.report.control.step5.node,
+                  title: d.report.control.step5.title,
+                  body: (
+                    <>
+                      {d.report.control.step5.bodyPre}
+                      <code className="font-mono text-xs">/api/debate/verdict</code>
+                      {d.report.control.step5.bodyPost}
+                    </>
+                  ),
+                },
+              ]}
+            />
+          </GamePanel>
+        </div>
 
         {/* 3 · Providers */}
-        <GamePanel title={d.report.providers.title}>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b-3 border-ink text-left font-heading text-xs uppercase tracking-wide text-ink/60">
-                  <th className="py-2 pr-3">{d.report.providers.colBackend}</th>
-                  <th className="py-2 pr-3">{d.report.providers.colUsedFor}</th>
-                  <th className="py-2 pr-3">{d.report.providers.colKey}</th>
-                  <th className="py-2">{d.report.providers.colNotes}</th>
-                </tr>
-              </thead>
-              <tbody className="align-top">
-                <tr className="border-b border-ink/15">
-                  <td className="py-2 pr-3 font-bold">OpenAI</td>
-                  <td className="py-2 pr-3">{d.report.providers.openaiUsed}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">OPENAI_API_KEY</td>
-                  <td className="py-2 text-ink/70">{d.report.providers.openaiNotes}</td>
-                </tr>
-                <tr className="border-b border-ink/15">
-                  <td className="py-2 pr-3 font-bold">DeepSeek</td>
-                  <td className="py-2 pr-3">{d.report.providers.deepseekUsed}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">DEEPSEEK_API_KEY</td>
-                  <td className="py-2 text-ink/70">{d.report.providers.deepseekNotes}</td>
-                </tr>
-                <tr className="border-b border-ink/15">
-                  <td className="py-2 pr-3 font-bold">OpenRouter</td>
-                  <td className="py-2 pr-3">{d.report.providers.openrouterUsed}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">OPENROUTER_API_KEY</td>
-                  <td className="py-2 text-ink/70">{d.report.providers.openrouterNotes}</td>
-                </tr>
-                <tr>
-                  <td className="py-2 pr-3 font-bold">Brave Search</td>
-                  <td className="py-2 pr-3">{d.report.providers.braveUsed}</td>
-                  <td className="py-2 pr-3 font-mono text-xs">BRAVE_SEARCH_API_KEY</td>
-                  <td className="py-2 text-ink/70">{d.report.providers.braveNotes}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p className="mt-3 rounded-card border-3 border-dashed border-ink/40 bg-paper p-2.5 text-xs text-ink/65">
-            {d.report.providers.securityNote}
-          </p>
-        </GamePanel>
-
-        {/* 4 · Model roster */}
-        <GamePanel title={d.report.roster.title}>
-          <div className="space-y-4">
-            {BRANDS.map((b) => (
-              <div key={b.brand}>
-                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide">
-                  {b.brand}{" "}
-                  <span className="text-ink/45">
-                    · {b.backend === "openrouter" ? d.report.roster.freeVia : b.backend}
-                  </span>
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {familiesForBrand(b.brand).map((f) => (
-                    <div
-                      key={f.family}
-                      className="rounded-card border-3 border-ink bg-surface px-2.5 py-1.5"
-                    >
-                      <p className="text-xs font-extrabold">{f.family}</p>
-                      <p className="text-[11px] text-ink/60">
-                        {f.models
-                          .map((m) => `${m.displayName} (${m.debateRating} · ${COST_TIER_LABEL[m.costTier]})`)
-                          .join(" · ")}
-                      </p>
-                    </div>
+        <div id="providers" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="providers" title={d.report.providers.title} />}>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] border-collapse text-sm">
+                <thead>
+                  <tr className="border-b-3 border-ink text-left font-heading text-xs uppercase tracking-wide text-ink/60">
+                    <th className="py-2 pr-3">{d.report.providers.colBackend}</th>
+                    <th className="py-2 pr-3">{d.report.providers.colUsedFor}</th>
+                    <th className="py-2 pr-3">{d.report.providers.colKey}</th>
+                    <th className="py-2">{d.report.providers.colNotes}</th>
+                  </tr>
+                </thead>
+                <tbody className="align-top">
+                  {providerRows.map((row, i) => (
+                    <tr key={row.brand} className={cn(i < providerRows.length - 1 && "border-b border-ink/15")}>
+                      <td className="py-2 pr-3 font-bold">
+                        <span className="flex items-center gap-2">
+                          <BrandLogo brand={row.brand} size={14} />
+                          {row.brand}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-3">{row.used}</td>
+                      <td className="py-2 pr-3 font-mono text-xs">{row.envKey}</td>
+                      <td className="py-2 text-ink/70">{row.notes}</td>
+                    </tr>
                   ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-ink/55">
-            {d.report.roster.footerPre}
-            <span className="font-mono">/v1/models</span>
-            {d.report.roster.footerPost}
-          </p>
-        </GamePanel>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 rounded-card border-3 border-dashed border-ink/40 bg-paper p-2.5 text-xs text-ink/65">
+              {d.report.providers.securityNote}
+            </p>
+          </GamePanel>
+        </div>
+
+        {/* 4 · Model roster — interactive fighter cards */}
+        <div id="roster" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="roster" title={d.report.roster.title} />}>
+            <FighterRoster />
+            <p className="mt-3 text-xs text-ink/55">
+              {d.report.roster.footerPre}
+              <span className="font-mono">/v1/models</span>
+              {d.report.roster.footerPost}
+            </p>
+          </GamePanel>
+        </div>
 
         {/* 5 · Prompt playground */}
-        <GamePanel title={d.report.playground.title} sticker={d.report.playground.sticker}>
-          <p className="mb-4 text-sm text-ink/70">
-            {d.report.playground.intro1}
-            <em>{d.report.playground.introEm}</em>
-            {d.report.playground.intro2}
-          </p>
+        <div id="prompts" className="scroll-mt-28">
+          <GamePanel
+            title={<AnchorTitle id="prompts" title={d.report.playground.title} />}
+            sticker={d.report.playground.sticker}
+          >
+            <p className="mb-4 text-sm text-ink/70">
+              {d.report.playground.intro1}
+              <em>{d.report.playground.introEm}</em>
+              {d.report.playground.intro2}
+            </p>
 
-          <div className="mb-4 grid gap-3 lg:grid-cols-2">
-            <div className="space-y-3">
-              <Knob label={d.report.playground.knobTopic}>
-                <input
-                  type="text"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  maxLength={280}
-                  className="w-full rounded-btn border-3 border-ink bg-surface px-3 py-1.5 text-sm outline-none focus-visible:outline-3 focus-visible:outline-offset-2"
-                />
-              </Knob>
-              <Knob label={d.report.playground.knobMode}>
-                <Chip active={mode === "debate"} onClick={() => setMode("debate")}>{d.report.playground.modeDebate}</Chip>
-                <Chip active={mode === "discussion"} onClick={() => setMode("discussion")}>{d.report.playground.modeDiscussion}</Chip>
-              </Knob>
-              <Knob
-                label={
-                  deep
-                    ? d.report.playground.knobToneLocked
-                    : d.report.playground.knobTone
-                }
-              >
-                {TONE_OPTIONS.map((t) => (
-                  <Chip
-                    key={t.id}
-                    active={effectiveTone === t.id}
-                    disabled={deep}
-                    onClick={() => setTone(t.id)}
-                  >
-                    {t.emoji} {t.label}
-                  </Chip>
-                ))}
-              </Knob>
-              {tone === "custom" && !deep ? (
-                <Knob label={d.report.playground.knobCustomTone}>
+            <div className="mb-4 grid gap-3 lg:grid-cols-2">
+              <div className="space-y-3">
+                <Knob label={d.report.playground.knobTopic}>
                   <input
                     type="text"
-                    value={customTone}
-                    onChange={(e) => setCustomTone(e.target.value)}
-                    maxLength={90}
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                    maxLength={280}
                     className="w-full rounded-btn border-3 border-ink bg-surface px-3 py-1.5 text-sm outline-none focus-visible:outline-3 focus-visible:outline-offset-2"
                   />
                 </Knob>
-              ) : null}
+                <Knob
+                  label={
+                    deep
+                      ? d.report.playground.knobToneLocked
+                      : d.report.playground.knobTone
+                  }
+                >
+                  {TONE_OPTIONS.map((t) => (
+                    <Chip
+                      key={t.id}
+                      active={effectiveTone === t.id}
+                      disabled={deep}
+                      onClick={() => setTone(t.id)}
+                    >
+                      {t.emoji} {t.label}
+                    </Chip>
+                  ))}
+                </Knob>
+                {tone === "custom" && !deep ? (
+                  <Knob label={d.report.playground.knobCustomTone}>
+                    <input
+                      type="text"
+                      value={customTone}
+                      onChange={(e) => setCustomTone(e.target.value)}
+                      maxLength={90}
+                      className="w-full rounded-btn border-3 border-ink bg-surface px-3 py-1.5 text-sm outline-none focus-visible:outline-3 focus-visible:outline-offset-2"
+                    />
+                  </Knob>
+                ) : null}
+              </div>
+
+              <div className="space-y-3">
+                <Knob
+                  label={
+                    deep
+                      ? d.report.playground.knobRoundsLocked
+                      : d.report.playground.knobRounds
+                  }
+                >
+                  {([3, 5, 7] as const).map((r) => (
+                    <Chip
+                      key={r}
+                      active={effectiveRounds === r}
+                      disabled={deep}
+                      onClick={() => {
+                        setRounds(r);
+                        setTurnIdx(0);
+                      }}
+                    >
+                      {d.report.playground.roundsLabel(r)}
+                    </Chip>
+                  ))}
+                </Knob>
+                <Knob
+                  label={
+                    deep
+                      ? d.report.playground.knobLengthLocked
+                      : d.report.playground.knobLength
+                  }
+                >
+                  {presets.map((p) => (
+                    <Chip
+                      key={p.id}
+                      active={!deep && length === p.id}
+                      disabled={deep}
+                      onClick={() => setLength(p.id)}
+                    >
+                      {d.report.playground.lengthLabel(p.id, p.maxTokens)}
+                    </Chip>
+                  ))}
+                </Knob>
+                <Knob label={d.report.playground.knobDeep}>
+                  <Chip active={!deep} onClick={() => setDeep(false)}>{d.report.playground.deepOff}</Chip>
+                  <Chip active={deep} onClick={() => { setDeep(true); setTurnIdx(0); }}>
+                    {d.report.playground.deepOn}
+                  </Chip>
+                </Knob>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <Knob
-                label={
-                  deep
-                    ? d.report.playground.knobRoundsLocked
-                    : d.report.playground.knobRounds
-                }
-              >
-                {([3, 5, 7] as const).map((r) => (
-                  <Chip
-                    key={r}
-                    active={effectiveRounds === r}
-                    disabled={deep}
-                    onClick={() => {
-                      setRounds(r);
-                      setTurnIdx(0);
-                    }}
-                  >
-                    {d.report.playground.roundsLabel(r)}
-                  </Chip>
-                ))}
-              </Knob>
-              <Knob
-                label={
-                  deep
-                    ? d.report.playground.knobLengthLocked
-                    : d.report.playground.knobLength
-                }
-              >
-                {presets.map((p) => (
-                  <Chip
-                    key={p.id}
-                    active={!deep && length === p.id}
-                    disabled={deep}
-                    onClick={() => setLength(p.id)}
-                  >
-                    {d.report.playground.lengthLabel(p.id, p.maxTokens)}
-                  </Chip>
-                ))}
-              </Knob>
-              <Knob label={d.report.playground.knobDeep}>
-                <Chip active={!deep} onClick={() => setDeep(false)}>{d.report.playground.deepOff}</Chip>
-                <Chip active={deep} onClick={() => { setDeep(true); setTurnIdx(0); }}>
-                  {d.report.playground.deepOn}
-                </Chip>
-              </Knob>
-              <Knob label={d.report.playground.knobPreview}>
-                {fighterTurns.map((t, i) => (
-                  <Chip key={t.id} active={i === Math.min(turnIdx, fighterTurns.length - 1)} onClick={() => setTurnIdx(i)}>
-                    R{t.roundNumber}·{t.speaker === "modelA" ? "A" : "B"}
-                  </Chip>
-                ))}
-              </Knob>
+            {/* The deterministic match timeline doubles as the turn picker. */}
+            <div className="mb-4">
+              <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-ink/50">
+                {d.report.playground.timelineLabel}
+              </p>
+              <RoundTimeline
+                turns={fighterTurns}
+                selectedIdx={Math.min(turnIdx, fighterTurns.length - 1)}
+                onSelect={setTurnIdx}
+                judgeEnabled={session.judge.enabled}
+              />
             </div>
-          </div>
 
-          <div className="space-y-4">
-            <PromptBlock
-              label={d.report.playground.systemLabel(modeWord, deep)}
-              text={systemPrompt}
+            <div className="space-y-4">
+              <PromptBlock
+                label={d.report.playground.systemLabel(deep)}
+                text={systemPrompt}
+              />
+              <PromptBlock
+                label={d.report.playground.turnLabel(
+                  turn.roundNumber,
+                  turn.roundLabel,
+                  turn.speaker === "modelA" ? session.modelA.displayName : session.modelB.displayName,
+                  deep,
+                )}
+                text={turnPrompt}
+              />
+              <p className="text-xs text-ink/55">{d.report.playground.note}</p>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowJudge((v) => !v)}
+                  className="rounded-btn border-3 border-ink bg-surface px-3 py-1.5 text-xs font-extrabold transition hover:bg-arcade-yellow hover:text-night"
+                >
+                  {showJudge ? d.report.playground.hideJudge : d.report.playground.showJudge}
+                  {d.report.playground.judgeToggleTail}
+                </button>
+                {showJudge ? (
+                  <div className="mt-3">
+                    <PromptBlock
+                      label={d.report.playground.judgeLabel}
+                      text={judgePrompt}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </GamePanel>
+        </div>
+
+        {/* 6 · Deep Debate pipeline — interactive flow */}
+        <div id="pipeline" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="pipeline" title={d.report.pipeline.title} />}>
+            <FlowDiagram
+              hint={d.report.pipeline.hint}
+              steps={[
+                {
+                  key: "search",
+                  icon: "🔎",
+                  node: d.report.pipeline.step1.title,
+                  title: d.report.pipeline.step1.title,
+                  body: d.report.pipeline.step1.body,
+                },
+                {
+                  key: "rank",
+                  icon: "🏅",
+                  node: d.report.pipeline.step2.title,
+                  title: d.report.pipeline.step2.title,
+                  body: d.report.pipeline.step2.body,
+                },
+                {
+                  key: "ground",
+                  icon: "📌",
+                  node: d.report.pipeline.step3.title,
+                  title: d.report.pipeline.step3.title,
+                  body: (
+                    <>
+                      {d.report.pipeline.step3.bodyPre}
+                      <em>{d.report.pipeline.step3.bodyEm}</em>
+                      {d.report.pipeline.step3.bodyPost}
+                    </>
+                  ),
+                },
+                {
+                  key: "verify",
+                  icon: "✅",
+                  node: d.report.pipeline.step4.title,
+                  title: d.report.pipeline.step4.title,
+                  body: d.report.pipeline.step4.body,
+                },
+                {
+                  key: "disclose",
+                  icon: "📖",
+                  node: d.report.pipeline.step5.title,
+                  title: d.report.pipeline.step5.title,
+                  body: d.report.pipeline.step5.body,
+                },
+              ]}
             />
-            <PromptBlock
-              label={d.report.playground.turnLabel(
-                turn.roundNumber,
-                turn.roundLabel,
-                turn.speaker === "modelA" ? session.modelA.displayName : session.modelB.displayName,
-                deep,
-              )}
-              text={turnPrompt}
-            />
-            <p className="text-xs text-ink/55">{d.report.playground.note}</p>
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowJudge((v) => !v)}
-                className="rounded-btn border-3 border-ink bg-surface px-3 py-1.5 text-xs font-extrabold transition hover:bg-arcade-yellow hover:text-night"
-              >
-                {showJudge ? d.report.playground.hideJudge : d.report.playground.showJudge}
-                {d.report.playground.judgeToggleTail}
-              </button>
-              {showJudge ? (
-                <div className="mt-3">
-                  <PromptBlock
-                    label={d.report.playground.judgeLabel}
-                    text={judgePrompt}
-                  />
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </GamePanel>
-
-        {/* 6 · Deep Debate pipeline */}
-        <GamePanel title={d.report.pipeline.title}>
-          <ol className="space-y-3">
-            <Step n={1} title={d.report.pipeline.step1.title}>
-              {d.report.pipeline.step1.body}
-            </Step>
-            <Step n={2} title={d.report.pipeline.step2.title}>
-              {d.report.pipeline.step2.body}
-            </Step>
-            <Step n={3} title={d.report.pipeline.step3.title}>
-              {d.report.pipeline.step3.bodyPre}
-              <em>{d.report.pipeline.step3.bodyEm}</em>
-              {d.report.pipeline.step3.bodyPost}
-            </Step>
-            <Step n={4} title={d.report.pipeline.step4.title}>
-              {d.report.pipeline.step4.body}
-            </Step>
-            <Step n={5} title={d.report.pipeline.step5.title}>
-              {d.report.pipeline.step5.body}
-            </Step>
-          </ol>
-        </GamePanel>
+          </GamePanel>
+        </div>
 
         {/* 7 · What a turn looks like */}
-        <GamePanel title={d.report.turnDemo.title}>
-          <p className="mb-3 text-sm text-ink/70">{d.report.turnDemo.intro}</p>
-          <DebateMessageCard
-            speaker="modelA"
-            title="GPT-4o Mini"
-            subtitle={d.report.turnDemo.cardSubtitle}
-            avatar="💨"
-            color="blue"
-            roundLabel={d.report.turnDemo.cardRoundLabel}
-            stance="pro"
-            content={d.report.turnDemo.cardContent}
-            citations={SAMPLE_SOURCES.concat([
-              {
-                index: 3,
-                title: "ICO — Age assurance and the Children's Code",
-                url: "https://ico.org.uk/",
-                quote: "A token confirming someone's age can be supplied when requesting access.",
-              },
-              {
-                index: 4,
-                title: "EFF — The dangers of mandatory age verification",
-                url: "https://www.eff.org/",
-                quote: "Age-verification systems inevitably block some adults from lawful speech.",
-              },
-            ])}
-            usage={{ inputTokens: 1214, outputTokens: 449, totalTokens: 1663 }}
-            cost={{ inputCost: 0.00018, outputCost: 0.00027, totalCost: 0.00045, currency: "USD" }}
-            latencyMs={4760}
-          />
-        </GamePanel>
+        <div id="turn-demo" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="turn-demo" title={d.report.turnDemo.title} />}>
+            <p className="mb-3 text-sm text-ink/70">{d.report.turnDemo.intro}</p>
+            <DebateMessageCard
+              speaker="modelA"
+              title="GPT-4o Mini"
+              subtitle={d.report.turnDemo.cardSubtitle}
+              avatar="💨"
+              color="blue"
+              roundLabel={d.report.turnDemo.cardRoundLabel}
+              stance="pro"
+              content={d.report.turnDemo.cardContent}
+              citations={SAMPLE_SOURCES.concat([
+                {
+                  index: 3,
+                  title: "ICO — Age assurance and the Children's Code",
+                  url: "https://ico.org.uk/",
+                  quote: "A token confirming someone's age can be supplied when requesting access.",
+                },
+                {
+                  index: 4,
+                  title: "EFF — The dangers of mandatory age verification",
+                  url: "https://www.eff.org/",
+                  quote: "Age-verification systems inevitably block some adults from lawful speech.",
+                },
+              ])}
+              usage={{ inputTokens: 1214, outputTokens: 449, totalTokens: 1663 }}
+              cost={{ inputCost: 0.00018, outputCost: 0.00027, totalCost: 0.00045, currency: "USD" }}
+              latencyMs={4760}
+            />
+          </GamePanel>
+        </div>
 
         {/* 8 · Cost model */}
-        <GamePanel title={d.report.cost.title}>
-          <p className="mb-3 text-sm text-ink/70">
-            {d.report.cost.intro}
-            <span className="font-semibold">{d.report.cost.introCached}</span>
-            {d.report.cost.introTail}
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b-3 border-ink text-left font-heading text-xs uppercase tracking-wide text-ink/60">
-                  <th className="py-2 pr-3">{d.report.cost.colModel}</th>
-                  <th className="py-2 pr-3">{d.report.cost.colInput}</th>
-                  <th className="py-2 pr-3">{d.report.cost.colCached}</th>
-                  <th className="py-2">{d.report.cost.colOutput}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(modelPricing).map(([key, p]) => (
-                  <tr key={key} className="border-b border-ink/10">
-                    <td className="py-1.5 pr-3 font-mono text-xs">{key}</td>
-                    <td className="py-1.5 pr-3 font-mono text-xs">${priceText(p.inputCostPer1M)}</td>
-                    <td className="py-1.5 pr-3 font-mono text-xs text-arcade-green">
-                      ${priceText(p.cachedInputCostPer1M ?? p.inputCostPer1M)}
-                    </td>
-                    <td className="py-1.5 font-mono text-xs">${priceText(p.outputCostPer1M)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <ul className="mt-3 space-y-1 text-xs text-ink/65">
-            <li>
-              {d.report.cost.note1(
-                FALLBACK_PRICE.inputCostPer1M.toFixed(2),
-                FALLBACK_PRICE.outputCostPer1M.toFixed(2),
-              )}
-            </li>
-            <li>{d.report.cost.note2(DEEP_SEARCH_COST_USD.toFixed(3))}</li>
-            <li>{d.report.cost.note3}</li>
-            <li>{d.report.cost.note4}</li>
-          </ul>
-        </GamePanel>
+        <div id="cost" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="cost" title={d.report.cost.title} />}>
+            <p className="mb-3 text-sm text-ink/70">
+              {d.report.cost.intro}
+              <span className="font-semibold">{d.report.cost.introCached}</span>
+              {d.report.cost.introTail}
+            </p>
+            <PricingExplorer />
+            <ul className="mt-3 space-y-1 text-xs text-ink/65">
+              <li>
+                {d.report.cost.note1(
+                  FALLBACK_PRICE.inputCostPer1M.toFixed(2),
+                  FALLBACK_PRICE.outputCostPer1M.toFixed(2),
+                )}
+              </li>
+              <li>{d.report.cost.note2(DEEP_SEARCH_COST_USD.toFixed(3))}</li>
+              <li>{d.report.cost.note3}</li>
+              <li>{d.report.cost.note4}</li>
+            </ul>
+            <div className="mt-4">
+              <CostEstimator />
+            </div>
+          </GamePanel>
+        </div>
 
         {/* 9 · Stack & configuration */}
-        <GamePanel title={d.report.stack.title}>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div>
-              <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                {d.report.stack.stackHeading}
-              </p>
-              <ul className="space-y-1 text-sm text-ink/75">
-                {d.report.stack.stackItems.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+        <div id="stack" className="scroll-mt-28">
+          <GamePanel title={<AnchorTitle id="stack" title={d.report.stack.title} />}>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
+                  {d.report.stack.stackHeading}
+                </p>
+                <ul className="space-y-1 text-sm text-ink/75">
+                  {d.report.stack.stackItems.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
+                  {d.report.stack.configHeading}
+                </p>
+                <div className="space-y-2">
+                  {configEntries.map((entry) => (
+                    <div key={entry.name} className="rounded-card border-3 border-ink bg-surface p-2.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="break-all font-mono text-xs font-bold">{entry.name}</p>
+                        <Badge color={entry.core ? "yellow" : "white"} size="sm">
+                          {entry.core ? d.report.stack.badgeCore : d.report.stack.badgeOptional}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-ink/65">{entry.desc}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-ink/55">{d.report.stack.configFooter}</p>
+              </div>
             </div>
-            <div>
-              <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                {d.report.stack.configHeading}
-              </p>
-              <ul className="space-y-1 text-xs text-ink/75">
-                <li><span className="font-mono font-bold">OPENAI_API_KEY / DEEPSEEK_API_KEY / OPENROUTER_API_KEY</span> — {d.report.stack.configBackends}</li>
-                <li><span className="font-mono font-bold">BRAVE_SEARCH_API_KEY</span> — {d.report.stack.configBraveSearch}</li>
-                <li><span className="font-mono font-bold">SEARCH_PROVIDER</span> — {d.report.stack.configSearchProvider}</li>
-                <li><span className="font-mono font-bold">SEARCH_COST_USD</span> — {d.report.stack.configSearchCost}</li>
-                <li><span className="font-mono font-bold">DEEP_SEARCH_MODE</span> — {d.report.stack.configDeepMode}</li>
-              </ul>
-              <p className="mt-2 text-xs text-ink/55">{d.report.stack.configFooter}</p>
-            </div>
-          </div>
-        </GamePanel>
+          </GamePanel>
+        </div>
 
         <p className="pb-2 text-center text-xs text-ink/45">
           {d.report.footer}
