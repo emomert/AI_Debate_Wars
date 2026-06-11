@@ -37,6 +37,7 @@ import {
   playVerdictRoll,
   stopDrumRoll,
 } from "@/lib/audio/soundManager";
+import type { PreparedSpeech } from "@/lib/tts/voicePlayer";
 
 export type RunnerPhase =
   | "thinking"
@@ -56,6 +57,9 @@ const THINKING_MS = 850;
 const TYPE_PER_CHAR_MS = 17; // base human-ish typing pace (35% faster)
 const TYPE_MIN_TOTAL_MS = 1430; // 35% faster
 const TYPE_MAX_TOTAL_MS = 7800; // 35% faster
+// When voice is on the reveal is paced to the speech length, which can run far
+// longer than a silent turn — a wide cap so a 40s voiced turn stays in sync.
+const VOICE_TYPE_MAX_TOTAL_MS = 90_000;
 const TYPE_FRAME_MS = 33; // ~30fps — half the re-renders of 60fps, still smooth
 const TYPE_SOUND_INTERVAL_MS = 55; // throttle keystroke ticks (~18/sec max)
 const SENTENCE_PAUSE_MS = 75; // half of before — shorter pause after . ! ? or newline
@@ -144,19 +148,24 @@ interface RunnerOptions {
   /** Called after each locked-in turn, on stop, and on completion. */
   onPersist?: (session: DebateSession) => void;
   /**
-   * Optional voice-over: awaited after each turn's typewriter so the next
-   * turn never talks over this one. The implementation must resolve quickly
-   * when voice is off and must never reject in a way that breaks the match
-   * (the runner additionally swallows errors).
+   * Optional voice-over. Called while still "thinking" (right after the turn
+   * locks in) to fetch + ready the audio; the returned handle is played the
+   * moment the typewriter starts so words appear AS they're spoken. Its
+   * `durationMs` paces the text reveal to the speech. Must resolve quickly
+   * (a no-op handle) when voice is off and never break the match — the
+   * runner additionally swallows errors.
    */
-  speak?: (message: DebateMessage, signal: AbortSignal) => Promise<void>;
+  prepareSpeech?: (
+    message: DebateMessage,
+    signal: AbortSignal,
+  ) => Promise<PreparedSpeech | null>;
 }
 
 export function useDebateRunner(
   initialSession: DebateSession,
   options: RunnerOptions = {},
 ) {
-  const { onPersist, speak } = options;
+  const { onPersist, prepareSpeech } = options;
 
   const alreadyFinished =
     (initialSession.status === "complete" || initialSession.status === "stopped") &&
@@ -186,8 +195,8 @@ export function useDebateRunner(
   const controllerRef = useRef<AbortController | null>(null);
   const onPersistRef = useRef(onPersist);
   onPersistRef.current = onPersist;
-  const speakRef = useRef(speak);
-  speakRef.current = speak;
+  const prepareSpeechRef = useRef(prepareSpeech);
+  prepareSpeechRef.current = prepareSpeech;
 
   // Manual-pacing gate: when set, the loop is paused waiting for next()/auto.
   const gateRef = useRef<(() => void) | null>(null);
@@ -260,7 +269,7 @@ export function useDebateRunner(
     const persist = (status: SessionStatus) =>
       onPersistRef.current?.(snapshot(working, status));
 
-    async function typewriter(content: string) {
+    async function typewriter(content: string, targetMs?: number) {
       const total = content.length;
       // Deliberately NOT gated on prefers-reduced-motion: the typewriter is the
       // core experience and a text reveal isn't vestibular-trigger motion, so
@@ -271,11 +280,13 @@ export function useDebateRunner(
         return;
       }
       // Total reveal time scales with length but is clamped, so the per-character
-      // cadence stays consistent and long turns don't drag forever.
-      const duration = Math.min(
-        TYPE_MAX_TOTAL_MS,
-        Math.max(TYPE_MIN_TOTAL_MS, total * TYPE_PER_CHAR_MS),
-      );
+      // cadence stays consistent and long turns don't drag forever. When voice is
+      // on, `targetMs` is the speech length: pace the reveal to it (wider clamp)
+      // so words appear roughly as they're spoken instead of racing ahead.
+      const duration =
+        targetMs && Number.isFinite(targetMs) && targetMs > 0
+          ? Math.min(VOICE_TYPE_MAX_TOTAL_MS, Math.max(TYPE_MIN_TOTAL_MS, targetMs))
+          : Math.min(TYPE_MAX_TOTAL_MS, Math.max(TYPE_MIN_TOTAL_MS, total * TYPE_PER_CHAR_MS));
       const charsPerFrame = total / (duration / TYPE_FRAME_MS);
 
       let revealed = 0; // fractional cursor position
@@ -436,6 +447,20 @@ export function useDebateRunner(
           playSound("turnComplete");
           playSound("costTick");
 
+          // Voice-over (when enabled): fetch + ready the audio WHILE still in the
+          // thinking state, so playback can start the instant the typewriter does
+          // and the text reveal can be paced to the speech length. Best-effort —
+          // any failure leaves `prepared` null and the turn types normally.
+          let prepared: PreparedSpeech | null = null;
+          if (prepareSpeechRef.current) {
+            try {
+              prepared = await prepareSpeechRef.current(message, signal);
+            } catch {
+              /* voice is best-effort */
+            }
+            if (signal.aborted) return;
+          }
+
           // Animate the already-locked content (kept out of `messages` until the
           // animation ends so the streaming card isn't duplicated in the list).
           // `activeMessage` rides along so the card knows its citations and the
@@ -447,8 +472,20 @@ export function useDebateRunner(
             activeMessage: message,
             streamingText: "",
           }));
-          await typewriter(message.content);
+          // Start the voice and the typewriter together; pace the reveal to the
+          // speech so words land as they're spoken. The next turn waits for the
+          // voice to finish (Fast pacing stays polite).
+          const speechDone = prepared ? prepared.play() : null;
+          await typewriter(message.content, prepared?.durationMs ?? undefined);
           if (signal.aborted) return;
+          if (speechDone) {
+            try {
+              await speechDone;
+            } catch {
+              /* voice is best-effort */
+            }
+            if (signal.aborted) return;
+          }
 
           setState((p) => ({
             ...p,
@@ -457,17 +494,6 @@ export function useDebateRunner(
             activeMessage: null,
             streamingText: "",
           }));
-          // Voice-over (when enabled): read the finished turn aloud before the
-          // loop moves on, so in Fast pacing the next fighter waits politely.
-          // Voice must never break the match — failures are swallowed.
-          if (speakRef.current) {
-            try {
-              await speakRef.current(message, signal);
-            } catch {
-              /* voice is best-effort */
-            }
-            if (signal.aborted) return;
-          }
           await delay(220, signal);
         }
 

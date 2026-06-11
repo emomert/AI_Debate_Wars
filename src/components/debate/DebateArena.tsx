@@ -142,9 +142,9 @@ function ArenaInner({
       voicePlayer.stop(); // leaving the arena silences the speech
     };
   }, []);
-  const speak = useCallback(
+  const prepareSpeech = useCallback(
     (m: DebateMessage, signal: AbortSignal) =>
-      voicePlayer.speakAuto(m, speakOptsRef.current, signal),
+      voicePlayer.prepare(m, speakOptsRef.current, signal),
     [],
   );
   const toggleVoice = useCallback(() => voicePlayer.toggle(), []);
@@ -161,7 +161,7 @@ function ArenaInner({
 
   // Note: the runner's typewriter intentionally ignores reduced-motion so every
   // visitor gets the same playback; `reduce` only tones down decorative motion.
-  const runner = useDebateRunner(session, { onPersist, speak });
+  const runner = useDebateRunner(session, { onPersist, prepareSpeech });
   const doneVerdict = session.verdict ?? runner.verdict;
   // When the match is done, the persisted session cost is authoritative (an
   // in-arena re-judge updates it but not the runner's frozen internal verdict).

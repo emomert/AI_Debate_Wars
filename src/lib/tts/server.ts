@@ -15,6 +15,14 @@ import type { Speaker } from "@/lib/debate/debateTypes";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
+/** Playback rate for the voices (OpenAI accepts 0.25–4.0; default a touch
+ *  brisk so turns don't drag). Env-tunable without a redeploy of logic. */
+function ttsSpeed(): number {
+  const n = Number(process.env.TTS_SPEED);
+  if (Number.isFinite(n) && n >= 0.25 && n <= 4) return n;
+  return 1.15;
+}
+
 export function isServerTtsConfigured(): boolean {
   if (process.env.TTS_PROVIDER === "none") return false;
   return Boolean(process.env.OPENAI_API_KEY);
@@ -53,6 +61,7 @@ export async function synthesizeSpeech(
       input: text,
       voice: OPENAI_VOICES[speaker],
       response_format: "mp3",
+      speed: ttsSpeed(),
       ...(instructions && !model.startsWith("tts-1") ? { instructions } : {}),
     }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),

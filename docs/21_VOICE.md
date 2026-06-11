@@ -20,6 +20,14 @@ server engine when `/api/health` reports `tts: true` and falls back to Web
 Speech on any failure — voice can never break a match. Fetched audio is
 blob-cached per message id, so replays never re-bill.
 
+**Sync.** The runner calls `voicePlayer.prepare()` while the turn is still in
+the "thinking" state — that fetches the audio (covered by the thinking bubble)
+and reads its duration. Playback then starts the instant the typewriter does,
+and the text reveal is paced to the speech length
+(`typewriter(content, durationMs)`), so words appear roughly as they're
+spoken instead of after the whole turn has typed out. The next turn waits for
+the voice to finish, keeping Fast pacing polite.
+
 Voice casting (`src/lib/tts/voices.ts`): Fighter A = `onyx` (deep male),
 Fighter B = `nova` (warm female), judge = `fable` (British male). The Web
 Speech tier approximates the same cast with preferred device voices +
@@ -64,5 +72,7 @@ gravitas. Legacy `tts-1` models reject `instructions`, so it's omitted there.
 - `TTS_PROVIDER` — `none` disables; otherwise on whenever `OPENAI_API_KEY`
   is set
 - `TTS_OPENAI_MODEL` — OpenAI speech model (default `gpt-4o-mini-tts`)
+- `TTS_SPEED` — voice playback rate, 0.25–4.0 (default 1.15; the typewriter
+  paces to the resulting audio length, so this also speeds the text reveal)
 - `TTS_COST_USD_PER_1M` — price override for the HUD/ledger (default 15)
 - `RL_TTS_PER_MIN` — per-IP rate limit (default 20)
