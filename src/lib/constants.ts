@@ -72,6 +72,20 @@ export const TONE_OPTIONS: ToneOption[] = [
   { id: "custom", label: "Custom", emoji: "✏️" },
 ];
 
+/**
+ * Hidden easter-egg tone: NOT in TONE_OPTIONS (never shown by default — not in
+ * samples, not on /report). The ToneSelector reveals it after 5 rapid clicks
+ * on the Aggressive chip.
+ */
+export const UNHINGED_TONE_OPTION: ToneOption = {
+  id: "unhinged",
+  label: "Unhinged",
+  emoji: "🤬",
+};
+
+/** Every tone incl. the hidden one — for label/emoji lookups of a saved config. */
+export const ALL_TONE_OPTIONS: ToneOption[] = [...TONE_OPTIONS, UNHINGED_TONE_OPTION];
+
 export const CUSTOM_TONE_MAX_LENGTH = 80;
 
 export interface PaceOption {

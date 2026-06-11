@@ -62,6 +62,8 @@ export const setup = {
     aggressive: { label: "Aggressive" },
     casual: { label: "Casual" },
     custom: { label: "Custom" },
+    // Hidden easter-egg tone (5 rapid clicks on Aggressive).
+    unhinged: { label: "Unhinged" },
   } as Record<string, { label: string }>,
   toneCustom: {
     describe: "Describe the tone (applies to both fighters)",

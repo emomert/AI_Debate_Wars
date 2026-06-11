@@ -39,7 +39,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Topic input with AI topic check/improve (`/api/topic/check`, cheap model)
 - Two fighters from 56+ models across OpenAI, DeepSeek, and OpenRouter (free models)
 - 3 / 5 / 7 rounds (Quick Match / Ranked Match / Championship)
-- Tone per fighter: serious, aggressive, casual, or custom free text
+- Tone per fighter: serious, aggressive, casual, or custom free text — plus a hidden "unhinged" easter-egg tone (5 rapid clicks on Aggressive in setup; profanity-allowed roast battle, hard ban on slurs/hate speech baked into the prompt)
 - Response length: short / medium / long; pace: manual or auto
 - Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode)
 - Optional judge: auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores

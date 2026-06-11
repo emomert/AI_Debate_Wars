@@ -28,8 +28,10 @@ export type Stance = "pro" | "against";
 export type ModelColor = "blue" | "red" | "yellow" | "purple";
 
 // "academic" was promoted out of tones into the Deep Debate capability; the
-// 4th slot is now a free-text "custom" tone the user describes.
-export type DebateTone = "serious" | "aggressive" | "casual" | "custom";
+// 4th slot is now a free-text "custom" tone the user describes. "unhinged" is
+// the hidden easter-egg tone (5 rapid clicks on Aggressive in setup): a
+// no-holds-barred roast battle — profanity allowed, slurs/hate speech never.
+export type DebateTone = "serious" | "aggressive" | "casual" | "custom" | "unhinged";
 
 export type JudgeMode = "none" | "auto" | "modelA" | "modelB" | "thirdModel";
 

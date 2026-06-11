@@ -7,11 +7,19 @@
  * Preset tones apply to BOTH fighters. A custom tone applies to both by default,
  * but the user can opt to give each fighter a different tone (customToneA/B,
  * each falling back to the shared customTone).
+ *
+ * Easter egg: 5 rapid clicks on the Aggressive chip unlock the hidden 🤬
+ * UNHINGED tone (roast-battle mode — see promptBuilder TONE_INSTRUCTIONS).
+ * The unlock persists for the browsing session.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import { CUSTOM_TONE_MAX_LENGTH, TONE_OPTIONS } from "@/lib/constants";
+import {
+  CUSTOM_TONE_MAX_LENGTH,
+  TONE_OPTIONS,
+  UNHINGED_TONE_OPTION,
+} from "@/lib/constants";
 import type { DebateTone } from "@/lib/debate/debateTypes";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
@@ -54,6 +62,48 @@ export function ToneSelector({
   const [perFighter, setPerFighter] = useState<boolean>(
     () => Boolean(customToneA.trim() || customToneB.trim()),
   );
+
+  // 🤬 UNHINGED unlock — survives navigation within the tab (sessionStorage)
+  // and re-derives from a rehydrated config that already carries the tone.
+  // Hydrated in an effect (not the initializer) so SSR and the first client
+  // render agree — reading storage during render is a hydration mismatch.
+  const UNLOCK_KEY = "ada:unhinged-unlocked";
+  const [unhingedUnlocked, setUnhingedUnlocked] = useState(false);
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(UNLOCK_KEY) === "1") setUnhingedUnlocked(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  useEffect(() => {
+    if (value === "unhinged") setUnhingedUnlocked(true);
+  }, [value]);
+  const aggressiveClicksRef = useRef<number[]>([]);
+
+  const handleToneClick = (tone: DebateTone) => {
+    if (disabled) return;
+    if (tone === "aggressive" && !unhingedUnlocked) {
+      const now = Date.now();
+      const clicks = [...aggressiveClicksRef.current.filter((t) => now - t < 3000), now];
+      aggressiveClicksRef.current = clicks;
+      if (clicks.length >= 5) {
+        setUnhingedUnlocked(true);
+        try {
+          window.sessionStorage.setItem(UNLOCK_KEY, "1");
+        } catch {
+          /* ignore */
+        }
+        playSound("modeSelect");
+        onChange("unhinged");
+        return;
+      }
+    }
+    playSound("buttonClick");
+    onChange(tone);
+  };
+
+  const toneOptions = unhingedUnlocked ? [...TONE_OPTIONS, UNHINGED_TONE_OPTION] : TONE_OPTIONS;
 
   // Config rehydrates from sessionStorage a tick after mount (ArenaContext), so
   // per-fighter tones can arrive AFTER the one-shot initializer ran. Re-sync the
@@ -125,8 +175,9 @@ export function ToneSelector({
         aria-label={d.setup.rules.tone}
         className="grid grid-cols-2 gap-2 sm:grid-cols-4"
       >
-        {TONE_OPTIONS.map((opt) => {
+        {toneOptions.map((opt) => {
           const selected = value === opt.id;
+          const isUnhinged = opt.id === "unhinged";
           return (
             <button
               key={opt.id}
@@ -135,19 +186,26 @@ export function ToneSelector({
               aria-checked={selected}
               disabled={disabled}
               aria-disabled={disabled}
-              onClick={() => {
-                if (disabled) return;
-                playSound("buttonClick");
-                onChange(opt.id);
-              }}
+              onClick={() => handleToneClick(opt.id)}
               className={cn(
-                "flex items-center gap-1.5 rounded-btn border-3 border-ink px-2.5 py-2 text-sm font-bold transition",
+                "flex items-center gap-1.5 rounded-btn border-3 px-2.5 py-2 text-sm font-bold transition",
                 "focus-visible:outline-3 focus-visible:outline-offset-2",
                 disabled && !selected && "cursor-not-allowed opacity-50",
                 disabled && selected && "cursor-not-allowed",
+                // The secret chip drops in full-width with danger styling.
+                isUnhinged && "col-span-2 justify-center uppercase tracking-wide sm:col-span-4",
+                isUnhinged ? "border-arcade-red" : "border-ink",
                 selected
-                  ? "bg-arcade-pink text-night shadow-hard-sm"
-                  : cn("bg-surface", !disabled && "hover:bg-arcade-yellow hover:text-night"),
+                  ? isUnhinged
+                    ? "bg-arcade-red text-white shadow-hard-sm"
+                    : "bg-arcade-pink text-night shadow-hard-sm"
+                  : cn(
+                      "bg-surface",
+                      !disabled &&
+                        (isUnhinged
+                          ? "text-arcade-red hover:bg-arcade-red hover:text-white"
+                          : "hover:bg-arcade-yellow hover:text-night"),
+                    ),
               )}
             >
               <span aria-hidden>{opt.emoji}</span>

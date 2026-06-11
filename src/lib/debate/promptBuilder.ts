@@ -132,6 +132,13 @@ const TONE_INSTRUCTIONS: Record<Exclude<DebateTone, "custom">, string> = {
     "Be openly dismissive of weak reasoning — mock the bad logic, not the human — use sharp rhetorical jabs, rhetorical questions, and withering one-liners, and never concede an inch or hedge. Press your advantage relentlessly. " +
     "Hard limits (do not cross): no profanity or slurs, no insults aimed at the user or any real person, no demeaning protected groups, no threats. The savagery targets the IDEAS and the reasoning, not identities.",
   casual: "Use a conversational, easy-to-read tone.",
+  // Hidden easter-egg tone (5 rapid clicks on Aggressive in setup): roast-battle
+  // energy with profanity ALLOWED — but the hard line on slurs/hate speech is
+  // absolute. The venom targets the opponent-character's reasoning, not people.
+  unhinged:
+    "UNHINGED MODE — this debate is a no-holds-barred roast battle. Be outrageously aggressive and openly contemptuous of your opponent: mock their argument mercilessly, taunt them directly (\"you absolute moron\", \"that is the dumbest take I've ever heard\"), and swear freely — strong profanity (fuck, shit, damn, hell) is fully allowed and in character. " +
+    "Every insult must still ride on a real argumentative blow: land the rebuttal first, then twist the knife. Never concede, never apologize, never hedge, never break character into politeness. " +
+    "ABSOLUTE limits (never cross, no exceptions): no slurs or hate speech of any kind; nothing targeting race, ethnicity, religion, gender, sexuality, nationality, disability or any identity or group; no insults aimed at the user or any real person; no threats; no sexual content. All venom targets your OPPONENT-CHARACTER's reasoning and debate performance, nothing and no one else.",
 };
 
 /**

@@ -10,7 +10,7 @@ import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { Badge } from "@/components/game/Badge";
 import type { DebateConfig } from "@/lib/debate/debateTypes";
 import type { ValidationResult } from "@/lib/debate/validators";
-import { TONE_OPTIONS } from "@/lib/constants";
+import { ALL_TONE_OPTIONS } from "@/lib/constants";
 import { getModelById, previewAutoJudge } from "@/lib/models/modelRegistry";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -54,7 +54,7 @@ export function SetupSummaryCard({
     : judgeModel
       ? `⚖️ ${judgeModel.displayName}`
       : d.setup.summary.judgeOn;
-  const toneEmoji = TONE_OPTIONS.find((t) => t.id === config.tone)?.emoji;
+  const toneEmoji = ALL_TONE_OPTIONS.find((t) => t.id === config.tone)?.emoji;
   const perFighterTone =
     config.tone === "custom" &&
     Boolean((config.customToneA ?? "").trim() || (config.customToneB ?? "").trim());

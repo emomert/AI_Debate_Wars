@@ -21,6 +21,7 @@ import {
   ttsCostUsdPer1MChars,
 } from "@/lib/tts/server";
 import { toSpeechText, truncateForSpeech } from "@/lib/tts/speechText";
+import { JUDGE_VOICE_STYLE, VOICE_STYLE_BY_TONE } from "@/lib/tts/voices";
 import type { Speaker } from "@/lib/debate/debateTypes";
 import { ProviderError, httpStatusForCode, toAppError } from "@/lib/utils/errors";
 import type { ApiErrorBody } from "@/lib/api/contracts";
@@ -39,6 +40,27 @@ const SPEAKERS: ReadonlySet<string> = new Set(["modelA", "modelB", "judge"]);
 interface TtsRequest {
   content?: unknown;
   speaker?: unknown;
+  /** Match tone — shapes the voice DELIVERY (gpt-4o-mini-tts instructions). */
+  tone?: unknown;
+  customTone?: unknown;
+}
+
+/** Map the match tone to a delivery-style instruction (lenient: unknown → none). */
+function voiceInstructions(
+  speaker: Speaker,
+  tone: unknown,
+  customTone: unknown,
+): string | undefined {
+  if (speaker === "judge") return JUDGE_VOICE_STYLE;
+  if (typeof tone !== "string") return undefined;
+  if (tone === "custom") {
+    const custom =
+      typeof customTone === "string"
+        ? customTone.replace(/\s+/g, " ").trim().slice(0, 80)
+        : "";
+    return custom ? `Deliver the lines in this style: ${custom}.` : undefined;
+  }
+  return VOICE_STYLE_BY_TONE[tone];
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -66,7 +88,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw new ProviderError("INVALID_REQUEST", "Nothing speakable in content");
     }
 
-    const { audio, contentType } = await synthesizeSpeech(text, speaker as Speaker);
+    const { audio, contentType } = await synthesizeSpeech(
+      text,
+      speaker as Speaker,
+      voiceInstructions(speaker as Speaker, body?.tone, body?.customTone),
+    );
 
     const costUsd = (text.length / 1_000_000) * ttsCostUsdPer1MChars();
     await recordSpend(req, costUsd);

@@ -18,6 +18,25 @@ export const OPENAI_VOICES: Record<Speaker, string> = {
   judge: "fable",
 };
 
+/**
+ * Delivery styling for gpt-4o-mini-tts (the `instructions` field): the match
+ * tone shapes HOW the voice performs the turn, not just what it says. Custom
+ * tones pass the user's own description through (sanitized server-side).
+ */
+export const VOICE_STYLE_BY_TONE: Record<string, string> = {
+  serious:
+    "Speak as a measured, confident debate champion: composed, precise, quietly intense.",
+  aggressive:
+    "Speak heatedly and combatively: fast, jabbing delivery with rising intensity, like a debater going for the knockout.",
+  casual:
+    "Speak relaxed and playful, like witty banter between friends — light, amused, unhurried.",
+  unhinged:
+    "Speak absolutely furious and contemptuous: seething, shouting-adjacent, dripping with disdain, right on the edge of losing it.",
+};
+
+export const JUDGE_VOICE_STYLE =
+  "Speak as an authoritative debate judge delivering a verdict: deliberate, composed, courtroom gravitas.";
+
 /** Web Speech fallback: differentiate roles by pitch/rate + preferred names. */
 export interface WebSpeechProfile {
   /** Case-insensitive name fragments tried against the device's voice list. */

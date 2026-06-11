@@ -23,7 +23,7 @@ import { ProviderError } from "@/lib/utils/errors";
 const VALID_MODES = ["debate", "discussion"];
 const VALID_ROUNDS = [3, 5, 7];
 const VALID_LENGTHS = ["short", "medium", "long"];
-const VALID_TONES = ["serious", "aggressive", "casual", "custom"];
+const VALID_TONES = ["serious", "aggressive", "casual", "custom", "unhinged"];
 
 // Generous per-message ceiling: the "long" preset allows ~1200 output tokens
 // (~5-6k chars with markdown), so 16k never clips a legitimate turn but stops a

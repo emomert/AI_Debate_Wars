@@ -25,6 +25,13 @@ Fighter B = `nova` (warm female), judge = `fable` (British male). The Web
 Speech tier approximates the same cast with preferred device voices +
 pitch/rate offsets.
 
+**Tone-styled delivery**: the match tone rides along on every `/api/tts`
+request and maps to a `gpt-4o-mini-tts` `instructions` string
+(`VOICE_STYLE_BY_TONE`) — serious sounds composed, aggressive jabs,
+casual banters, the hidden unhinged tone seethes, and custom tone text is
+passed through (sanitized, 80-char cap). The judge always gets courtroom
+gravitas. Legacy `tts-1` models reject `instructions`, so it's omitted there.
+
 ## Cost armor (CLAUDE.md rules)
 
 - `/api/tts` runs `enforceLimits(req, "tts")` (per-IP `RL_TTS_PER_MIN`,

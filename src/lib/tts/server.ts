@@ -35,10 +35,13 @@ export interface SynthesizedSpeech {
 export async function synthesizeSpeech(
   text: string,
   speaker: Speaker,
+  /** Optional delivery styling (gpt-4o-mini-tts only; legacy tts-1 rejects it). */
+  instructions?: string,
 ): Promise<SynthesizedSpeech> {
   if (!isServerTtsConfigured()) {
     throw new ProviderError("INVALID_REQUEST", "Server TTS is not configured");
   }
+  const model = process.env.TTS_OPENAI_MODEL ?? "gpt-4o-mini-tts";
   const res = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: {
@@ -46,10 +49,11 @@ export async function synthesizeSpeech(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: process.env.TTS_OPENAI_MODEL ?? "gpt-4o-mini-tts",
+      model,
       input: text,
       voice: OPENAI_VOICES[speaker],
       response_format: "mp3",
+      ...(instructions && !model.startsWith("tts-1") ? { instructions } : {}),
     }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });

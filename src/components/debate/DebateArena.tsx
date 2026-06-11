@@ -117,10 +117,15 @@ function ArenaInner({
 
   // Voice-over state (docs/21). The voicePlayer singleton owns the persisted
   // toggle, playback and the running TTS cost; the arena just mirrors it into
-  // React state and feeds the runner a speak() hook.
-  const serverTts = availability?.tts ?? false;
-  const serverTtsRef = useRef(serverTts);
-  serverTtsRef.current = serverTts;
+  // React state and feeds the runner a speak() hook. The match tone rides
+  // along so the server can style the voice DELIVERY to match the fight.
+  const speakOpts = {
+    serverTts: availability?.tts ?? false,
+    tone: session.tone,
+    customTone: session.customTone,
+  };
+  const speakOptsRef = useRef(speakOpts);
+  speakOptsRef.current = speakOpts;
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [voiceCostUsd, setVoiceCostUsd] = useState(0);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
@@ -139,7 +144,7 @@ function ArenaInner({
   }, []);
   const speak = useCallback(
     (m: DebateMessage, signal: AbortSignal) =>
-      voicePlayer.speakAuto(m, serverTtsRef.current, signal),
+      voicePlayer.speakAuto(m, speakOptsRef.current, signal),
     [],
   );
   const toggleVoice = useCallback(() => voicePlayer.toggle(), []);
@@ -148,7 +153,7 @@ function ArenaInner({
       playing: speakingId === m.id,
       onToggle: () => {
         if (speakingId === m.id) voicePlayer.stop();
-        else voicePlayer.replay(m, serverTtsRef.current);
+        else voicePlayer.replay(m, speakOptsRef.current);
       },
     }),
     [speakingId],

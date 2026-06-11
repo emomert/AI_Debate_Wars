@@ -24,6 +24,15 @@ export interface SpeakableMessage {
   speaker: Speaker;
 }
 
+/** How to source + style the speech for the current match. */
+export interface SpeakOptions {
+  /** Server TTS available (from /api/health)? false → Web Speech only. */
+  serverTts: boolean;
+  /** Match tone — server maps it to a voice-delivery instruction. */
+  tone?: string;
+  customTone?: string;
+}
+
 type Listener<T> = (value: T) => void;
 
 class VoicePlayer {
@@ -107,14 +116,14 @@ class VoicePlayer {
    * voice ON. Resolves when the speech ends (the runner awaits it so the next
    * turn doesn't talk over this one).
    */
-  speakAuto(message: SpeakableMessage, serverTts: boolean, signal?: AbortSignal): Promise<void> {
+  speakAuto(message: SpeakableMessage, opts: SpeakOptions, signal?: AbortSignal): Promise<void> {
     if (!this.enabled) return Promise.resolve();
-    return this.speak(message, serverTts, signal);
+    return this.speak(message, opts, signal);
   }
 
   /** Manual replay from a message card — honors the click even if voice is off. */
-  replay(message: SpeakableMessage, serverTts: boolean): void {
-    void this.speak(message, serverTts);
+  replay(message: SpeakableMessage, opts: SpeakOptions): void {
+    void this.speak(message, opts);
   }
 
   /** Stop whatever is playing (audio element or browser speech). */
@@ -135,7 +144,7 @@ class VoicePlayer {
 
   private async speak(
     message: SpeakableMessage,
-    serverTts: boolean,
+    opts: SpeakOptions,
     signal?: AbortSignal,
   ): Promise<void> {
     this.stop();
@@ -151,7 +160,7 @@ class VoicePlayer {
 
     this.setPlaying(message.id);
     try {
-      if (serverTts && (await this.playServer(message, abort.signal))) return;
+      if (opts.serverTts && (await this.playServer(message, opts, abort.signal))) return;
       if (abort.signal.aborted) return;
       await speakWithWebSpeech(text, message.speaker, abort.signal);
     } finally {
@@ -161,14 +170,23 @@ class VoicePlayer {
   }
 
   /** Returns true when server audio handled the speech (incl. abort mid-play). */
-  private async playServer(message: SpeakableMessage, signal: AbortSignal): Promise<boolean> {
+  private async playServer(
+    message: SpeakableMessage,
+    opts: SpeakOptions,
+    signal: AbortSignal,
+  ): Promise<boolean> {
     try {
       let blob = this.cache.get(message.id);
       if (!blob) {
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: message.content, speaker: message.speaker }),
+          body: JSON.stringify({
+            content: message.content,
+            speaker: message.speaker,
+            tone: opts.tone,
+            customTone: opts.customTone,
+          }),
           signal,
         });
         if (!res.ok) return false; // 503 unconfigured / 429 capped → Web Speech

@@ -62,6 +62,8 @@ export const setup = {
     aggressive: { label: "Agresif" },
     casual: { label: "Rahat" },
     custom: { label: "Özel" },
+    // Gizli sürpriz ton (Agresif'e art arda 5 tıklama).
+    unhinged: { label: "Çıldırmış" },
   } as Record<string, { label: string }>,
   toneCustom: {
     describe: "Üslubu tarif edin (her iki yarışmacıya uygulanır)",
