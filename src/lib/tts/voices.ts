@@ -18,6 +18,13 @@ export const KOKORO_VOICES: Record<Speaker, string> = {
   judge: "bm_george",
 };
 
+/** Same casting on OpenAI's speech API (gpt-4o-mini-tts / tts-1 voices). */
+export const OPENAI_VOICES: Record<Speaker, string> = {
+  modelA: "onyx",
+  modelB: "nova",
+  judge: "fable",
+};
+
 /** Web Speech fallback: differentiate roles by pitch/rate + preferred names. */
 export interface WebSpeechProfile {
   /** Case-insensitive name fragments tried against the device's voice list. */

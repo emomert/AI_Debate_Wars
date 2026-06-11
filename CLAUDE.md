@@ -44,7 +44,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode)
 - Optional judge: auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores
 - Per-message and total cost tracking, cache-aware pricing
-- Optional fighter voices (opt-in 🔊): free Web Speech tier always; premium Kokoro TTS via DeepInfra (`/api/tts`, ~$0.80/1M chars) with automatic fallback (see `docs/21_VOICE.md`)
+- Optional fighter voices (opt-in 🔊): free Web Speech tier always; premium server TTS via `/api/tts` — Kokoro/DeepInfra (~$0.80/1M chars) or OpenAI speech (~$15/1M, reuses `OPENAI_API_KEY`), auto-detected, with automatic fallback (see `docs/21_VOICE.md`)
 - Stateless share links (`/s?d=...`) with generated OG images (`/api/og`)
 - Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars (see `docs/20_COMMUNITY.md`)
 - Optional Supabase auth (magic link + Google); match history and stats on `/profile`
@@ -85,7 +85,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 
 Providers: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
 Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD`, `DEEP_SEARCH_MODE` (`unified` | `hybrid`).
-Voice: `DEEPINFRA_API_KEY` (enables server TTS), `TTS_PROVIDER` (`deepinfra` | `none`), `TTS_COST_USD_PER_1M` (default 0.8), `RL_TTS_PER_MIN`.
+Voice: `TTS_PROVIDER` (`deepinfra` | `openai` | `none`; default auto: DeepInfra key → Kokoro, else OpenAI key), `DEEPINFRA_API_KEY`, `TTS_OPENAI_MODEL` (default `gpt-4o-mini-tts`), `TTS_COST_USD_PER_1M` (price override), `RL_TTS_PER_MIN`.
 Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
 

@@ -59,14 +59,15 @@ export const modelPricing: Record<string, ModelPrice> = {
 };
 
 /**
- * Server TTS (fighter voices): USD per 1M input CHARACTERS — Kokoro-82M on
- * DeepInfra ($0.80/1M, June 2026). Env-overridable so a provider/price change
- * is a dashboard edit, not a deploy. Client bundles see the default.
+ * Server TTS (fighter voices): USD per 1M input CHARACTERS, per engine
+ * (June 2026: Kokoro-82M on DeepInfra; OpenAI gpt-4o-mini-tts ≈ $0.015/min,
+ * billed here as its character equivalent). The active engine + an optional
+ * TTS_COST_USD_PER_1M override are resolved server-side in src/lib/tts/server.
  */
-export const TTS_COST_USD_PER_1M_CHARS = (() => {
-  const n = Number(process.env.TTS_COST_USD_PER_1M);
-  return Number.isFinite(n) && n >= 0 ? n : 0.8;
-})();
+export const TTS_PRICE_USD_PER_1M_CHARS = {
+  deepinfra: 0.8,
+  openai: 15.0,
+} as const;
 
 /** Fallback price used when a model is not found in the table. */
 export const FALLBACK_PRICE: ModelPrice = {

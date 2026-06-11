@@ -245,8 +245,8 @@ export const report = {
       "· Standard, cached and output rates verified against the providers' official pages (June 2026). gpt-5.3-chat-latest has no published rate and is priced at its nearest confirmed neighbor (no cache discount assumed).",
     note4:
       "· Cache-aware: when the provider reports cache-hit input tokens (a ♻️ on the cost badge), they bill at the cached rate above — so the cost is the real bill, not an over-estimate.",
-    note5: (price: string) =>
-      `· Optional fighter voices: free browser speech by default; with a voice key configured the server engine (Kokoro 82M via DeepInfra) bills $${price}/1M characters — a fully voiced match is about a cent, shown as a 🔊 line in the arena HUD and counted against the same daily spend caps.`,
+    note5: (kokoro: string, openai: string) =>
+      `· Optional fighter voices: free browser speech by default; the configured server engine bills per character — Kokoro 82M via DeepInfra at $${kokoro}/1M (≈1¢ per voiced match) or OpenAI speech at ≈$${openai}/1M (≈13¢) — shown as a 🔊 line in the arena HUD and counted against the same daily spend caps.`,
     estimator: {
       title: "🎮 Estimate a match",
       intro:

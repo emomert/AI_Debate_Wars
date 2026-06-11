@@ -15,10 +15,12 @@
 import { NextResponse } from "next/server";
 
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
-import { isServerTtsConfigured, synthesizeSpeech } from "@/lib/tts/server";
+import {
+  isServerTtsConfigured,
+  synthesizeSpeech,
+  ttsCostUsdPer1MChars,
+} from "@/lib/tts/server";
 import { toSpeechText, truncateForSpeech } from "@/lib/tts/speechText";
-import { KOKORO_VOICES } from "@/lib/tts/voices";
-import { TTS_COST_USD_PER_1M_CHARS } from "@/lib/cost/pricing";
 import type { Speaker } from "@/lib/debate/debateTypes";
 import { ProviderError, httpStatusForCode, toAppError } from "@/lib/utils/errors";
 import type { ApiErrorBody } from "@/lib/api/contracts";
@@ -64,12 +66,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw new ProviderError("INVALID_REQUEST", "Nothing speakable in content");
     }
 
-    const { audio, contentType } = await synthesizeSpeech(
-      text,
-      KOKORO_VOICES[speaker as Speaker],
-    );
+    const { audio, contentType } = await synthesizeSpeech(text, speaker as Speaker);
 
-    const costUsd = (text.length / 1_000_000) * TTS_COST_USD_PER_1M_CHARS;
+    const costUsd = (text.length / 1_000_000) * ttsCostUsdPer1MChars();
     await recordSpend(req, costUsd);
 
     return new NextResponse(audio, {

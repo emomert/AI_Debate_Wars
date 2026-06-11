@@ -1,25 +1,51 @@
 import "server-only";
 
 /**
- * Server TTS provider — the PREMIUM voice tier (docs/21): Kokoro-82M served
- * by DeepInfra at ~$0.80 per 1M characters. Pluggable by configuration like
- * the search registry: TTS_PROVIDER=none disables it even with a key set,
- * and with no key the app silently runs on the free Web Speech tier.
+ * Server TTS provider — the PREMIUM voice tier (docs/21). Two engines behind
+ * one synthesize call, pluggable by configuration like the search registry:
  *
- * DeepInfra exposes the model two ways; we try the stable OpenAI-compatible
- * speech endpoint first (raw audio bytes) and fall back to the native
- * inference endpoint (JSON with a base64 data-URI), so a change on their
- * side degrades gracefully instead of killing voice.
+ *  - "deepinfra": Kokoro-82M (~$0.80/1M chars) — cheapest, needs its own key
+ *  - "openai":    gpt-4o-mini-tts (≈$15/1M-char equivalent) — reuses the
+ *                 existing OPENAI_API_KEY, zero extra vendor setup
+ *
+ * Engine resolution (TTS_PROVIDER overrides): prefer DeepInfra when its key
+ * exists (18× cheaper), else fall back to OpenAI's key. TTS_PROVIDER=none is
+ * the kill switch. With nothing configured the app runs on the free Web
+ * Speech tier — this module is never required for the app to work.
  */
 
 import { ProviderError } from "@/lib/utils/errors";
+import { TTS_PRICE_USD_PER_1M_CHARS } from "@/lib/cost/pricing";
+import { KOKORO_VOICES, OPENAI_VOICES } from "@/lib/tts/voices";
+import type { Speaker } from "@/lib/debate/debateTypes";
 
 const DEEPINFRA_MODEL = "hexgrad/Kokoro-82M";
 const REQUEST_TIMEOUT_MS = 30_000;
 
+export type TtsEngine = keyof typeof TTS_PRICE_USD_PER_1M_CHARS;
+
+/** Which engine would serve /api/tts right now (null → free tier only). */
+export function resolveTtsEngine(): TtsEngine | null {
+  const pref = process.env.TTS_PROVIDER;
+  if (pref === "none") return null;
+  if (pref === "deepinfra") return process.env.DEEPINFRA_API_KEY ? "deepinfra" : null;
+  if (pref === "openai") return process.env.OPENAI_API_KEY ? "openai" : null;
+  // Auto: cheapest configured engine wins.
+  if (process.env.DEEPINFRA_API_KEY) return "deepinfra";
+  if (process.env.OPENAI_API_KEY) return "openai";
+  return null;
+}
+
 export function isServerTtsConfigured(): boolean {
-  if ((process.env.TTS_PROVIDER ?? "deepinfra") === "none") return false;
-  return Boolean(process.env.DEEPINFRA_API_KEY);
+  return resolveTtsEngine() !== null;
+}
+
+/** USD per 1M characters for the ACTIVE engine (env-overridable). */
+export function ttsCostUsdPer1MChars(): number {
+  const override = Number(process.env.TTS_COST_USD_PER_1M);
+  if (Number.isFinite(override) && override >= 0) return override;
+  const engine = resolveTtsEngine();
+  return engine ? TTS_PRICE_USD_PER_1M_CHARS[engine] : 0;
 }
 
 export interface SynthesizedSpeech {
@@ -29,14 +55,51 @@ export interface SynthesizedSpeech {
 
 export async function synthesizeSpeech(
   text: string,
-  voice: string,
+  speaker: Speaker,
 ): Promise<SynthesizedSpeech> {
-  const apiKey = process.env.DEEPINFRA_API_KEY;
-  if (!apiKey || !isServerTtsConfigured()) {
+  const engine = resolveTtsEngine();
+  if (!engine) {
     throw new ProviderError("INVALID_REQUEST", "Server TTS is not configured");
   }
+  return engine === "openai"
+    ? synthesizeOpenAi(text, OPENAI_VOICES[speaker])
+    : synthesizeDeepInfra(text, KOKORO_VOICES[speaker]);
+}
+
+/* --------------------------------- OpenAI --------------------------------- */
+
+async function synthesizeOpenAi(text: string, voice: string): Promise<SynthesizedSpeech> {
+  const res = await fetch("https://api.openai.com/v1/audio/speech", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: process.env.TTS_OPENAI_MODEL ?? "gpt-4o-mini-tts",
+      input: text,
+      voice,
+      response_format: "mp3",
+    }),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    throw new ProviderError("PROVIDER_ERROR", `OpenAI TTS failed (${res.status})`);
+  }
+  return { audio: await res.arrayBuffer(), contentType: "audio/mpeg" };
+}
+
+/* -------------------------------- DeepInfra ------------------------------- */
+
+/**
+ * DeepInfra exposes Kokoro two ways; try the stable OpenAI-compatible speech
+ * endpoint first (raw audio bytes) and fall back to the native inference
+ * endpoint (JSON with a base64 data-URI), so a change on their side degrades
+ * gracefully instead of killing voice.
+ */
+async function synthesizeDeepInfra(text: string, voice: string): Promise<SynthesizedSpeech> {
   const headers = {
-    Authorization: `Bearer ${apiKey}`,
+    Authorization: `Bearer ${process.env.DEEPINFRA_API_KEY}`,
     "Content-Type": "application/json",
   };
 

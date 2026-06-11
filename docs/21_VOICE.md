@@ -14,15 +14,21 @@ the speech to finish, so a match plays like a radio broadcast.
 |---|---|---|---|
 | Free | Web Speech API (`src/lib/tts/webSpeech.ts`) | $0 | Always available; the fallback for everything |
 | Premium | Kokoro-82M via DeepInfra (`src/lib/tts/server.ts` + `/api/tts`) | $0.80 / 1M chars (≈ $0.01 per full match) | When `DEEPINFRA_API_KEY` is set |
+| Premium | OpenAI speech (`gpt-4o-mini-tts`) | ≈ $15 / 1M-char equivalent (≈ $0.13 per match) | Auto-fallback when only `OPENAI_API_KEY` exists — zero extra vendor setup |
+
+Engine resolution (`resolveTtsEngine`): `TTS_PROVIDER` forces an engine;
+otherwise the cheapest configured one wins (DeepInfra key → Kokoro, else
+OpenAI key → OpenAI speech).
 
 `src/lib/tts/voicePlayer.ts` (client singleton, soundManager-style) tries the
 server engine when `/api/health` reports `tts: true` and falls back to Web
 Speech on any failure — voice can never break a match. Fetched audio is
 blob-cached per message id, so replays never re-bill.
 
-Voice casting (`src/lib/tts/voices.ts`): Fighter A = `am_michael`, Fighter B =
-`af_bella`, judge = `bm_george`; the Web Speech tier approximates the same
-cast with preferred device voices + pitch/rate offsets.
+Voice casting (`src/lib/tts/voices.ts`): Kokoro — Fighter A = `am_michael`,
+Fighter B = `af_bella`, judge = `bm_george`; OpenAI — `onyx` / `nova` /
+`fable`. The Web Speech tier approximates the same cast with preferred device
+voices + pitch/rate offsets.
 
 ## Cost armor (CLAUDE.md rules)
 
@@ -33,8 +39,10 @@ cast with preferred device voices + pitch/rate offsets.
   stripped) and hard-capped at 4,000 chars — a forged request can't buy more
   audio than a real turn produces.
 - The real per-request cost returns in `X-Tts-Cost-Usd`; the arena HUD shows
-  the running 🔊 total. The price lives in `src/lib/cost/pricing.ts`
-  (`TTS_COST_USD_PER_1M_CHARS`, env-overridable), never in UI code.
+  the running 🔊 total. Per-engine prices live in `src/lib/cost/pricing.ts`
+  (`TTS_PRICE_USD_PER_1M_CHARS`, `TTS_COST_USD_PER_1M` env override), never
+  in UI code. (OpenAI's engine bills per audio token ≈ $0.015/min; the
+  per-character figure is its ledger equivalent.)
 - Voice cost is session-ephemeral (HUD display + server spend ledger); it is
   intentionally NOT written into the session's per-message cost breakdown, so
   stored sessions keep validating against the anti-forgery checks.
@@ -49,7 +57,9 @@ cast with preferred device voices + pitch/rate offsets.
 
 ## Env
 
-- `DEEPINFRA_API_KEY` — enables the premium tier (off → free tier only)
-- `TTS_PROVIDER` — `deepinfra` (default) | `none` (kill switch)
-- `TTS_COST_USD_PER_1M` — price override for the HUD/ledger (default 0.8)
+- `TTS_PROVIDER` — `deepinfra` | `openai` | `none` (kill switch); unset =
+  auto (DeepInfra key → Kokoro, else OpenAI key → OpenAI speech)
+- `DEEPINFRA_API_KEY` — enables the cheap Kokoro engine
+- `TTS_OPENAI_MODEL` — OpenAI speech model (default `gpt-4o-mini-tts`)
+- `TTS_COST_USD_PER_1M` — price override for the HUD/ledger
 - `RL_TTS_PER_MIN` — per-IP rate limit (default 20)
