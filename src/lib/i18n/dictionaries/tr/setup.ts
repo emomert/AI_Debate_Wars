@@ -149,7 +149,6 @@ export const setup = {
     debateFit: "Münazara becerisi",
     debateFitHelp:
       "Bu modelin yapılandırılmış bir münazarada ne kadar iyi olduğuna dair 0–100 puanımız — akıl yürütme, karşı argüman ve konuya sadık kalma. Yüksek = daha zorlu bir rakip.",
-    recommendedHeading: "Önerilen",
     showAll: (n: number) => `${n} modelin tümünü göster ▾`,
     showFewer: "Daha az göster ▴",
     needsWebSearchKey: "Derin Münazara için sunucunun web arama anahtarı gerekir",

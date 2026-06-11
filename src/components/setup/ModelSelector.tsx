@@ -243,12 +243,6 @@ export function ModelSelector({
           radiogroup): the collapsed rows unmount, and aria-pressed on each row
           keeps the selection state honest in every collapse state. */}
       <div role="group" aria-label={`${label} model`} className="space-y-2">
-        {restModels.length > 0 ? (
-          <p className="px-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/45">
-            {d.setup.models.recommendedHeading}
-          </p>
-        ) : null}
-
         {recommendedModels.map((m) => renderModelRow(m))}
 
         {restModels.length > 0 ? (

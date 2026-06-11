@@ -151,7 +151,6 @@ export const setup = {
     debateFit: "Debate skill",
     debateFitHelp:
       "Our 0–100 rating of how well this model holds up in a structured debate — reasoning, rebuttals and staying on point. Higher = a tougher opponent.",
-    recommendedHeading: "Recommended",
     showAll: (n: number) => `Show all ${n} models ▾`,
     showFewer: "Show fewer ▴",
     needsWebSearchKey: "Needs the server's web-search key for Deep Debate",
