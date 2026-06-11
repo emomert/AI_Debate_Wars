@@ -17,6 +17,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
+import { GitHubIcon, GoogleIcon } from "@/components/auth/ProviderIcons";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
@@ -315,7 +316,10 @@ function LoginForm() {
                 disabled={busy !== null}
                 onClick={() => signInWithOAuth("google")}
               >
-                {busy === "google" ? d.auth.login.redirecting : d.auth.login.googleCta}
+                <span className="inline-flex items-center justify-center gap-2">
+                  <GoogleIcon />
+                  {busy === "google" ? d.auth.login.redirecting : d.auth.login.googleCta}
+                </span>
               </ArcadeButton>
               <ArcadeButton
                 variant="neutral-white"
@@ -323,7 +327,10 @@ function LoginForm() {
                 disabled={busy !== null}
                 onClick={() => signInWithOAuth("github")}
               >
-                {busy === "github" ? d.auth.login.redirecting : d.auth.login.githubCta}
+                <span className="inline-flex items-center justify-center gap-2">
+                  <GitHubIcon />
+                  {busy === "github" ? d.auth.login.redirecting : d.auth.login.githubCta}
+                </span>
               </ArcadeButton>
             </div>
           </>

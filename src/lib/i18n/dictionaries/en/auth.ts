@@ -35,8 +35,8 @@ export const auth = {
     magicLinkCta: "✉️ Email me a magic link",
     or: "or",
     redirecting: "Redirecting…",
-    googleCta: "🔵 Continue with Google",
-    githubCta: "⚫ Continue with GitHub",
+    googleCta: "Continue with Google",
+    githubCta: "Continue with GitHub",
   },
   /** First-sign-in onboarding (src/app/welcome/page.tsx). */
   welcome: {
