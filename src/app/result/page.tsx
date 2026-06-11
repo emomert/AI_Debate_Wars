@@ -30,6 +30,12 @@ const MatchSaver = dynamic(
   () => import("@/components/result/MatchSaver").then((m) => m.MatchSaver),
   { ssr: false },
 );
+// Same code-split treatment: the publish panel pulls in the Supabase SDK for
+// its auth state, so it loads only after hydration and only when auth is on.
+const PublishPanel = dynamic(
+  () => import("@/components/result/PublishPanel").then((m) => m.PublishPanel),
+  { ssr: false },
+);
 const authEnabled = isSupabaseConfigured();
 
 export default function ResultPage() {
@@ -121,6 +127,9 @@ export default function ResultPage() {
         ) : null}
 
         <SharePanel session={session} />
+
+        {/* Community publish: full-match sharing with visibility controls. */}
+        {authEnabled ? <PublishPanel session={session} /> : null}
 
         <FinalSummaryCard session={session} />
 

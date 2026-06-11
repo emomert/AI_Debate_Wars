@@ -45,6 +45,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Optional judge: auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores
 - Per-message and total cost tracking, cache-aware pricing
 - Stateless share links (`/s?d=...`) with generated OG images (`/api/og`)
+- Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars (see `docs/20_COMMUNITY.md`)
 - Optional Supabase auth (magic link + Google); match history and stats on `/profile`
 - Per-IP rate limits and global/per-IP daily spend caps (Supabase RPCs, fail-open)
 - Arcade UI: synth SFX, generative background music, sound toggle, mobile-responsive
@@ -52,13 +53,14 @@ The AI models only generate individual turn responses based on strict prompts. T
 
 ## Repository Map
 
-- `src/app/` — pages (home, setup, debate, result, s, profile, login, report, legal) and API routes (`api/debate/turn`, `api/debate/verdict`, `api/topic/check`, `api/health`, `api/og`)
+- `src/app/` — pages (home, setup, debate, result, s, community, m/[id], profile, login, report, legal) and API routes (`api/debate/turn`, `api/debate/verdict`, `api/topic/check`, `api/health`, `api/og`, `api/community/{publish,vote,comment}`)
 - `src/lib/debate/` — orchestrator, round plans, prompt builder, verdict parser, validators, citations, topic check
 - `src/lib/providers/` — provider interface + OpenAI / DeepSeek / OpenRouter implementations, registry with retry and auto-judge resolution
 - `src/lib/models/modelRegistry.ts` — model catalog (display info, cost tiers, debate ratings, Turkish support, web-search capability)
 - `src/lib/cost/` — pricing table (`pricing.ts`) and cost calculation
 - `src/lib/search/` — injected web search (Brave) behind a search-provider interface
 - `src/lib/supabase/` — auth clients, match persistence, stats
+- `src/lib/community/` — shared-match types, publish-time snapshot sanitizer, profile presets, community API client
 - `src/lib/security/rateLimit.ts` — rate limits and spend caps
 - `src/lib/share/` — stateless share-link encoding
 - `src/lib/i18n/` — locale config, dictionaries (en/tr), providers
@@ -83,7 +85,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 Providers: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
 Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD`, `DEEP_SEARCH_MODE` (`unified` | `hybrid`).
 Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
+Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
 
 ## Development Workflow
 

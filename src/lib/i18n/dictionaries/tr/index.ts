@@ -14,6 +14,7 @@ import { profile } from "./profile";
 import { report } from "./report";
 import { auth } from "./auth";
 import { legal } from "./legal";
+import { community } from "./community";
 
 export const tr: Dictionary = {
   common,
@@ -26,4 +27,5 @@ export const tr: Dictionary = {
   report,
   auth,
   legal,
+  community,
 };

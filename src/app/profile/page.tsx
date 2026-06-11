@@ -14,12 +14,18 @@ import { Badge } from "@/components/game/Badge";
 import { ReopenButton } from "@/components/profile/ReopenButton";
 import { DeleteMatchButton } from "@/components/profile/DeleteMatchButton";
 import { DeleteAllButton } from "@/components/profile/DeleteAllButton";
+import { ProfileEditor } from "@/components/profile/ProfileEditor";
+import { UnpublishButton } from "@/components/profile/UnpublishButton";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   MATCH_SUMMARY_COLUMNS,
   computeStats,
   type MatchSummary,
 } from "@/lib/supabase/matches";
+import {
+  SHARED_MATCH_SUMMARY_COLUMNS,
+  type SharedMatchSummary,
+} from "@/lib/community/types";
 import { formatCost } from "@/lib/utils/format";
 import { getServerDictionary } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -70,11 +76,19 @@ export default async function ProfilePage() {
     );
   }
 
-  const { data, error } = await supabase
-    .from("matches")
-    .select(MATCH_SUMMARY_COLUMNS)
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const [{ data, error }, sharedRes] = await Promise.all([
+    supabase
+      .from("matches")
+      .select(MATCH_SUMMARY_COLUMNS)
+      .order("created_at", { ascending: false })
+      .limit(500),
+    supabase
+      .from("shared_matches")
+      .select(SHARED_MATCH_SUMMARY_COLUMNS)
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ]);
   // Distinguish a real load failure (e.g. the migration hasn't been run) from a
   // genuinely empty history, so a misconfigured setup isn't shown as "all good".
   if (error) {
@@ -87,6 +101,12 @@ export default async function ProfilePage() {
     );
   }
   const matches = (data ?? []) as MatchSummary[];
+  // Shared-matches load failure shouldn't take the whole profile down — the
+  // section degrades to its empty state (and the error is logged).
+  if (sharedRes.error) {
+    console.error("[profile] failed to load shared matches:", sharedRes.error.message);
+  }
+  const shared = (sharedRes.data ?? []) as SharedMatchSummary[];
   const stats = computeStats(matches);
   const recent = matches.slice(0, 40);
   const topWins = Object.entries(stats.winsByModel).sort((a, b) => b[1] - a[1]).slice(0, 5);
@@ -109,6 +129,52 @@ export default async function ProfilePage() {
       <div className="mt-2">
         <Stat label={d.profile.stats.mostUsedFighter} value={stats.topFighter ?? "—"} />
       </div>
+
+      {/* Public identity: handle + avatar shown across the community. */}
+      <ProfileEditor userId={user.id} />
+
+      {/* Shared matches: posts published to the community hub. */}
+      <GamePanel title={d.community.myShared.title(shared.length)} className="mt-5">
+        {shared.length === 0 ? (
+          <p className="text-sm text-ink/55">{d.community.myShared.empty}</p>
+        ) : (
+          <ul className="space-y-2">
+            {shared.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-wrap items-center gap-2 rounded-card border-3 border-ink bg-surface p-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-heading text-sm font-extrabold">{p.topic}</p>
+                  <p className="mt-0.5 truncate text-xs text-ink/55">
+                    {p.show_models && p.model_a && p.model_b
+                      ? d.community.feed.vs(p.model_a, p.model_b)
+                      : d.community.feed.mysteryVs}
+                    {" · "}
+                    {d.community.myShared.votes(p.vote_count)}
+                    {" · "}
+                    {d.community.myShared.comments(p.comment_count)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <Badge color={p.visibility === "public" ? "green" : "ink"} size="sm">
+                    {p.visibility === "public"
+                      ? d.community.myShared.publicBadge
+                      : d.community.myShared.unlistedBadge}
+                  </Badge>
+                  <Badge color="white" size="sm">{p.created_at.slice(0, 10)}</Badge>
+                  <Link href={`/m/${p.id}`}>
+                    <ArcadeButton size="sm" variant="neutral-white">
+                      {d.community.myShared.view}
+                    </ArcadeButton>
+                  </Link>
+                  <UnpublishButton postId={p.id} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </GamePanel>
 
       {topWins.length > 0 ? (
         <GamePanel title={d.profile.winsByFighter} className="mt-5">

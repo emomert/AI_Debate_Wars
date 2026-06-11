@@ -19,8 +19,18 @@ Enforced via Supabase RPC `rl_hit` **before any paid provider work**:
 | `/api/debate/turn` | 8 / min | `RL_TURN_PER_MIN` |
 | `/api/debate/verdict` | 4 / min | `RL_VERDICT_PER_MIN` |
 | `/api/topic/check` | 12 / min | `RL_TOPIC_PER_MIN` |
+| `/api/community/publish` | 4 / min | `RL_PUBLISH_PER_MIN` |
+| `/api/community/vote` | 20 / min | `RL_VOTE_PER_MIN` |
+| `/api/community/comment` | 6 / min | `RL_COMMENT_PER_MIN` |
 
 Window length: `RL_WINDOW_SECONDS` (default 60). Client IP comes from `x-forwarded-for` / `x-real-ip`.
+
+The community routes are DB-only (no paid provider work): they share the same
+`rl_hit` rate limiting but **skip the daily spend-cap check** (`PAID_KINDS` in
+`rateLimit.ts`) — a maxed spend budget must never block sharing. They also
+require a signed-in user and re-validate every input (post-id charset, vote
+choice enum, comment length, session shape + completeness on publish); see
+`docs/20_COMMUNITY.md` for the RLS / SECURITY DEFINER access model.
 
 ### Spend caps (daily, USD)
 

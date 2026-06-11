@@ -88,8 +88,14 @@ export function GameShell({
             wide ? "max-w-7xl" : "max-w-5xl",
           )}
         >
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Logo />
+            <Link
+              href="/community"
+              className="shrink-0 rounded-btn border-3 border-ink bg-card px-2 py-1 font-heading text-[11px] font-extrabold uppercase tracking-wide transition hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2 sm:text-xs"
+            >
+              🏟️ <span>{d.community.nav}</span>
+            </Link>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             {headerExtras ? (

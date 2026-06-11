@@ -9,6 +9,7 @@ import type {
   DebateSession,
   DebateVerdict,
 } from "@/lib/debate/debateTypes";
+import type { PublishOptions, VoteChoice, VoteTally } from "@/lib/community/types";
 import type { TopicCheckResult } from "@/lib/debate/topicCheck";
 import type { Locale } from "@/lib/i18n/config";
 import type { AppErrorCode } from "@/lib/utils/errors";
@@ -54,6 +55,40 @@ export interface HealthResponse {
     webSearch: boolean;
   };
   timestamp: string;
+}
+
+/** POST /api/community/publish — share a finished match (sanitized snapshot). */
+export interface PublishMatchRequest {
+  session: DebateSession;
+  options: PublishOptions;
+}
+
+export interface PublishMatchResponse {
+  /** The shared match's public id — the /m/<id> URL. */
+  id: string;
+  /** True when an existing post for this session was updated, not created. */
+  updated: boolean;
+}
+
+/** POST /api/community/vote — cast/change a side-vote on a shared match. */
+export interface CastVoteRequest {
+  postId: string;
+  choice: VoteChoice;
+}
+
+export interface CastVoteResponse {
+  tally: VoteTally;
+}
+
+/** POST /api/community/comment — add a comment to a shared match. */
+export interface AddCommentRequest {
+  postId: string;
+  body: string;
+}
+
+export interface AddCommentResponse {
+  id: string;
+  createdAt: string;
 }
 
 export interface ApiErrorBody {

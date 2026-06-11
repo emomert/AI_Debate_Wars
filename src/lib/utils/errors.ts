@@ -20,6 +20,9 @@ export type AppErrorCode =
   | "DAILY_LIMIT_REACHED" // global/per-IP daily spend cap
   | "INSUFFICIENT_CREDITS"
   | "TOKEN_LIMIT_EXCEEDED"
+  // Community hub routes (publish/vote/comment):
+  | "AUTH_REQUIRED" // the action needs a signed-in user
+  | "NOT_FOUND" // the shared match/post no longer exists
   | "UNKNOWN_ERROR";
 
 export interface AppErrorShape {
@@ -44,7 +47,10 @@ export function httpStatusForCode(code: AppErrorCode): number {
     case "INVALID_MODEL":
       return 400;
     case "MISSING_API_KEY":
+    case "AUTH_REQUIRED":
       return 401;
+    case "NOT_FOUND":
+      return 404;
     case "RATE_LIMITED":
     case "TOO_MANY_REQUESTS":
     case "DAILY_LIMIT_REACHED":
@@ -105,6 +111,16 @@ export function friendlyMessage(code: AppErrorCode): { title: string; body: stri
       return {
         title: "That turn hit the token ceiling",
         body: "Try a shorter max response length and run it again.",
+      };
+    case "AUTH_REQUIRED":
+      return {
+        title: "Sign in to enter the arena",
+        body: "This move needs an account — sign in and try again.",
+      };
+    case "NOT_FOUND":
+      return {
+        title: "That match left the arena",
+        body: "This shared match doesn't exist anymore — it may have been unpublished.",
       };
     case "INVALID_SESSION":
     case "INVALID_REQUEST":

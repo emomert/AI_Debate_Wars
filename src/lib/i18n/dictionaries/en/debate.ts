@@ -104,6 +104,16 @@ export const debate = {
       title: "The arena lights flickered",
       body: "The model didn't respond cleanly. Try again or switch models.",
     },
+    // Community-route codes — never produced during a debate, but the map
+    // covers every AppErrorCode so this screen can render any error.
+    AUTH_REQUIRED: {
+      title: "Sign in to enter the arena",
+      body: "This move needs an account — sign in and try again.",
+    },
+    NOT_FOUND: {
+      title: "That match left the arena",
+      body: "This shared match doesn't exist anymore — it may have been unpublished.",
+    },
     UNKNOWN_ERROR: {
       title: "The arena lights flickered",
       body: "The model didn't respond cleanly. Try again or switch models.",

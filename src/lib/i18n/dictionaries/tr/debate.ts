@@ -104,6 +104,16 @@ export const debate = {
       title: "Arena ışıkları titredi",
       body: "Model düzgün bir yanıt vermedi. Tekrar deneyin ya da modelleri değiştirin.",
     },
+    // Topluluk rotalarının kodları — münazara sırasında üretilmez, ancak bu
+    // harita her AppErrorCode'u kapsadığı için ekran her hatayı gösterebilir.
+    AUTH_REQUIRED: {
+      title: "Arenaya girmek için giriş yapın",
+      body: "Bu hamle bir hesap gerektiriyor — giriş yapıp tekrar deneyin.",
+    },
+    NOT_FOUND: {
+      title: "Bu maç arenadan ayrılmış",
+      body: "Bu paylaşılan maç artık yok — yayından kaldırılmış olabilir.",
+    },
     UNKNOWN_ERROR: {
       title: "Arena ışıkları titredi",
       body: "Model düzgün bir yanıt vermedi. Tekrar deneyin ya da modelleri değiştirin.",

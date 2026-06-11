@@ -21,7 +21,12 @@ import "server-only";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ProviderError } from "@/lib/utils/errors";
 
-type RouteKind = "turn" | "verdict" | "topic";
+type RouteKind = "turn" | "verdict" | "topic" | "publish" | "vote" | "comment";
+
+// Spend caps only make sense for routes that call a paid provider; community
+// writes (publish/vote/comment) are DB-only and skip the spend check — a maxed
+// daily budget must never block sharing a finished match.
+const PAID_KINDS: ReadonlySet<RouteKind> = new Set(["turn", "verdict", "topic"]);
 
 const num = (v: string | undefined, fallback: number): number => {
   const n = Number(v);
@@ -35,6 +40,10 @@ const PER_MIN: Record<RouteKind, number> = {
   verdict: num(process.env.RL_VERDICT_PER_MIN, 4),
   // Topic checks are cheap + fast, so a more generous cap (still flood-proof).
   topic: num(process.env.RL_TOPIC_PER_MIN, 12),
+  // Community writes (DB-only, but still spam-prone):
+  publish: num(process.env.RL_PUBLISH_PER_MIN, 4),
+  vote: num(process.env.RL_VOTE_PER_MIN, 20),
+  comment: num(process.env.RL_COMMENT_PER_MIN, 6),
 };
 const GLOBAL_DAILY_CAP_USD = num(process.env.SPEND_GLOBAL_DAILY_USD, 10);
 const IP_DAILY_CAP_USD = num(process.env.SPEND_IP_DAILY_USD, 1);
@@ -86,7 +95,8 @@ export async function enforceLimits(req: Request, kind: RouteKind): Promise<void
     console.error("[rate-limit] rl_hit threw (allowing):", err);
   }
 
-  // 2) Daily spend caps (global + per-IP).
+  // 2) Daily spend caps (global + per-IP) — paid provider routes only.
+  if (!PAID_KINDS.has(kind)) return;
   try {
     const { data: spendOk, error } = await supabase.rpc("spend_allowed", {
       p_ip: ip,
