@@ -136,7 +136,9 @@ export function ProfileForm({ userId, onSaved }: ProfileFormProps) {
           <p className="text-[10px] font-bold uppercase tracking-wide text-ink/50">
             {t.avatarLabel}
           </p>
-          <div className="mt-1 grid grid-cols-8 gap-1.5">
+          {/* auto-fill keeps every box at least 44px so emojis never overflow,
+              however narrow the column gets. */}
+          <div className="mt-1 grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-2">
             {AVATAR_PRESETS.map((preset) => (
               <button
                 key={preset}
@@ -148,7 +150,7 @@ export function ProfileForm({ userId, onSaved }: ProfileFormProps) {
                 disabled={!loaded || state === "saving"}
                 aria-pressed={avatar === preset}
                 className={cn(
-                  "grid aspect-square place-items-center rounded-btn border-3 border-ink text-lg transition",
+                  "grid aspect-square place-items-center rounded-btn border-3 border-ink text-2xl leading-none transition",
                   avatar === preset
                     ? "bg-arcade-yellow shadow-hard-sm"
                     : "bg-card hover:bg-surface",
