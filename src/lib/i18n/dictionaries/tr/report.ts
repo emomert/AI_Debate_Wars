@@ -245,8 +245,8 @@ export const report = {
       "· Standart, önbellekli ve çıktı oranları sağlayıcıların resmi sayfalarına karşı doğrulanmıştır (Haziran 2026). gpt-5.3-chat-latest'in yayınlanmış bir oranı yoktur ve en yakın doğrulanmış komşusunun fiyatıyla fiyatlandırılır (önbellek indirimi varsayılmaz).",
     note4:
       "· Önbellek farkında: sağlayıcı önbellek isabetli girdi tokenları bildirdiğinde (maliyet rozetinde bir ♻️), bunlar yukarıdaki önbellekli oranla faturalandırılır — yani maliyet, abartılı bir tahmin değil, gerçek faturadır.",
-    note5: (kokoro: string, openai: string) =>
-      `· İsteğe bağlı yarışmacı sesleri: varsayılan olarak ücretsiz tarayıcı konuşması; yapılandırılan sunucu motoru karakter başına faturalandırır — DeepInfra üzerinden Kokoro 82M 1M başına $${kokoro} (seslendirilmiş maç başına ≈1¢) ya da OpenAI konuşması 1M başına ≈$${openai} (≈13¢) — arena HUD'ında 🔊 satırı olarak gösterilir ve aynı günlük harcama tavanlarına sayılır.`,
+    note5: (price: string) =>
+      `· İsteğe bağlı yarışmacı sesleri: varsayılan olarak ücretsiz tarayıcı konuşması; sunucu motoru (OpenAI konuşması) 1M karakter başına ≈$${price} faturalandırır — tamamen seslendirilmiş bir maç yaklaşık 13¢ — arena HUD'ında 🔊 satırı olarak gösterilir ve aynı günlük harcama tavanlarına sayılır.`,
     estimator: {
       title: "🎮 Bir maçın maliyetini tahmin et",
       intro:

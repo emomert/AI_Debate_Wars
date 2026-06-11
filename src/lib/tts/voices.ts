@@ -1,6 +1,6 @@
 /**
  * Voice casting — which voice each arena role speaks with. Client-safe
- * constants shared by the /api/tts route (Kokoro voice ids) and the Web
+ * constants shared by the /api/tts route (OpenAI voice ids) and the Web
  * Speech engine (pitch/rate differentiation when the device voice list is
  * too unpredictable to cast reliably).
  */
@@ -8,17 +8,10 @@
 import type { Speaker } from "@/lib/debate/debateTypes";
 
 /**
- * Kokoro-82M preset voices (DeepInfra). Fixed casting so every match sounds
- * consistent: Fighter A an American male, Fighter B an American female, the
- * judge a British male — instantly tellable apart even with eyes closed.
+ * OpenAI speech voices (gpt-4o-mini-tts / tts-1). Fixed casting so every
+ * match sounds consistent: Fighter A a deep male, Fighter B a warm female,
+ * the judge a British male — instantly tellable apart even with eyes closed.
  */
-export const KOKORO_VOICES: Record<Speaker, string> = {
-  modelA: "am_michael",
-  modelB: "af_bella",
-  judge: "bm_george",
-};
-
-/** Same casting on OpenAI's speech API (gpt-4o-mini-tts / tts-1 voices). */
 export const OPENAI_VOICES: Record<Speaker, string> = {
   modelA: "onyx",
   modelB: "nova",
