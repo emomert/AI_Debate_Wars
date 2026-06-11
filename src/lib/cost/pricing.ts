@@ -58,6 +58,16 @@ export const modelPricing: Record<string, ModelPrice> = {
   "openrouter:openai/gpt-oss-120b:free": { inputCostPer1M: 0, outputCostPer1M: 0 },
 };
 
+/**
+ * Server TTS (fighter voices): USD per 1M input CHARACTERS — Kokoro-82M on
+ * DeepInfra ($0.80/1M, June 2026). Env-overridable so a provider/price change
+ * is a dashboard edit, not a deploy. Client bundles see the default.
+ */
+export const TTS_COST_USD_PER_1M_CHARS = (() => {
+  const n = Number(process.env.TTS_COST_USD_PER_1M);
+  return Number.isFinite(n) && n >= 0 ? n : 0.8;
+})();
+
 /** Fallback price used when a model is not found in the table. */
 export const FALLBACK_PRICE: ModelPrice = {
   inputCostPer1M: 0.5,

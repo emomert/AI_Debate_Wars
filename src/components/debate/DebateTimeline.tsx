@@ -59,6 +59,8 @@ interface DebateTimelineProps {
   activeMessage: DebateMessage | null;
   streamingText: string;
   phase: RunnerPhase;
+  /** Per-message voice control (play/stop button on completed cards). */
+  voiceFor?: (m: DebateMessage) => { playing: boolean; onToggle: () => void };
 }
 
 export function DebateTimeline({
@@ -68,6 +70,7 @@ export function DebateTimeline({
   activeMessage,
   streamingText,
   phase,
+  voiceFor,
 }: DebateTimelineProps) {
   const d = useT();
   const empty = messages.length === 0 && !activeTurn && phase !== "judging";
@@ -100,6 +103,7 @@ export function DebateTimeline({
             usage={m.usage}
             latencyMs={m.latencyMs}
             citations={m.citations}
+            voice={voiceFor?.(m)}
           />
         );
       })}

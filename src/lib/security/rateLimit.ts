@@ -21,12 +21,12 @@ import "server-only";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ProviderError } from "@/lib/utils/errors";
 
-type RouteKind = "turn" | "verdict" | "topic" | "publish" | "vote" | "comment";
+type RouteKind = "turn" | "verdict" | "topic" | "tts" | "publish" | "vote" | "comment";
 
 // Spend caps only make sense for routes that call a paid provider; community
 // writes (publish/vote/comment) are DB-only and skip the spend check — a maxed
 // daily budget must never block sharing a finished match.
-const PAID_KINDS: ReadonlySet<RouteKind> = new Set(["turn", "verdict", "topic"]);
+const PAID_KINDS: ReadonlySet<RouteKind> = new Set(["turn", "verdict", "topic", "tts"]);
 
 const num = (v: string | undefined, fallback: number): number => {
   const n = Number(v);
@@ -40,6 +40,8 @@ const PER_MIN: Record<RouteKind, number> = {
   verdict: num(process.env.RL_VERDICT_PER_MIN, 4),
   // Topic checks are cheap + fast, so a more generous cap (still flood-proof).
   topic: num(process.env.RL_TOPIC_PER_MIN, 12),
+  // Voice synthesis (~$0.001/turn): generous enough for auto-read + replays.
+  tts: num(process.env.RL_TTS_PER_MIN, 20),
   // Community writes (DB-only, but still spam-prone):
   publish: num(process.env.RL_PUBLISH_PER_MIN, 4),
   vote: num(process.env.RL_VOTE_PER_MIN, 20),

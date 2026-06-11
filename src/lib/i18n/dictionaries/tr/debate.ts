@@ -139,6 +139,17 @@ export const debate = {
     msgSuffix: "mesaj",
   },
 
+  // Yarışmacı sesleri (HUD anahtarı + mesaj başına oynat düğmesi)
+  voice: {
+    hudOn: "🔊 Ses",
+    hudOff: "🔇 Ses",
+    toggleLabel: (on: boolean) =>
+      `Yarışmacı sesleri: ${on ? "açık" : "kapalı"}. Değiştirmek için tıklayın.`,
+    play: "🔊 Oynat",
+    stop: "⏹ Durdur",
+    costLabel: "Bu maçtaki ses sentezi maliyeti",
+  },
+
   // DebateControls buttons
   controls: {
     stop: "Durdur",

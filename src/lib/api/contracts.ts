@@ -53,6 +53,8 @@ export interface HealthResponse {
     openrouter: boolean;
     /** App-run web search (Deep Debate for OpenAI/DeepSeek fighters). */
     webSearch: boolean;
+    /** Server voice synthesis (fighter voices); false → free Web Speech tier. */
+    tts: boolean;
   };
   timestamp: string;
 }

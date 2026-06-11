@@ -53,6 +53,8 @@ interface DebateMessageCardProps {
   usage?: TokenUsage;
   latencyMs?: number;
   citations?: Citation[];
+  /** Voice playback control for this message (debate arena only). */
+  voice?: { playing: boolean; onToggle: () => void };
 }
 
 const ACCENT_BAR: Record<ModelColor, string> = {
@@ -76,6 +78,7 @@ function DebateMessageCardComponent({
   usage,
   latencyMs,
   citations,
+  voice,
 }: DebateMessageCardProps) {
   const d = useT();
   const isJudge = speaker === "judge";
@@ -159,6 +162,21 @@ function DebateMessageCardComponent({
             <CostBadge cost={cost} usage={usage} latencyMs={latencyMs} />
             {citations && citations.length > 0 ? (
               <SourcesList citations={citations} />
+            ) : null}
+            {voice ? (
+              <button
+                type="button"
+                onClick={voice.onToggle}
+                aria-pressed={voice.playing}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-badge border-3 border-ink px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide transition focus-visible:outline-3 focus-visible:outline-offset-2",
+                  voice.playing
+                    ? "bg-arcade-green text-night"
+                    : "bg-surface hover:bg-arcade-yellow hover:text-night",
+                )}
+              >
+                {voice.playing ? d.debate.voice.stop : d.debate.voice.play}
+              </button>
             ) : null}
           </footer>
         ) : null}

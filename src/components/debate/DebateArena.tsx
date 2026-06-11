@@ -16,8 +16,9 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 import { useArena } from "@/lib/state/ArenaContext";
 import { useDebateRunner } from "@/lib/debate/useDebateRunner";
-import type { DebateSession } from "@/lib/debate/debateTypes";
+import type { DebateMessage, DebateSession } from "@/lib/debate/debateTypes";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
+import { voicePlayer } from "@/lib/tts/voicePlayer";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 import { GamePanel } from "@/components/game/GamePanel";
@@ -109,13 +110,53 @@ function ArenaInner({
   onResults,
 }: ArenaInnerProps) {
   const d = useT();
-  // Note: the runner's typewriter intentionally ignores reduced-motion so every
-  // visitor gets the same playback; `reduce` only tones down decorative motion.
-  const runner = useDebateRunner(session, { onPersist });
   // For the end-of-match Rejudge/Share panels: availability + a way to swap in a
   // re-judged session. `session` already carries the persisted verdict once the
   // match completes, and a re-judge updates it via setSession.
   const { availability, setSession } = useArena();
+
+  // Voice-over state (docs/21). The voicePlayer singleton owns the persisted
+  // toggle, playback and the running TTS cost; the arena just mirrors it into
+  // React state and feeds the runner a speak() hook.
+  const serverTts = availability?.tts ?? false;
+  const serverTtsRef = useRef(serverTts);
+  serverTtsRef.current = serverTts;
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceCostUsd, setVoiceCostUsd] = useState(0);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  useEffect(() => {
+    setVoiceEnabled(voicePlayer.hydrate());
+    setVoiceCostUsd(voicePlayer.getCostUsd());
+    const offEnabled = voicePlayer.subscribeEnabled(setVoiceEnabled);
+    const offPlaying = voicePlayer.subscribePlaying(setSpeakingId);
+    const offCost = voicePlayer.subscribeCost(setVoiceCostUsd);
+    return () => {
+      offEnabled();
+      offPlaying();
+      offCost();
+      voicePlayer.stop(); // leaving the arena silences the speech
+    };
+  }, []);
+  const speak = useCallback(
+    (m: DebateMessage, signal: AbortSignal) =>
+      voicePlayer.speakAuto(m, serverTtsRef.current, signal),
+    [],
+  );
+  const toggleVoice = useCallback(() => voicePlayer.toggle(), []);
+  const voiceFor = useCallback(
+    (m: DebateMessage) => ({
+      playing: speakingId === m.id,
+      onToggle: () => {
+        if (speakingId === m.id) voicePlayer.stop();
+        else voicePlayer.replay(m, serverTtsRef.current);
+      },
+    }),
+    [speakingId],
+  );
+
+  // Note: the runner's typewriter intentionally ignores reduced-motion so every
+  // visitor gets the same playback; `reduce` only tones down decorative motion.
+  const runner = useDebateRunner(session, { onPersist, speak });
   const doneVerdict = session.verdict ?? runner.verdict;
   // When the match is done, the persisted session cost is authoritative (an
   // in-arena re-judge updates it but not the runner's frozen internal verdict).
@@ -252,6 +293,9 @@ function ArenaInner({
         activeModelName={activeModelName}
         pace={runner.pace}
         onTogglePace={togglePace}
+        voiceEnabled={voiceEnabled}
+        onToggleVoice={toggleVoice}
+        voiceCostUsd={voiceCostUsd}
       />
 
       {/* Topic bar */}
@@ -296,6 +340,7 @@ function ArenaInner({
             activeMessage={runner.activeMessage}
             streamingText={runner.streamingText}
             phase={runner.phase}
+            voiceFor={voiceFor}
           />
 
           {runner.phase === "done" && doneVerdict ? (

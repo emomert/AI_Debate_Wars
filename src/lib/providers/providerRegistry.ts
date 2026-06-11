@@ -23,6 +23,7 @@ import {
   type Backend,
 } from "@/lib/models/modelRegistry";
 import { isInjectedSearchConfigured } from "@/lib/search/searchRegistry";
+import { isServerTtsConfigured } from "@/lib/tts/server";
 import type { DebateSession } from "@/lib/debate/debateTypes";
 
 const registry: Partial<Record<ProviderId, Provider>> = {
@@ -96,6 +97,8 @@ export function providerAvailability() {
     openrouter: Boolean(process.env.OPENROUTER_API_KEY),
     // App-run web search — gates Deep Debate for OpenAI/DeepSeek fighters.
     webSearch: isInjectedSearchConfigured(),
+    // Server voice synthesis (fighter voices) — UI falls back to Web Speech.
+    tts: isServerTtsConfigured(),
   };
 }
 

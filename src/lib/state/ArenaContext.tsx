@@ -134,6 +134,8 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
           // gates Deep Debate — stay optimistic and let the authoritative
           // server validator reject cleanly if search is truly unconfigured.
           webSearch: true,
+          // Pessimistic: with health unknown, voice runs on free Web Speech.
+          tts: false,
         }),
       );
     return () => controller.abort();

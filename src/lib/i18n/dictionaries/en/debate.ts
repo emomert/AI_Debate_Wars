@@ -139,6 +139,17 @@ export const debate = {
     msgSuffix: "msg",
   },
 
+  // Fighter voices (HUD toggle + per-message play button)
+  voice: {
+    hudOn: "🔊 Voice",
+    hudOff: "🔇 Voice",
+    toggleLabel: (on: boolean) =>
+      `Fighter voices: ${on ? "on" : "off"}. Click to switch.`,
+    play: "🔊 Play",
+    stop: "⏹ Stop",
+    costLabel: "Voice synthesis cost this match",
+  },
+
   // DebateControls buttons
   controls: {
     stop: "Stop",

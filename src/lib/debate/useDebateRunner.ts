@@ -143,13 +143,20 @@ interface RunnerState {
 interface RunnerOptions {
   /** Called after each locked-in turn, on stop, and on completion. */
   onPersist?: (session: DebateSession) => void;
+  /**
+   * Optional voice-over: awaited after each turn's typewriter so the next
+   * turn never talks over this one. The implementation must resolve quickly
+   * when voice is off and must never reject in a way that breaks the match
+   * (the runner additionally swallows errors).
+   */
+  speak?: (message: DebateMessage, signal: AbortSignal) => Promise<void>;
 }
 
 export function useDebateRunner(
   initialSession: DebateSession,
   options: RunnerOptions = {},
 ) {
-  const { onPersist } = options;
+  const { onPersist, speak } = options;
 
   const alreadyFinished =
     (initialSession.status === "complete" || initialSession.status === "stopped") &&
@@ -179,6 +186,8 @@ export function useDebateRunner(
   const controllerRef = useRef<AbortController | null>(null);
   const onPersistRef = useRef(onPersist);
   onPersistRef.current = onPersist;
+  const speakRef = useRef(speak);
+  speakRef.current = speak;
 
   // Manual-pacing gate: when set, the loop is paused waiting for next()/auto.
   const gateRef = useRef<(() => void) | null>(null);
@@ -448,6 +457,17 @@ export function useDebateRunner(
             activeMessage: null,
             streamingText: "",
           }));
+          // Voice-over (when enabled): read the finished turn aloud before the
+          // loop moves on, so in Fast pacing the next fighter waits politely.
+          // Voice must never break the match — failures are swallowed.
+          if (speakRef.current) {
+            try {
+              await speakRef.current(message, signal);
+            } catch {
+              /* voice is best-effort */
+            }
+            if (signal.aborted) return;
+          }
           await delay(220, signal);
         }
 
