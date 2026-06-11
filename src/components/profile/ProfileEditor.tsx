@@ -5,6 +5,9 @@
  * plus a preset arcade avatar, shown on shared matches, votes and comments.
  * Saves via the browser Supabase client (RLS: own row only). No handle yet →
  * the user appears as "Anonymous Fighter" across the community.
+ *
+ * The inner ProfileForm is shared with the first-sign-in onboarding step
+ * (/welcome), which wraps it in its own panel and adds a Skip button.
  */
 
 import { useEffect, useState } from "react";
@@ -22,7 +25,13 @@ import { cn } from "@/lib/utils/cn";
 
 type SaveState = "idle" | "saving" | "saved" | "taken" | "invalid" | "error";
 
-export function ProfileEditor({ userId }: { userId: string }) {
+interface ProfileFormProps {
+  userId: string;
+  /** Called after a successful save (welcome page navigates onward). */
+  onSaved?: (username: string | null) => void;
+}
+
+export function ProfileForm({ userId, onSaved }: ProfileFormProps) {
   const d = useT();
   const t = d.community.profileCard;
   const supabase = getSupabaseBrowserClient();
@@ -81,6 +90,7 @@ export function ProfileEditor({ userId }: { userId: string }) {
     setUsername(handle);
     setSavedUsername(handle === "" ? null : handle);
     setState("saved");
+    onSaved?.(handle === "" ? null : handle);
   };
 
   const feedback: Partial<Record<SaveState, { text: string; tone: "ok" | "bad" }>> = {
@@ -92,9 +102,7 @@ export function ProfileEditor({ userId }: { userId: string }) {
   const fb = feedback[state];
 
   return (
-    <GamePanel title={t.title} className="mt-5">
-      <p className="text-sm text-ink/65">{t.blurb}</p>
-
+    <>
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Handle */}
         <div>
@@ -173,6 +181,17 @@ export function ProfileEditor({ userId }: { userId: string }) {
           </p>
         ) : null}
       </div>
+    </>
+  );
+}
+
+export function ProfileEditor({ userId }: { userId: string }) {
+  const d = useT();
+  const t = d.community.profileCard;
+  return (
+    <GamePanel title={t.title} className="mt-5">
+      <p className="text-sm text-ink/65">{t.blurb}</p>
+      <ProfileForm userId={userId} />
     </GamePanel>
   );
 }

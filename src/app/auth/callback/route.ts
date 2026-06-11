@@ -1,12 +1,15 @@
 /**
  * Auth callback (docs/19). Handles BOTH sign-in flows:
- *   - OAuth (Google) and PKCE magic links return ?code= → exchangeCodeForSession
+ *   - OAuth (Google/GitHub) and PKCE email links return ?code= → exchangeCodeForSession
  *   - token-hash style email links return ?token_hash=&type= → verifyOtp
- * On success redirects to a sanitized same-origin `next` path (default "/").
+ * On success redirects to a sanitized same-origin `next` path (default "/") —
+ * except first-time users (no profiles row yet), who are routed through
+ * /welcome to create their fighter card. Password-recovery links carry
+ * next=/reset-password and bypass the welcome detour.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import type { EmailOtpType, SupabaseClient } from "@supabase/supabase-js";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -14,6 +17,23 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 function safeNext(next: string | null): string {
   if (next && next.startsWith("/") && !next.startsWith("//")) return next;
   return "/";
+}
+
+/** Where a freshly signed-in session should land (welcome for new users). */
+async function landingPath(supabase: SupabaseClient, next: string): Promise<string> {
+  // The recovery flow must reach the set-new-password form unconditionally.
+  if (next === "/reset-password") return next;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return next;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (profile) return next;
+  return `/welcome${next !== "/" ? `?next=${encodeURIComponent(next)}` : ""}`;
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -32,10 +52,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (supabase) {
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (!error) return NextResponse.redirect(`${base}${next}`);
+      if (!error) {
+        return NextResponse.redirect(`${base}${await landingPath(supabase, next)}`);
+      }
     } else if (tokenHash && type) {
       const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-      if (!error) return NextResponse.redirect(`${base}${next}`);
+      if (!error) {
+        return NextResponse.redirect(`${base}${await landingPath(supabase, next)}`);
+      }
     }
   }
   return NextResponse.redirect(`${base}/login?error=auth`);

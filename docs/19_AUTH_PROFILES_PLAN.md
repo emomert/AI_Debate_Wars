@@ -1,10 +1,14 @@
 # 19 · Login & Profiles Plan (Supabase)
 
 > Status: ✅ IMPLEMENTED (v1 scope shipped 2026-06; this doc is now the design
-> record). Phases 1–3 are live: auth shell (magic link + Google), match
-> persistence with RLS, and the profile page with history + stats, plus match
-> delete. Still open from §3 "Later": anti-forgery validation against stored
-> sessions, quota gating, and data export (see
+> record). Phases 1–3 are live: auth shell (email+password, magic link,
+> Google + GitHub OAuth), match persistence with RLS, and the profile page
+> with history + stats, plus match delete. 2026-06-11 additions: password
+> sign-in/sign-up with reset flow (`/reset-password`), GitHub OAuth, and a
+> skippable first-sign-in onboarding step (`/welcome`) that creates the
+> fighter card (handle + avatar; Skip writes a bare profiles row so the user
+> isn't re-prompted). Still open from §3 "Later": anti-forgery validation
+> against stored sessions, quota gating, and data export (see
 > [docs/18](18_RELEASE_REQUIREMENTS.md)).
 
 ---
@@ -26,7 +30,10 @@ Building this also unlocks two things from docs/18:
 ## 2. Why Supabase (chosen)
 
 One free-tier vendor covering everything we need, so we don't stitch 3 services:
-- **Auth** — email magic-link + Google OAuth, sessions stored in cookies.
+- **Auth** — email+password, email magic-link, Google + GitHub OAuth; sessions
+  stored in cookies. New users without a profile are routed through `/welcome`
+  (fighter-card onboarding) by `/auth/callback` (or client-side after a
+  password sign-in).
 - **Postgres** — match history + stats, with **Row Level Security** so a user
   can only ever read/write their own rows (enforced in the DB, not just app code).
 - **Storage** (later) — if we ever host generated verdict images for unfurl.

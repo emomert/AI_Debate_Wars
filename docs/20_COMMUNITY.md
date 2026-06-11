@@ -60,9 +60,11 @@ trigger.
 
 `public.profiles`: optional unique handle (`^[a-z0-9_]{3,20}$`, case-insensitive
 unique) + a preset emoji avatar (`src/lib/community/profile.ts`, 16 presets, no
-uploads). Edited on `/profile` ("Your fighter card"). Without a handle the user
-appears as "Anonymous Fighter". A profile row is auto-provisioned on first
-publish/comment.
+uploads). Created on first sign-in via the skippable `/welcome` onboarding step
+("Create your fighter card"; Skip writes a bare row so the user isn't
+re-prompted), edited later on `/profile` ("Your fighter card"). Without a
+handle the user appears as "Anonymous Fighter". A profile row is also
+auto-provisioned on first publish/comment as a fallback.
 
 ## Access model (RLS + RPCs)
 

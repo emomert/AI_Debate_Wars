@@ -1,9 +1,14 @@
 "use client";
 
 /**
- * Login (docs/19) — magic-link email + Google OAuth. Login is optional; it only
- * unlocks saved match history + stats. Renders a friendly notice if Supabase
- * isn't configured on this deployment.
+ * Login (docs/19) — email + password (sign in / create account), magic-link
+ * email, and Google / GitHub OAuth. Login is optional; it only unlocks saved
+ * match history, stats and the community identity. Renders a friendly notice
+ * if Supabase isn't configured on this deployment.
+ *
+ * New users (no profiles row yet) are routed through /welcome to create their
+ * fighter card: OAuth and email links via the /auth/callback redirect, and
+ * password sign-ins via the client-side check in finishSignIn below.
  */
 
 import { Suspense, useEffect, useState } from "react";
@@ -14,6 +19,11 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { cn } from "@/lib/utils/cn";
+
+type Mode = "signin" | "signup";
+type Busy = "password" | "magic" | "reset" | "google" | "github" | null;
+type Sent = { kind: "magic" | "confirm" | "reset"; email: string } | null;
 
 export default function LoginPage() {
   return (
@@ -40,9 +50,11 @@ function LoginForm() {
   const supabase = getSupabaseBrowserClient();
   const router = useRouter();
   const params = useSearchParams();
+  const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const [busy, setBusy] = useState<"magic" | "google" | null>(null);
+  const [password, setPassword] = useState("");
+  const [sent, setSent] = useState<Sent>(null);
+  const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(
     params.get("error") ? d.auth.login.linkError : null,
   );
@@ -67,37 +79,110 @@ function LoginForm() {
   }
 
   // Return the user to where they came from (e.g. the match they wanted to
-  // save). The callback sanitizes `next` to a same-origin path.
+  // save). The callback sanitizes `next` to a same-origin path. Lazy (called
+  // from handlers only) so SSR never touches `window`.
   const nextParam = params.get("next");
-  const callbackUrl = `${window.location.origin}/auth/callback${
-    nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""
-  }`;
+  const nextPath =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+  const callbackUrl = () =>
+    `${window.location.origin}/auth/callback${
+      nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""
+    }`;
 
-  const sendMagicLink = async (e: React.FormEvent) => {
+  /** Password sign-ins skip /auth/callback, so the "new user → create your
+   *  fighter card" routing happens here instead. */
+  const finishSignIn = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    router.replace(
+      data
+        ? nextPath
+        : `/welcome${nextParam ? `?next=${encodeURIComponent(nextPath)}` : ""}`,
+    );
+  };
+
+  const submitPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBusy("password");
+    setError(null);
+    const credentials = { email: email.trim(), password };
+    if (mode === "signin") {
+      const { data, error } = await supabase.auth.signInWithPassword(credentials);
+      if (error) {
+        setBusy(null);
+        setError(error.message);
+        return;
+      }
+      await finishSignIn(data.user.id);
+      return;
+    }
+    const { data, error } = await supabase.auth.signUp({
+      ...credentials,
+      options: { emailRedirectTo: callbackUrl() },
+    });
+    setBusy(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    // With email confirmation enabled there's no session yet — the account
+    // activates via the emailed link (which routes through /auth/callback).
+    if (data.session && data.user) {
+      setBusy("password");
+      await finishSignIn(data.user.id);
+      return;
+    }
+    setSent({ kind: "confirm", email: credentials.email });
+  };
+
+  const sendMagicLink = async () => {
     setBusy("magic");
     setError(null);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: callbackUrl },
+      options: { emailRedirectTo: callbackUrl() },
     });
     setBusy(null);
     if (error) setError(error.message);
-    else setSent(true);
+    else setSent({ kind: "magic", email: email.trim() });
   };
 
-  const signInWithGoogle = async () => {
-    setBusy("google");
+  const sendPasswordReset = async () => {
+    if (email.trim() === "") {
+      setError(d.auth.login.needEmailForReset);
+      return;
+    }
+    setBusy("reset");
+    setError(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+    });
+    setBusy(null);
+    if (error) setError(error.message);
+    else setSent({ kind: "reset", email: email.trim() });
+  };
+
+  const signInWithOAuth = async (provider: "google" | "github") => {
+    setBusy(provider);
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: callbackUrl },
+      provider,
+      options: { redirectTo: callbackUrl() },
     });
     if (error) {
       setBusy(null);
       setError(error.message);
     }
-    // On success the browser navigates to Google, so no further UI needed.
+    // On success the browser navigates to the provider, so no further UI needed.
+  };
+
+  const sentCopy: Record<NonNullable<Sent>["kind"], { title: string; before: string; after: string }> = {
+    magic: { title: d.auth.login.sentTitle, before: d.auth.login.sentBefore, after: d.auth.login.sentAfter },
+    confirm: { title: d.auth.login.confirmTitle, before: d.auth.login.confirmBefore, after: d.auth.login.confirmAfter },
+    reset: { title: d.auth.login.resetTitle, before: d.auth.login.resetBefore, after: d.auth.login.resetAfter },
   };
 
   return (
@@ -116,35 +201,96 @@ function LoginForm() {
 
         {sent ? (
           <div className="mt-5 rounded-card border-3 border-arcade-green bg-arcade-green/10 p-4 text-center">
-            <p className="font-heading text-lg font-extrabold">{d.auth.login.sentTitle}</p>
+            <p className="font-heading text-lg font-extrabold">{sentCopy[sent.kind].title}</p>
             <p className="mt-1 text-sm text-ink/70">
-              {d.auth.login.sentBefore}
-              <span className="font-semibold">{email}</span>
-              {d.auth.login.sentAfter}
+              {sentCopy[sent.kind].before}
+              <span className="font-semibold">{sent.email}</span>
+              {sentCopy[sent.kind].after}
             </p>
           </div>
         ) : (
           <>
-            <form onSubmit={sendMagicLink} className="mt-5 space-y-3">
-              <label htmlFor="email" className="block font-heading text-sm font-extrabold">
-                {d.auth.login.emailLabel}
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={d.auth.login.emailPlaceholder}
-                className="w-full rounded-card border-4 border-ink bg-paper px-4 py-3 font-body text-base outline-none focus-visible:outline-[3px] focus-visible:outline-offset-2"
-              />
+            {/* Sign in ↔ create account toggle */}
+            <div className="mt-5 grid grid-cols-2 gap-1.5" role="tablist">
+              {(["signin", "signup"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  onClick={() => {
+                    setMode(m);
+                    setError(null);
+                  }}
+                  className={cn(
+                    "rounded-btn border-3 border-ink px-3 py-1.5 text-sm font-extrabold transition focus-visible:outline-3 focus-visible:outline-offset-2",
+                    mode === m ? "bg-night text-white shadow-hard-sm" : "bg-surface hover:bg-paper",
+                  )}
+                >
+                  {m === "signin" ? d.auth.login.modeSignIn : d.auth.login.modeSignUp}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={submitPassword} className="mt-4 space-y-3">
+              <div>
+                <label htmlFor="email" className="block font-heading text-sm font-extrabold">
+                  {d.auth.login.emailLabel}
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={d.auth.login.emailPlaceholder}
+                  className="mt-1 w-full rounded-card border-4 border-ink bg-paper px-4 py-3 font-body text-base outline-none focus-visible:outline-[3px] focus-visible:outline-offset-2"
+                />
+              </div>
+              <div>
+                <div className="flex items-baseline justify-between gap-2">
+                  <label htmlFor="password" className="block font-heading text-sm font-extrabold">
+                    {d.auth.login.passwordLabel}
+                  </label>
+                  {mode === "signin" ? (
+                    <button
+                      type="button"
+                      onClick={sendPasswordReset}
+                      disabled={busy !== null}
+                      className="text-xs font-bold text-ink/55 underline decoration-2 underline-offset-2 transition hover:text-ink focus-visible:outline-3 focus-visible:outline-offset-2"
+                    >
+                      {busy === "reset" ? d.auth.login.sending : d.auth.login.forgotCta}
+                    </button>
+                  ) : null}
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={6}
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={d.auth.login.passwordPlaceholder}
+                  className="mt-1 w-full rounded-card border-4 border-ink bg-paper px-4 py-3 font-body text-base outline-none focus-visible:outline-[3px] focus-visible:outline-offset-2"
+                />
+                {mode === "signup" ? (
+                  <p className="mt-1 text-[11px] text-ink/45">{d.auth.login.passwordHint}</p>
+                ) : null}
+              </div>
               <ArcadeButton
                 type="submit"
                 variant="primary-green"
                 fullWidth
-                disabled={busy !== null || email.trim() === ""}
+                disabled={busy !== null || email.trim() === "" || password === ""}
               >
-                {busy === "magic" ? d.auth.login.sending : d.auth.login.magicLinkCta}
+                {busy === "password"
+                  ? mode === "signin"
+                    ? d.auth.login.signingIn
+                    : d.auth.login.creatingAccount
+                  : mode === "signin"
+                    ? d.auth.login.signInCta
+                    : d.auth.login.signUpCta}
               </ArcadeButton>
             </form>
 
@@ -154,14 +300,32 @@ function LoginForm() {
               <span className="h-[2px] flex-1 bg-ink/15" />
             </div>
 
-            <ArcadeButton
-              variant="neutral-white"
-              fullWidth
-              disabled={busy !== null}
-              onClick={signInWithGoogle}
-            >
-              {busy === "google" ? d.auth.login.redirecting : d.auth.login.googleCta}
-            </ArcadeButton>
+            <div className="space-y-2">
+              <ArcadeButton
+                variant="neutral-white"
+                fullWidth
+                disabled={busy !== null || email.trim() === ""}
+                onClick={sendMagicLink}
+              >
+                {busy === "magic" ? d.auth.login.sending : d.auth.login.magicLinkCta}
+              </ArcadeButton>
+              <ArcadeButton
+                variant="neutral-white"
+                fullWidth
+                disabled={busy !== null}
+                onClick={() => signInWithOAuth("google")}
+              >
+                {busy === "google" ? d.auth.login.redirecting : d.auth.login.googleCta}
+              </ArcadeButton>
+              <ArcadeButton
+                variant="neutral-white"
+                fullWidth
+                disabled={busy !== null}
+                onClick={() => signInWithOAuth("github")}
+              >
+                {busy === "github" ? d.auth.login.redirecting : d.auth.login.githubCta}
+              </ArcadeButton>
+            </div>
           </>
         )}
       </GamePanel>
