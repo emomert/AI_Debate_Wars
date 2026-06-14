@@ -11,12 +11,14 @@
  */
 
 import type {
+  BattleFighters,
   DebateConfig,
   DebateSession,
   DebateTurn,
   SelectedModel,
   Speaker,
 } from "@/lib/debate/debateTypes";
+import { MAX_BATTLES } from "@/lib/debate/debateTypes";
 import { getRoundPlan } from "@/lib/debate/roundPlans";
 import { MODE_OPTIONS } from "@/lib/constants";
 import { EMPTY_COST_SUMMARY } from "@/lib/cost/calculateCost";
@@ -88,6 +90,48 @@ export function createDebateSession(config: DebateConfig): DebateSession {
     createdAt: ts,
     updatedAt: ts,
   };
+}
+
+/**
+ * The full list of battle fighter pairings for a config: the primary
+ * `modelA`/`modelB` (battle #1) followed by any EXTRA pairs in `config.battles`.
+ * Always returns at least one pair, and never more than MAX_BATTLES — the single
+ * source of truth for "how many battles does this match have".
+ */
+export function getBattlePairs(config: DebateConfig): BattleFighters[] {
+  const extras = config.battles ?? [];
+  const pairs: BattleFighters[] = [
+    { modelA: config.modelA, modelB: config.modelB },
+    ...extras,
+  ];
+  return pairs.slice(0, MAX_BATTLES);
+}
+
+/**
+ * Build one ready-to-run session PER battle pairing — same topic + shared
+ * settings, different fighters. All sessions share a `matchSetId` and carry
+ * their `battleIndex`/`battleCount` so the live arena + results can group and
+ * label them. A single-battle config yields a 1-element array (battle #1 only),
+ * so the multi-battle path collapses cleanly to today's behavior.
+ *
+ * Slot colors are enforced here (A blue, B red) so a stray extra-battle pair
+ * with wrong colors can't leak into the cards.
+ */
+export function createDebateSessions(config: DebateConfig): DebateSession[] {
+  const pairs = getBattlePairs(config);
+  const matchSetId = createId("set");
+  const battleCount = pairs.length;
+  return pairs.map((pair, battleIndex) => {
+    const session = createDebateSession({
+      ...config,
+      modelA: { ...pair.modelA, color: "blue" },
+      modelB: { ...pair.modelB, color: "red" },
+    });
+    session.matchSetId = matchSetId;
+    session.battleIndex = battleIndex;
+    session.battleCount = battleCount;
+    return session;
+  });
 }
 
 export function getNextTurn(session: DebateSession): DebateTurn | null {

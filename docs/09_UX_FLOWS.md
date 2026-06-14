@@ -15,6 +15,15 @@
 9. After the final round, the judge deliberates (drum roll) and the verdict reveals.
 10. Result screen: verdict, scores, summary, total cost — with **share** (auto-unfurling link + image), **save to profile** (signed-in), **change judge & re-judge**, and rematch options.
 
+## Multi-Battle Matches
+
+A match can pit **1–3 battles** against the same topic at once — each battle is its own fighter pairing; everything else (topic, rounds, tone, length, Deep Debate, judge, pace, voice) is shared.
+
+- **Setup:** the fighters section is a battle list — battle #1 is the usual A-vs-B picker; "➕ Add another battle" adds a second/third (each with its own swap + remove). The match card lists every pairing.
+- **Arena:** all battles run **concurrently**. A tab bar (shown only when 2+ battles) switches the view; each tab shows the pairing, a live status dot, the round counter and the winner once judged. Switching finishes the current turn first so nothing is cut off, and only the **watched** battle makes sound or speaks — background battles run silent and never fetch voice.
+- **Pace:** in manual pace only the watched battle waits for "Next Turn"; background battles keep auto-advancing. Auto plays everything. "Stop" stops the whole match; "See Results" enables once **every** battle is finished.
+- **Results / sharing:** the results screen has the same battle switcher; verdict, re-judge, share link, community publish and save-to-history all operate on the **selected** battle (one link / post / history row each).
+
 ## Page Notes
 
 - **Home:** hero, sample topics, "Use Debator" / "Try Sample" CTAs, About/Report/Profile links, sound toggle.

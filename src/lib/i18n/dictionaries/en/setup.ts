@@ -15,6 +15,17 @@ export const setup = {
   fighterB: "Fighter B",
   backToHome: "← Back to home",
 
+  // Multi-battle: run up to 3 fights on the same topic at once (only the
+  // fighters change between battles).
+  battles: {
+    battleLabel: (n: number) => `Battle ${n}`,
+    addBattle: "➕ Add another battle",
+    removeAria: (n: number) => `Remove battle ${n}`,
+    swapAria: (n: number) => `Swap fighters in battle ${n}`,
+    maxNote: "Run up to 3 battles on the same topic at once — only the fighters change.",
+    summaryCount: (n: number) => `${n} battles`,
+  },
+
   // Match Rules sub-section labels + lock badges
   rules: {
     rounds: "Rounds",

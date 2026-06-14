@@ -20,9 +20,10 @@ import { RejudgePanel } from "@/components/result/RejudgePanel";
 import { SharePanel } from "@/components/result/SharePanel";
 import { SourcesList, mergeCitations } from "@/components/debate/SourcesList";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
+import { validateSetup } from "@/lib/debate/validators";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { useArena } from "@/lib/state/ArenaContext";
-import { useT } from "@/lib/i18n/LocaleProvider";
+import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 
 // Lazy + config-gated so the Supabase SDK stays off the result bundle when
 // auth is disabled, and otherwise loads only after hydration.
@@ -41,7 +42,19 @@ const authEnabled = isSupabaseConfigured();
 export default function ResultPage() {
   const router = useRouter();
   const d = useT();
-  const { session, setSession, startMatch, availability, hydrated } = useArena();
+  const { locale } = useLocale();
+  const {
+    config,
+    sessions,
+    activeBattleIndex,
+    setActiveBattleIndex,
+    updateSession,
+    startMatch,
+    availability,
+    hydrated,
+  } = useArena();
+  const session = sessions[activeBattleIndex] ?? null;
+  const multi = sessions.length > 1;
 
   if (!session) {
     return (
@@ -71,6 +84,14 @@ export default function ResultPage() {
   }
 
   const rematch = () => {
+    // Re-validate the live config before relaunching (mirrors setup's start
+    // guard) — a stale/invalid config reaching here via Try-a-Sample/Reopen
+    // shouldn't burn tokens; send the user to setup to fix it instead.
+    const injectedSearchReady = availability ? availability.webSearch : null;
+    if (!validateSetup(config, { injectedSearchReady, locale }).valid) {
+      router.push("/setup");
+      return;
+    }
     startMatch();
     router.push("/debate");
   };
@@ -97,6 +118,70 @@ export default function ResultPage() {
         ) : null}
       </div>
 
+      {/* Battle switcher — pick which battle's result to view (multi-battle only) */}
+      {multi ? (
+        <div className="mb-5">
+          <div
+            className="flex items-stretch gap-2 overflow-x-auto pb-1"
+            role="tablist"
+            aria-label={d.result.battles.overviewTitle}
+          >
+            {sessions.map((s, i) => {
+              const active = i === activeBattleIndex;
+              const w = s.verdict?.winner;
+              const wLabel =
+                s.status !== "complete"
+                  ? d.result.battles.inProgress
+                  : w === "modelA"
+                    ? d.result.battles.winnerA
+                    : w === "modelB"
+                      ? d.result.battles.winnerB
+                      : w === "tie"
+                        ? d.result.battles.tie
+                        : null;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={d.result.battles.tabAria(i + 1)}
+                  onClick={() => setActiveBattleIndex(i)}
+                  className={
+                    "min-w-[150px] shrink-0 rounded-card border-4 border-ink p-2 text-left transition focus-visible:outline-3 focus-visible:outline-offset-2 " +
+                    (active
+                      ? "bg-night text-white shadow-hard"
+                      : "bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard")
+                  }
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-heading text-sm font-extrabold">
+                      {d.result.battles.tab(i + 1)}
+                    </span>
+                    {wLabel ? (
+                      <Badge color={active ? "white" : "purple"} size="sm">
+                        {wLabel}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <div
+                    className={
+                      "mt-0.5 truncate text-[11px] font-semibold " +
+                      (active ? "text-white/70" : "text-ink/60")
+                    }
+                  >
+                    {s.modelA.displayName} {d.result.battles.vs} {s.modelB.displayName}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-center text-[11px] font-bold text-ink/55">
+            {d.result.battles.viewing(activeBattleIndex + 1, sessions.length)}
+          </p>
+        </div>
+      ) : null}
+
       <div className="space-y-5">
         {session.verdict ? (
           <VerdictCard
@@ -122,7 +207,7 @@ export default function ResultPage() {
           <RejudgePanel
             session={session}
             availability={availability}
-            onSession={setSession}
+            onSession={(s) => updateSession(activeBattleIndex, s)}
           />
         ) : null}
 

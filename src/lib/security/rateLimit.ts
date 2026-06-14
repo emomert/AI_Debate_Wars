@@ -34,21 +34,32 @@ const num = (v: string | undefined, fallback: number): number => {
 };
 
 // Conservative launch defaults; override via env without a redeploy of logic.
+// Per-minute turn/verdict caps are sized for MULTI-BATTLE matches (up to 3
+// battles run concurrently, so a single match can fire ~3× the turn/verdict
+// requests of a single debate). Tune down via env if abuse becomes a problem.
 const WINDOW_SECONDS = num(process.env.RL_WINDOW_SECONDS, 60);
 const PER_MIN: Record<RouteKind, number> = {
-  turn: num(process.env.RL_TURN_PER_MIN, 8),
-  verdict: num(process.env.RL_VERDICT_PER_MIN, 4),
+  // 3 battles in auto pace, each with fast/short turns, can burst well past a
+  // 3×-of-8 cap; a tripped per-IP turn cap throws TOO_MANY_REQUESTS, which is
+  // deliberately NOT client-retried, so it would HARD-CRASH a battle mid-match.
+  // Size for the realistic 3-battle ceiling instead (still flood-proof; the
+  // daily spend cap is the real money backstop).
+  turn: num(process.env.RL_TURN_PER_MIN, 60),
+  verdict: num(process.env.RL_VERDICT_PER_MIN, 24),
   // Topic checks are cheap + fast, so a more generous cap (still flood-proof).
   topic: num(process.env.RL_TOPIC_PER_MIN, 12),
   // Voice synthesis (~$0.001/turn): generous enough for auto-read + replays.
+  // Only the watched battle ever voices, so multi-battle doesn't raise this.
   tts: num(process.env.RL_TTS_PER_MIN, 20),
   // Community writes (DB-only, but still spam-prone):
   publish: num(process.env.RL_PUBLISH_PER_MIN, 4),
   vote: num(process.env.RL_VOTE_PER_MIN, 20),
   comment: num(process.env.RL_COMMENT_PER_MIN, 6),
 };
-const GLOBAL_DAILY_CAP_USD = num(process.env.SPEND_GLOBAL_DAILY_USD, 10);
-const IP_DAILY_CAP_USD = num(process.env.SPEND_IP_DAILY_USD, 1);
+// Daily spend caps: a 3-battle match can cost ~3× a single debate, so the per-IP
+// cap is raised so one multi-battle match can't trip it mid-way.
+const GLOBAL_DAILY_CAP_USD = num(process.env.SPEND_GLOBAL_DAILY_USD, 15);
+const IP_DAILY_CAP_USD = num(process.env.SPEND_IP_DAILY_USD, 3);
 
 /** Best-effort client IP from the proxy headers Vercel/most hosts set. */
 export function clientIp(req: Request): string {

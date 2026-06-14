@@ -16,14 +16,19 @@ Enforced via Supabase RPC `rl_hit` **before any paid provider work**:
 
 | Route | Default limit | Env var |
 |---|---|---|
-| `/api/debate/turn` | 8 / min | `RL_TURN_PER_MIN` |
-| `/api/debate/verdict` | 4 / min | `RL_VERDICT_PER_MIN` |
+| `/api/debate/turn` | 60 / min | `RL_TURN_PER_MIN` |
+| `/api/debate/verdict` | 24 / min | `RL_VERDICT_PER_MIN` |
 | `/api/topic/check` | 12 / min | `RL_TOPIC_PER_MIN` |
 | `/api/community/publish` | 4 / min | `RL_PUBLISH_PER_MIN` |
 | `/api/community/vote` | 20 / min | `RL_VOTE_PER_MIN` |
 | `/api/community/comment` | 6 / min | `RL_COMMENT_PER_MIN` |
 
 Window length: `RL_WINDOW_SECONDS` (default 60). Client IP comes from `x-forwarded-for` / `x-real-ip`.
+
+The turn/verdict caps are sized for **multi-battle matches**: a single match can
+run up to 3 battles at once (each on its own session), so it fires ~3× the
+turn/verdict requests of a single debate. TTS is unchanged — only the watched
+battle ever voices, and background battles never fetch speech.
 
 The community routes are DB-only (no paid provider work): they share the same
 `rl_hit` rate limiting but **skip the daily spend-cap check** (`PAID_KINDS` in
@@ -34,8 +39,8 @@ choice enum, comment length, session shape + completeness on publish); see
 
 ### Spend caps (daily, USD)
 
-- Global cap: `SPEND_GLOBAL_DAILY_USD` (default $10).
-- Per-IP cap: `SPEND_IP_DAILY_USD` (default $1).
+- Global cap: `SPEND_GLOBAL_DAILY_USD` (default $15).
+- Per-IP cap: `SPEND_IP_DAILY_USD` (default $3 — raised so a single 3-battle match can't trip it mid-way).
 - `spend_allowed` is checked before paid work; `spend_record` logs actual cost after each response (best-effort — a ledger failure never fails the user's request).
 
 ### Fail-open behavior

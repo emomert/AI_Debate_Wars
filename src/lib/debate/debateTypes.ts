@@ -56,6 +56,22 @@ export interface SelectedModel {
   color: ModelColor;
 }
 
+/**
+ * One battle's fighter pairing. Multi-battle mode runs several of these on the
+ * SAME topic + shared settings at once (max 3). Only the two fighters differ
+ * between battles; everything else (rounds, tone, judge, pace, …) is shared.
+ */
+export interface BattleFighters {
+  modelA: SelectedModel;
+  modelB: SelectedModel;
+  /**
+   * Optional stable client id, set when an EXTRA battle is added in setup, used
+   * purely as a React key so removing a battle remounts the right rows (no UI
+   * state bleed between fighter pickers). The primary battle has none.
+   */
+  uid?: string;
+}
+
 export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
@@ -176,6 +192,16 @@ export type SessionStatus =
 
 export interface DebateSession {
   id: string;
+  /**
+   * Multi-battle grouping (optional, back-compat). When a match runs several
+   * battles on the same topic at once, every battle session shares one
+   * `matchSetId` and carries its 0-based `battleIndex` and the total
+   * `battleCount`. Single-battle matches leave these unset (treated as index 0
+   * of 1).
+   */
+  matchSetId?: string;
+  battleIndex?: number;
+  battleCount?: number;
   topic: string;
   mode: DebateMode;
   /**
@@ -224,6 +250,13 @@ export interface DebateConfig {
   language?: Locale;
   modelA: SelectedModel;
   modelB: SelectedModel;
+  /**
+   * Multi-battle EXTRA pairings beyond the primary `modelA`/`modelB` (battle #1).
+   * Length 0–2 ⇒ a total of 1–3 battles on the same topic + shared settings.
+   * Kept optional so every single-battle code path that reads `modelA`/`modelB`
+   * is untouched; use `getBattlePairs(config)` to read the full list.
+   */
+  battles?: BattleFighters[];
   roundCount: RoundCount;
   tone: DebateTone;
   /** Free-text tone, set when tone === "custom" — the shared default for both fighters. */
@@ -237,6 +270,9 @@ export interface DebateConfig {
   pace: DebatePace;
   judge: JudgeConfig;
 }
+
+/** Max simultaneous battles on one topic (setup cap + runtime guard). */
+export const MAX_BATTLES = 3;
 
 /** A single row in a deterministic round plan (docs/04_DEBATE_ENGINE.md). */
 export interface RoundPlanEntry {

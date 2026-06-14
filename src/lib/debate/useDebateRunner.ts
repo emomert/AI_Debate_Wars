@@ -63,6 +63,9 @@ const VOICE_TYPE_MAX_TOTAL_MS = 90_000;
 const TYPE_FRAME_MS = 33; // ~30fps — half the re-renders of 60fps, still smooth
 const TYPE_SOUND_INTERVAL_MS = 55; // throttle keystroke ticks (~18/sec max)
 const SENTENCE_PAUSE_MS = 75; // half of before — shorter pause after . ! ? or newline
+// A silent (background) battle paces its verdict reveal with this beat instead
+// of the audible drum roll, so it never grabs the shared drum-roll element.
+const VERDICT_REVEAL_SILENT_MS = 700;
 
 // Silent background retries: if a generation fails, stay in the (non-alarming)
 // "thinking"/"judging" state and quietly re-try with backoff before ever showing
@@ -159,13 +162,22 @@ interface RunnerOptions {
     message: DebateMessage,
     signal: AbortSignal,
   ) => Promise<PreparedSpeech | null>;
+  /**
+   * Whether THIS runner may make sound right now. Defaults to always-audible, so
+   * a single-battle match behaves byte-identically. In multi-battle mode only
+   * the currently-viewed battle is audible — background battles run silent so 3
+   * concurrent runners don't pile up overlapping keystrokes / stings / drum
+   * rolls (the drum-roll element is a shared singleton). Read via a ref so a
+   * live battle-switch takes effect immediately.
+   */
+  isAudible?: () => boolean;
 }
 
 export function useDebateRunner(
   initialSession: DebateSession,
   options: RunnerOptions = {},
 ) {
-  const { onPersist, prepareSpeech } = options;
+  const { onPersist, prepareSpeech, isAudible } = options;
 
   const alreadyFinished =
     (initialSession.status === "complete" || initialSession.status === "stopped") &&
@@ -197,6 +209,17 @@ export function useDebateRunner(
   onPersistRef.current = onPersist;
   const prepareSpeechRef = useRef(prepareSpeech);
   prepareSpeechRef.current = prepareSpeech;
+  // Live "may I make sound?" check (default yes). Gated through `sfx`/`keystroke`
+  // below so a background battle never steals the shared audio singletons.
+  const audibleRef = useRef(isAudible);
+  audibleRef.current = isAudible;
+  const audible = () => audibleRef.current?.() ?? true;
+  const sfx = (key: Parameters<typeof playSound>[0]) => {
+    if (audible()) playSound(key);
+  };
+  const keystroke = () => {
+    if (audible()) playKeystroke();
+  };
 
   // Manual-pacing gate: when set, the loop is paused waiting for next()/auto.
   const gateRef = useRef<(() => void) | null>(null);
@@ -215,7 +238,8 @@ export function useDebateRunner(
 
   const stop = useCallback(() => {
     controllerRef.current?.abort();
-    stopDrumRoll(); // don't leave the suspense loop playing after a stop
+    if (audible()) stopDrumRoll(); // don't leave the suspense loop playing after a stop
+    // (only the audible battle owns the shared drum-roll element)
     const w = workingRef.current;
     if (w) {
       onPersistRef.current?.(snapshot(w, "stopped"));
@@ -246,7 +270,7 @@ export function useDebateRunner(
     const release = gateRef.current;
     if (release) {
       gateRef.current = null;
-      playSound("next");
+      sfx("next");
       release();
     }
   }, []);
@@ -321,7 +345,7 @@ export function useDebateRunner(
         sinceSound += TYPE_FRAME_MS;
         if (grew && sinceSound >= TYPE_SOUND_INTERVAL_MS) {
           sinceSound = 0;
-          playKeystroke();
+          keystroke();
         }
 
         // A real typist pauses a beat at the end of a sentence.
@@ -347,15 +371,18 @@ export function useDebateRunner(
           activeMessage: null,
           streamingText: "",
         }));
-        gateRef.current = () => resolve();
-        signal.addEventListener(
-          "abort",
-          () => {
-            gateRef.current = null;
-            reject(new DOMException("aborted", "AbortError"));
-          },
-          { once: true },
-        );
+        // Named handler so the normal release path (next() / switch-to-auto) can
+        // detach it — otherwise every gated turn leaks an abort listener on the
+        // run's long-lived signal (mirrors delay()'s self-cleaning above).
+        const onAbort = () => {
+          gateRef.current = null;
+          reject(new DOMException("aborted", "AbortError"));
+        };
+        gateRef.current = () => {
+          signal.removeEventListener("abort", onAbort);
+          resolve();
+        };
+        signal.addEventListener("abort", onAbort, { once: true });
       });
     }
 
@@ -398,7 +425,7 @@ export function useDebateRunner(
 
           if (turn.roundNumber !== lastRound) {
             lastRound = turn.roundNumber;
-            playSound("roundStart");
+            sfx("roundStart");
           }
 
           setState((p) => ({
@@ -408,7 +435,7 @@ export function useDebateRunner(
             streamingText: "",
             awaitingKind: null,
           }));
-          playSound("typingStart");
+          sfx("typingStart");
           // Gated turns are usually already fetched, so only a brief beat. The
           // first (ungated) turn keeps a full thinking beat, which also absorbs
           // React strict-mode's mount→unmount→mount so no duplicate call fires.
@@ -458,8 +485,8 @@ export function useDebateRunner(
           turn.status = "complete";
           working.messages = [...working.messages, message];
           persist("running");
-          playSound("turnComplete");
-          playSound("costTick");
+          sfx("turnComplete");
+          sfx("costTick");
 
           // Voice-over (when enabled): fetch + ready the audio WHILE still in the
           // thinking state, so playback can start the instant the typewriter does
@@ -527,7 +554,7 @@ export function useDebateRunner(
             if (signal.aborted) return;
           }
           setState((p) => ({ ...p, phase: "judging", activeTurn: null, awaitingKind: null }));
-          playSound("judgeEnter"); // brief "the judge is in" cue
+          sfx("judgeEnter"); // brief "the judge is in" cue
 
           // Same silent-retry resilience for the verdict.
           let verdict: DebateVerdict | undefined;
@@ -561,7 +588,11 @@ export function useDebateRunner(
           working.verdict = verdict; // computed, but NOT shown yet
           // Drumroll → reveal: play the cue ONCE and reveal the verdict exactly
           // as it ends (resolves instantly if sound is off / blocked / aborted).
-          await playVerdictRoll(signal);
+          // A background (inactive) battle must NOT grab the shared drum-roll
+          // element from the battle the user is watching, so it just paces the
+          // reveal with a quiet beat instead.
+          if (audible()) await playVerdictRoll(signal);
+          else await delay(VERDICT_REVEAL_SILENT_MS, signal);
           if (signal.aborted) return;
           setState((p) => ({ ...p, verdict }));
         }
@@ -578,9 +609,9 @@ export function useDebateRunner(
           verdict: working.verdict ?? null,
         }));
       } catch (err) {
-        stopDrumRoll(); // a verdict failure must not leave the loop running
+        if (audible()) stopDrumRoll(); // a verdict failure must not leave the loop running
         if (isAbort(err)) return;
-        playSound("error");
+        sfx("error");
         setState((p) => ({
           ...p,
           phase: "error",
@@ -595,7 +626,7 @@ export function useDebateRunner(
     void run();
     return () => {
       controller.abort();
-      stopDrumRoll(); // navigating away mid-judging must silence the loop
+      if (audible()) stopDrumRoll(); // navigating away mid-judging must silence the loop
     };
     // Re-runs on retry (runToken) and once per session (keyed remount).
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -38,6 +38,15 @@ export const debate = {
     deepDebate: "🌐 Derin Münazara",
   },
 
+  // Çoklu dövüş sekme çubuğu (yalnızca bir maç aynı anda 2–3 dövüş yürütünce)
+  battles: {
+    tab: (n: number) => `Dövüş ${n}`,
+    tabAria: (n: number) => `Dövüş ${n}'i görüntüle`,
+    vs: "vs",
+    allBattles: "Tümü",
+    finishedCount: (done: number, total: number) => `${done}/${total} bitti`,
+  },
+
   // Panels under the timeline
   noJudge: "Bu turda hakem yok — münazara son turun ardından sona erdi.",
   stoppedPanel: {

@@ -15,6 +15,17 @@ export const setup = {
   fighterB: "Yarışmacı B",
   backToHome: "← Ana sayfaya dön",
 
+  // Çoklu dövüş: aynı konuda en fazla 3 dövüş (dövüşler arasında yalnızca
+  // yarışmacılar değişir).
+  battles: {
+    battleLabel: (n: number) => `Dövüş ${n}`,
+    addBattle: "➕ Başka bir dövüş ekle",
+    removeAria: (n: number) => `Dövüş ${n}'i kaldır`,
+    swapAria: (n: number) => `Dövüş ${n}'deki yarışmacıları değiştir`,
+    maxNote: "Aynı konuda aynı anda en fazla 3 dövüş — yalnızca yarışmacılar değişir.",
+    summaryCount: (n: number) => `${n} dövüş`,
+  },
+
   // Match Rules sub-section labels + lock badges
   rules: {
     rounds: "Tur",

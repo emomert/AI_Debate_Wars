@@ -38,6 +38,15 @@ export const debate = {
     deepDebate: "🌐 Deep Debate",
   },
 
+  // Multi-battle tab bar (only shown when a match runs 2–3 battles at once)
+  battles: {
+    tab: (n: number) => `Battle ${n}`,
+    tabAria: (n: number) => `View battle ${n}`,
+    vs: "vs",
+    allBattles: "All",
+    finishedCount: (done: number, total: number) => `${done}/${total} done`,
+  },
+
   // Panels under the timeline
   noJudge: "No judge this round — the debate ended after the final round.",
   stoppedPanel: {

@@ -1,67 +1,71 @@
 "use client";
 
 /**
- * DebateArena — the live debate experience. It owns the Phase 1 playback runner,
- * lays out the two fighter cards + central timeline (responsive: side columns on
- * desktop, a stacked row on mobile), shows the verdict reveal, and wires the
- * stop / rematch / results controls.
+ * DebateArena — the live match. A match is one OR MORE battles (fighter pairings)
+ * on the same topic, all running concurrently. This component is the parent: it
+ * mounts one BattleController per battle (so they all run at once), renders a tab
+ * bar to switch between them, and owns the shared chrome — global pace, the
+ * single voicePlayer, the clean battle-switch, and stop-all.
+ *
+ * A single-battle match renders exactly one BattleController with no tab bar, so
+ * the experience is identical to the original single-arena.
  *
  * The app drives everything here; no provider is ever called.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "framer-motion";
 
 import { useArena } from "@/lib/state/ArenaContext";
-import { useDebateRunner } from "@/lib/debate/useDebateRunner";
-import type { DebateMessage, DebateSession } from "@/lib/debate/debateTypes";
-import { isDebateComplete } from "@/lib/debate/orchestrator";
+import type { DebatePace, DebateSession } from "@/lib/debate/debateTypes";
+import type { RunnerPhase } from "@/lib/debate/useDebateRunner";
 import { voicePlayer } from "@/lib/tts/voicePlayer";
+import { stopDrumRoll } from "@/lib/audio/soundManager";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { cn } from "@/lib/utils/cn";
+import { formatCost } from "@/lib/utils/format";
 
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { Badge } from "@/components/game/Badge";
-import { AIModelCard, type ModelCardStatus } from "@/components/debate/AIModelCard";
-import { DebateHUD } from "@/components/debate/DebateHUD";
-import { DebateTimeline } from "@/components/debate/DebateTimeline";
-import { DebateControls } from "@/components/debate/DebateControls";
-import { VerdictCard } from "@/components/debate/VerdictCard";
-import { RejudgePanel } from "@/components/result/RejudgePanel";
-import { SharePanel } from "@/components/result/SharePanel";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
-
-// Lazy + config-gated so the Supabase SDK stays off the /debate bundle when
-// auth is off, and otherwise loads only after hydration.
-const MatchSaver = dynamic(
-  () => import("@/components/result/MatchSaver").then((m) => m.MatchSaver),
-  { ssr: false },
-);
-const arenaAuthEnabled = isSupabaseConfigured();
+import {
+  BattleController,
+  type BattleControls,
+  type BattleSnapshot,
+} from "@/components/debate/BattleController";
 
 export function DebateArena() {
   const router = useRouter();
   const reduce = useReducedMotion();
-  const { session, setSession, startMatch, hydrated } = useArena();
+  const {
+    sessions,
+    activeBattleIndex,
+    setActiveBattleIndex,
+    updateSession,
+    startMatch,
+    hydrated,
+  } = useArena();
 
-  // The runner persists progress after each turn so navigating away and back
-  // resumes instead of re-charging completed turns.
-  const activeSession = session;
+  if (sessions.length === 0) {
+    return <EmptyArena hydrated={hydrated} onNewSetup={() => router.push("/setup")} />;
+  }
 
-  return activeSession ? (
-    <ArenaInner
-      key={activeSession.id}
-      session={activeSession}
+  // Key by the match identity so a rematch (new sessions) gives MatchArena fresh
+  // local state, while per-turn session updates (same ids) never remount it.
+  const matchKey = sessions[0].matchSetId ?? sessions[0].id;
+  return (
+    <MatchArena
+      key={matchKey}
+      sessions={sessions}
+      activeBattleIndex={activeBattleIndex}
+      setActiveBattleIndex={setActiveBattleIndex}
+      updateSession={updateSession}
       reduce={Boolean(reduce)}
-      onPersist={setSession}
       onRestart={() => startMatch()}
       onNewSetup={() => router.push("/setup")}
       onResults={() => router.push("/result")}
     />
-  ) : (
-    <EmptyArena hydrated={hydrated} onNewSetup={() => router.push("/setup")} />
   );
 }
 
@@ -92,388 +96,233 @@ function EmptyArena({
   );
 }
 
-interface ArenaInnerProps {
-  session: DebateSession;
+interface MatchArenaProps {
+  sessions: DebateSession[];
+  activeBattleIndex: number;
+  setActiveBattleIndex: (i: number) => void;
+  updateSession: (i: number, s: DebateSession) => void;
   reduce: boolean;
-  onPersist: (s: DebateSession) => void;
   onRestart: () => void;
   onNewSetup: () => void;
   onResults: () => void;
 }
 
-function ArenaInner({
-  session,
+function MatchArena({
+  sessions,
+  activeBattleIndex,
+  setActiveBattleIndex,
+  updateSession,
   reduce,
-  onPersist,
   onRestart,
   onNewSetup,
   onResults,
-}: ArenaInnerProps) {
-  const d = useT();
-  // For the end-of-match Rejudge/Share panels: availability + a way to swap in a
-  // re-judged session. `session` already carries the persisted verdict once the
-  // match completes, and a re-judge updates it via setSession.
-  const { availability, setSession } = useArena();
+}: MatchArenaProps) {
+  const multi = sessions.length > 1;
 
-  // Voice-over state (docs/21). The voicePlayer singleton owns the persisted
-  // toggle, playback and the running TTS cost; the arena just mirrors it into
-  // React state and feeds the runner a speak() hook. The match tone rides
-  // along so the server can style the voice DELIVERY to match the fight.
-  const speakOpts = {
-    serverTts: availability?.tts ?? false,
-    tone: session.tone,
-    customTone: session.customTone,
-  };
-  const speakOptsRef = useRef(speakOpts);
-  speakOptsRef.current = speakOpts;
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [voiceCostUsd, setVoiceCostUsd] = useState(0);
-  const [speakingId, setSpeakingId] = useState<string | null>(null);
-  useEffect(() => {
-    setVoiceEnabled(voicePlayer.hydrate());
-    setVoiceCostUsd(voicePlayer.getCostUsd());
-    const offEnabled = voicePlayer.subscribeEnabled(setVoiceEnabled);
-    const offPlaying = voicePlayer.subscribePlaying(setSpeakingId);
-    const offCost = voicePlayer.subscribeCost(setVoiceCostUsd);
-    return () => {
-      offEnabled();
-      offPlaying();
-      offCost();
-      voicePlayer.stop(); // leaving the arena silences the speech
-    };
+  // Shared pace for the whole match — the watched battle honors it; background
+  // battles always run auto. Seeded from the configured pace (this component is
+  // keyed per match, so the initializer sees the right session).
+  const [globalPace, setGlobalPace] = useState<DebatePace>(() => sessions[0]?.pace ?? "manual");
+  const [snapshots, setSnapshots] = useState<(BattleSnapshot | null)[]>(() =>
+    sessions.map(() => null),
+  );
+  const controlsRef = useRef<(BattleControls | null)[]>([]);
+
+  const handleState = useCallback((i: number, snap: BattleSnapshot) => {
+    setSnapshots((prev) => {
+      const copy = prev.slice();
+      copy[i] = snap;
+      return copy;
+    });
   }, []);
-  const prepareSpeech = useCallback(
-    (m: DebateMessage, signal: AbortSignal) =>
-      voicePlayer.prepare(m, speakOptsRef.current, signal),
+
+  const registerControls = useCallback((i: number, controls: BattleControls | null) => {
+    controlsRef.current[i] = controls;
+  }, []);
+
+  const toggleGlobalPace = useCallback(() => {
+    setGlobalPace((p) => (p === "auto" ? "manual" : "auto"));
+  }, []);
+
+  // Defensive clamp — index never outruns the session list.
+  const activeIndex = Math.min(Math.max(0, activeBattleIndex), sessions.length - 1);
+
+  // Clean switch: finish the leaving battle's current turn (so nothing is cut
+  // off mid-sentence) and silence its voice, then show the chosen battle. The
+  // leaving battle keeps running in the background (its pace flips to auto via
+  // BattleController's effect once it's no longer active).
+  const switchTo = useCallback(
+    (i: number) => {
+      if (i === activeIndex) return;
+      voicePlayer.stop();
+      // The leaving battle may be mid verdict drum-roll on the SHARED audio
+      // element; silence it so it doesn't bleed over the battle we're switching
+      // to (only the active/audible battle ever started it).
+      stopDrumRoll();
+      controlsRef.current[activeIndex]?.skipTurn();
+      setActiveBattleIndex(i);
+    },
+    [activeIndex, setActiveBattleIndex],
+  );
+
+  // Stop the whole match — every battle, not just the watched one.
+  const stopAll = useCallback(() => {
+    controlsRef.current.forEach((c) => c?.stop());
+  }, []);
+
+  // Leaving the arena silences the (single, shared) voice + drum-roll players.
+  useEffect(
+    () => () => {
+      voicePlayer.stop();
+      stopDrumRoll();
+    },
     [],
   );
 
-  // Note: the runner's typewriter intentionally ignores reduced-motion so every
-  // visitor gets the same playback; `reduce` only tones down decorative motion.
-  const runner = useDebateRunner(session, { onPersist, prepareSpeech });
-
-  // The message currently being typed out, for replay-on-re-enable.
-  const activeMessageRef = useRef<DebateMessage | null>(null);
-  activeMessageRef.current = runner.activeMessage;
-
-  // Turning voice back ON while a turn is on screen replays it, so "open the
-  // voice again" actually continues out loud instead of staying silent until
-  // the next turn.
-  const toggleVoice = useCallback(() => {
-    const nowOn = voicePlayer.toggle();
-    if (nowOn && activeMessageRef.current) {
-      voicePlayer.replay(activeMessageRef.current, speakOptsRef.current);
-    }
-  }, []);
-
-  // Skip: instantly finish the typewriter AND stop the voice, then move on.
-  const skip = useCallback(() => {
-    voicePlayer.stop();
-    runner.skipTurn();
-  }, [runner.skipTurn]);
-
-  const voiceFor = useCallback(
-    (m: DebateMessage) => ({
-      playing: speakingId === m.id,
-      onToggle: () => {
-        if (speakingId === m.id) voicePlayer.stop();
-        else voicePlayer.replay(m, speakOptsRef.current);
-      },
-    }),
-    [speakingId],
-  );
-  const doneVerdict = session.verdict ?? runner.verdict;
-  // When the match is done, the persisted session cost is authoritative (an
-  // in-arena re-judge updates it but not the runner's frozen internal verdict).
-  const doneCostSummary =
-    runner.phase === "done" ? session.costSummary : runner.costSummary;
-
-  // Displayed (localized) roles for the fighter cards. The English roles still
-  // flow to prompts via MODE_OPTIONS — these are presentation-only.
-  const roles = useMemo(() => {
-    const r = session.mode === "debate" ? d.debate.roles.debate : d.debate.roles.discussion;
-    return { a: r.a, b: r.b };
-  }, [session.mode, d]);
-
-  const statusFor = (speaker: "modelA" | "modelB"): ModelCardStatus => {
-    if (runner.phase === "stopped") return "idle";
-    if (runner.activeTurn?.speaker === speaker) {
-      return runner.phase === "streaming" ? "speaking" : "thinking";
-    }
-    if (runner.phase === "done") return "finished";
-    return "idle";
-  };
-
-  // The runner persists the stopped session itself (from its working copy), so
-  // here we just signal the stop. Stable so memoized controls don't churn.
-  const handleStop = useCallback(() => runner.stop(), [runner.stop]);
-
-  const activeModelName = runner.activeTurn
-    ? runner.activeTurn.speaker === "modelB"
-      ? session.modelB.displayName
-      : session.modelA.displayName
-    : undefined;
-  const announceName = activeModelName ?? d.debate.announce.fighterFallback;
-  const announcement =
-    runner.phase === "thinking"
-      ? session.deepDebate
-        ? d.debate.announce.researching(announceName, runner.currentRound, runner.totalRounds)
-        : d.debate.announce.thinking(announceName, runner.currentRound, runner.totalRounds)
-      : runner.phase === "streaming"
-        ? d.debate.announce.responding(announceName, runner.currentRound, runner.totalRounds)
-        : runner.phase === "judging"
-          ? d.debate.announce.judging
-          : runner.phase === "awaiting"
-            ? runner.awaitingKind === "verdict"
-              ? d.debate.announce.awaitingVerdict
-              : d.debate.announce.awaitingNext
-            : runner.phase === "stopped"
-              ? d.debate.announce.stopped
-              : runner.phase === "error"
-                ? d.debate.announce.error
-                : runner.verdict
-                  ? d.debate.announce.verdictReady
-                  : d.debate.announce.complete;
-
-  // Stable so the memoized DebateHUD doesn't re-render every streaming frame.
-  const togglePace = useCallback(
-    () => runner.setPace(runner.pace === "auto" ? "manual" : "auto"),
-    [runner.pace, runner.setPace],
-  );
-
-  // Brief "ROUND N" flash whenever the active round advances during play.
-  const [flashRound, setFlashRound] = useState<number | null>(null);
-  const prevRoundRef = useRef(runner.currentRound);
-  useEffect(() => {
-    const live = runner.phase === "thinking" || runner.phase === "streaming";
-    if (live && runner.currentRound !== prevRoundRef.current) {
-      setFlashRound(runner.currentRound);
-    } else if (runner.phase === "stopped" || runner.phase === "error") {
-      // Don't let a mid-flash banner linger over the stopped/error card.
-      setFlashRound(null);
-    }
-    prevRoundRef.current = runner.currentRound;
-  }, [runner.currentRound, runner.phase]);
-  // Hide timer lives in its OWN effect keyed only on flashRound: in Fast mode
-  // the phase flips within the flash window, and when the timer lived in the
-  // effect above those re-runs cleared it — the banner never went away.
-  useEffect(() => {
-    if (flashRound == null) return;
-    const t = setTimeout(() => setFlashRound(null), 1300);
-    return () => clearTimeout(t);
-  }, [flashRound]);
-
-  const cardA = (
-    <AIModelCard
-      model={session.modelA}
-      side="A"
-      role={roles.a}
-      stance={session.mode === "debate" ? "pro" : undefined}
-      status={statusFor("modelA")}
-    />
-  );
-  const cardB = (
-    <AIModelCard
-      model={session.modelB}
-      side="B"
-      role={roles.b}
-      stance={session.mode === "debate" ? "against" : undefined}
-      status={statusFor("modelB")}
-    />
-  );
+  const terminal = (s: BattleSnapshot | null) =>
+    !!s && (s.phase === "done" || s.phase === "stopped" || s.phase === "error");
+  const doneCount = sessions.filter((_, i) => terminal(snapshots[i])).length;
+  // Multi-battle: results open once EVERY battle is finished (so navigating away
+  // doesn't abort battles still in flight). Single battle: as before (has turns).
+  const resultsReady = multi
+    ? sessions.every((_, i) => terminal(snapshots[i]))
+    : // Single battle: read straight from the session (synchronous) so the
+      // "See Results" button never flashes disabled waiting for the lifted
+      // snapshot — byte-identical to the old hasMessages check.
+      sessions[0].messages.length > 0;
+  const allBattlesCost = snapshots.reduce((sum, s) => sum + (s?.costUsd ?? 0), 0);
 
   return (
     <div>
-      <p className="sr-only" role="status" aria-live="polite">
-        {announcement}
-      </p>
+      {multi ? (
+        <BattleTabs
+          sessions={sessions}
+          snapshots={snapshots}
+          activeIndex={activeIndex}
+          onSelect={switchTo}
+          doneCount={doneCount}
+          allBattlesCost={allBattlesCost}
+        />
+      ) : null}
 
-      {/* Round-transition flash */}
-      <AnimatePresence>
-        {flashRound != null ? (
-          <motion.div
-            key={flashRound}
-            aria-hidden
-            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.8, y: -12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="pointer-events-none fixed inset-x-0 top-1/3 z-40 flex justify-center px-4"
-          >
-            <span className="rounded-modal border-4 border-ink bg-arcade-yellow px-6 py-3 font-display text-3xl shadow-hard-lg sm:text-5xl">
-              {d.debate.roundFlash(flashRound)}
-            </span>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {sessions.map((s, i) => (
+        <BattleController
+          key={s.id}
+          session={s}
+          index={i}
+          isActive={i === activeIndex}
+          globalPace={globalPace}
+          resultsReady={resultsReady}
+          reduce={reduce}
+          onPersist={(next) => updateSession(i, next)}
+          onState={handleState}
+          registerControls={registerControls}
+          onToggleGlobalPace={toggleGlobalPace}
+          onStop={stopAll}
+          onRestart={onRestart}
+          onNewSetup={onNewSetup}
+          onResults={onResults}
+        />
+      ))}
+    </div>
+  );
+}
 
-      <DebateHUD
-        mode={session.mode}
-        currentRound={runner.currentRound}
-        totalRounds={runner.totalRounds}
-        roundLabel={runner.activeTurn?.roundLabel ?? runner.messages.at(-1)?.roundLabel}
-        costSummary={doneCostSummary}
-        phase={runner.phase}
-        messageCount={runner.messages.length}
-        activeModelName={activeModelName}
-        pace={runner.pace}
-        onTogglePace={togglePace}
-        voiceEnabled={voiceEnabled}
-        onToggleVoice={toggleVoice}
-        voiceCostUsd={voiceCostUsd}
-        canSkip={runner.phase === "streaming"}
-        onSkip={skip}
-      />
+const PHASE_DOT: Record<RunnerPhase, string> = {
+  thinking: "bg-arcade-yellow",
+  streaming: "bg-arcade-green",
+  judging: "bg-arcade-purple",
+  awaiting: "bg-arcade-blue",
+  done: "bg-ink/40",
+  stopped: "bg-arcade-red",
+  error: "bg-arcade-red",
+};
 
-      {/* Topic bar */}
-      <div className="mt-4 rounded-card border-4 border-ink bg-card p-3 shadow-hard-sm sm:p-4">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-          {d.debate.topic.nowDebating}
-        </p>
-        <h1 className="font-heading text-lg font-extrabold sm:text-2xl">
-          {session.topic}
-        </h1>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge color="blue" size="sm">A · {session.modelA.displayName}</Badge>
-          <Badge color="red" size="sm">B · {session.modelB.displayName}</Badge>
-          <Badge color="white" size="sm" className="max-w-[12rem] truncate">
-            {d.debate.topic.tone(session.tone === "custom" ? (session.customTone || d.debate.topic.customTone) : session.tone)}
-          </Badge>
-          {session.deepDebate ? (
-            <Badge color="purple" size="sm">{d.debate.topic.deepDebate}</Badge>
-          ) : (
-            <Badge color="white" size="sm">{session.responseLength}</Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile fighter row */}
-      <div className="mt-4 grid grid-cols-2 gap-2 lg:hidden">
-        {cardA}
-        {cardB}
-      </div>
-
-      {/* Desktop 3-column arena */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_240px]">
-        <aside className="hidden lg:block">
-          <div className="sticky top-[112px]">{cardA}</div>
-        </aside>
-
-        <div className="space-y-4">
-          <DebateTimeline
-            session={session}
-            messages={runner.messages}
-            activeTurn={runner.activeTurn}
-            activeMessage={runner.activeMessage}
-            streamingText={runner.streamingText}
-            phase={runner.phase}
-            voiceFor={voiceFor}
-          />
-
-          {runner.phase === "done" && doneVerdict ? (
-            <VerdictCard
-              verdict={doneVerdict}
-              modelA={session.modelA}
-              modelB={session.modelB}
-            />
-          ) : null}
-
-          {runner.phase === "done" && isDebateComplete(session) && !session.judge.enabled ? (
-            <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-4 text-center text-sm text-ink/65">
-              {d.debate.noJudge}
-            </div>
-          ) : null}
-
-          {/* Change the judge + share, right here at the arena end (feedback
-              #3/#9) — not only on the results page. Gated on a genuinely complete
-              match so a resumed STOPPED session doesn't show them. */}
-          {runner.phase === "done" && isDebateComplete(session) ? (
-            <RejudgePanel
-              session={session}
-              availability={availability}
-              onSession={setSession}
-            />
-          ) : null}
-
-          {runner.phase === "done" && (isDebateComplete(session) || session.verdict) ? (
-            <SharePanel session={session} />
-          ) : null}
-
-          {runner.phase === "done" && isDebateComplete(session) && arenaAuthEnabled ? (
-            <MatchSaver session={session} />
-          ) : null}
-
-          {runner.phase === "stopped" ||
-          (runner.phase === "done" && session.status === "stopped") ? (
-            <div className="rounded-card border-3 border-arcade-red bg-arcade-red/10 p-4 text-center">
-              <p className="font-heading font-extrabold">{d.debate.stoppedPanel.title}</p>
-              <p className="mt-1 text-sm text-ink/65">
-                {d.debate.stoppedPanel.body}
-              </p>
-            </div>
-          ) : null}
-
-          {runner.phase === "awaiting" ? (
-            <motion.div
-              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="rounded-card border-4 border-arcade-blue bg-arcade-blue/10 p-4 text-center"
+function BattleTabs({
+  sessions,
+  snapshots,
+  activeIndex,
+  onSelect,
+  doneCount,
+  allBattlesCost,
+}: {
+  sessions: DebateSession[];
+  snapshots: (BattleSnapshot | null)[];
+  activeIndex: number;
+  onSelect: (i: number) => void;
+  doneCount: number;
+  allBattlesCost: number;
+}) {
+  const d = useT();
+  return (
+    <div className="mb-3">
+      <div className="flex items-stretch gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Battles">
+        {sessions.map((s, i) => {
+          const snap = snapshots[i];
+          const active = i === activeIndex;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              aria-label={d.debate.battles.tabAria(i + 1)}
+              onClick={() => onSelect(i)}
+              className={cn(
+                "min-w-[150px] shrink-0 rounded-card border-4 border-ink p-2 text-left transition focus-visible:outline-3 focus-visible:outline-offset-2",
+                active
+                  ? "bg-night text-white shadow-hard"
+                  : "bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
+              )}
             >
-              <p className="font-heading text-lg font-extrabold">
-                {runner.awaitingKind === "verdict" ? d.debate.awaiting.verdictTitle : d.debate.awaiting.moveTitle}
-              </p>
-              <p className="mx-auto mt-1 max-w-md text-sm text-ink/70">
-                {runner.awaitingKind === "verdict"
-                  ? d.debate.awaiting.verdictBody
-                  : d.debate.awaiting.moveBody}
-              </p>
-              <div className="mt-4 flex justify-center">
-                <ArcadeButton variant="primary-green" size="lg" onClick={runner.next}>
-                  {runner.awaitingKind === "verdict" ? d.debate.awaiting.revealVerdict : d.debate.awaiting.nextTurn}
-                </ArcadeButton>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-heading text-sm font-extrabold">
+                  {d.debate.battles.tab(i + 1)}
+                </span>
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-2.5 w-2.5 shrink-0 rounded-full border-2 border-ink",
+                    snap ? PHASE_DOT[snap.phase] : "bg-ink/20",
+                  )}
+                />
               </div>
-            </motion.div>
-          ) : null}
-
-          {runner.phase === "error" && runner.error ? (
-            <div className="rounded-card border-4 border-arcade-red bg-arcade-red/10 p-4 text-center">
-              <p className="text-2xl" aria-hidden>
-                ⚡
-              </p>
-              <p className="mt-1 font-heading text-lg font-extrabold">
-                {d.debate.errors[runner.error.code].title}
-              </p>
-              <p className="mx-auto mt-1 max-w-md text-sm text-ink/70">
-                {d.debate.errors[runner.error.code].body}
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                <ArcadeButton variant="primary-green" onClick={runner.retry}>
-                  {d.debate.errorPanel.retryTurn}
-                </ArcadeButton>
-                <ArcadeButton variant="neutral-white" onClick={onNewSetup}>
-                  {d.debate.errorPanel.newSetup}
-                </ArcadeButton>
+              <div
+                className={cn(
+                  "mt-0.5 truncate text-[11px] font-semibold",
+                  active ? "text-white/70" : "text-ink/60",
+                )}
+              >
+                {s.modelA.displayName} {d.debate.battles.vs} {s.modelB.displayName}
               </div>
-            </div>
-          ) : null}
-        </div>
-
-        <aside className="hidden lg:block">
-          <div className="sticky top-[112px]">{cardB}</div>
-        </aside>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    "font-mono text-[10px] font-bold",
+                    active ? "text-white/60" : "text-ink/45",
+                  )}
+                >
+                  R{snap?.currentRound ?? 1}/{snap?.totalRounds ?? s.roundCount}
+                </span>
+                {snap?.hasVerdict && snap.winner === "modelA" ? (
+                  <Badge color="blue" size="sm">🏆 A</Badge>
+                ) : snap?.hasVerdict && snap.winner === "modelB" ? (
+                  <Badge color="red" size="sm">🏆 B</Badge>
+                ) : snap?.hasVerdict && snap.winner === "tie" ? (
+                  <Badge color="white" size="sm">🤝</Badge>
+                ) : null}
+              </div>
+            </button>
+          );
+        })}
       </div>
-
-      <DebateControls
-        phase={runner.phase}
-        awaitingKind={runner.awaitingKind}
-        hasMessages={runner.messages.length > 0}
-        onStop={handleStop}
-        onRestart={onRestart}
-        onNewSetup={onNewSetup}
-        onResults={onResults}
-        onRetry={runner.retry}
-        onNext={runner.next}
-      />
+      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] font-bold text-ink/55">
+        <span>{d.debate.battles.finishedCount(doneCount, sessions.length)}</span>
+        <span className="inline-flex items-center gap-1 rounded-btn border-2 border-ink bg-night px-1.5 py-0.5 font-mono text-arcade-green">
+          <span aria-hidden>💰</span>
+          {formatCost(allBattlesCost)} · {d.debate.battles.allBattles}
+        </span>
+      </div>
     </div>
   );
 }

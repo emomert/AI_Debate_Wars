@@ -11,6 +11,7 @@ import { Badge } from "@/components/game/Badge";
 import type { DebateConfig } from "@/lib/debate/debateTypes";
 import type { ValidationResult } from "@/lib/debate/validators";
 import { ALL_TONE_OPTIONS } from "@/lib/constants";
+import { getBattlePairs } from "@/lib/debate/orchestrator";
 import { getModelById, previewAutoJudge } from "@/lib/models/modelRegistry";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -31,6 +32,7 @@ export function SetupSummaryCard({
 }: SetupSummaryCardProps) {
   const d = useT();
   const roundLabel = d.setup.rounds[config.roundCount]?.label;
+  const pairs = getBattlePairs(config);
 
   // Name the judge in the match card: the chosen third model, or — for Auto —
   // the same neutral model the server will pick (previewAutoJudge). Falls back
@@ -84,29 +86,52 @@ export function SetupSummaryCard({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
-              {d.setup.summary.fighterA}
-            </p>
-            <p className="truncate text-sm font-bold text-arcade-blue">
-              {config.modelA.displayName}
-            </p>
+        {pairs.length === 1 ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
+                {d.setup.summary.fighterA}
+              </p>
+              <p className="truncate text-sm font-bold text-arcade-blue">
+                {config.modelA.displayName}
+              </p>
+            </div>
+            <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
+                {d.setup.summary.fighterB}
+              </p>
+              <p className="truncate text-sm font-bold text-arcade-red">
+                {config.modelB.displayName}
+              </p>
+            </div>
           </div>
-          <div className="rounded-card border-3 border-night bg-white p-2.5 text-night">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
-              {d.setup.summary.fighterB}
-            </p>
-            <p className="truncate text-sm font-bold text-arcade-red">
-              {config.modelB.displayName}
-            </p>
+        ) : (
+          <div className="space-y-2">
+            {pairs.map((p, i) => (
+              <div
+                key={i}
+                className="rounded-card border-3 border-night bg-white p-2.5 text-night"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
+                  {d.setup.battles.battleLabel(i + 1)}
+                </p>
+                <p className="mt-0.5 truncate text-sm font-bold">
+                  <span className="text-arcade-blue">{p.modelA.displayName}</span>
+                  <span className="text-night/40"> vs </span>
+                  <span className="text-arcade-red">{p.modelB.displayName}</span>
+                </p>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
 
         <div className="flex flex-wrap gap-1.5">
           <Badge color="white" size="sm">
             {config.mode === "debate" ? d.setup.summary.badgeDebate : d.setup.summary.badgeDiscussion}
           </Badge>
+          {pairs.length > 1 ? (
+            <Badge color="purple" size="sm">⚔️ {d.setup.battles.summaryCount(pairs.length)}</Badge>
+          ) : null}
           <Badge color="white" size="sm">{d.setup.summary.roundLine(config.roundCount, roundLabel ?? "")}</Badge>
           <Badge color="white" size="sm" className="max-w-[12rem] truncate">{toneLabel}</Badge>
           <Badge color="white" size="sm">

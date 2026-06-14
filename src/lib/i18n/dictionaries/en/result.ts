@@ -30,6 +30,19 @@ export const result = {
     },
   },
 
+  // Multi-battle switcher (only shown when a match has 2–3 battles)
+  battles: {
+    tab: (n: number) => `Battle ${n}`,
+    tabAria: (n: number) => `View battle ${n} results`,
+    vs: "vs",
+    overviewTitle: "🗂️ All battles",
+    viewing: (n: number, total: number) => `Viewing battle ${n} of ${total}`,
+    winnerA: "A wins",
+    winnerB: "B wins",
+    tie: "Draw",
+    inProgress: "In progress",
+  },
+
   // VerdictCard
   verdict: {
     badge: "🏆 VERDICT",

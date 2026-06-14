@@ -12,9 +12,8 @@ import { useRouter } from "next/navigation";
 import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
-import { IconButton } from "@/components/game/IconButton";
 import { TopicInput } from "@/components/setup/TopicInput";
-import { ModelSelector } from "@/components/setup/ModelSelector";
+import { BattleList } from "@/components/setup/BattleList";
 import { RoundSelector } from "@/components/setup/RoundSelector";
 import { ToneSelector } from "@/components/setup/ToneSelector";
 import { ResponseLengthSelector } from "@/components/setup/ResponseLengthSelector";
@@ -27,13 +26,17 @@ import { SetupSummaryCard } from "@/components/setup/SetupSummaryCard";
 import { useArena, toSelectedModel, defaultFighters } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { validateSetup } from "@/lib/debate/validators";
+import { getBattlePairs } from "@/lib/debate/orchestrator";
+import { createId } from "@/lib/utils/ids";
 import { TOPIC_MAX_LENGTH } from "@/lib/constants";
 import {
   modelIdSupportsLanguage,
   modelSupportsWebSearch,
+  type ModelCatalogEntry,
 } from "@/lib/models/modelRegistry";
 import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
-import type { DebateConfig } from "@/lib/debate/debateTypes";
+import type { BattleFighters, DebateConfig } from "@/lib/debate/debateTypes";
+import { MAX_BATTLES } from "@/lib/debate/debateTypes";
 
 export default function SetupPage() {
   const router = useRouter();
@@ -50,12 +53,31 @@ export default function SetupPage() {
     if (locale !== "tr") return;
     const patch: Partial<DebateConfig> = {};
     const { a, b } = defaultFighters();
+    // Battle #1 (primary modelA/modelB) — keep the "pick the other default if it
+    // collides" behavior so the two fighters don't both fall back to the same id.
     if (!modelIdSupportsLanguage(config.modelA.modelId, locale)) {
       patch.modelA = toSelectedModel(config.modelB.modelId === a.id ? b : a, "blue");
     }
     if (!modelIdSupportsLanguage(config.modelB.modelId, locale)) {
       patch.modelB = toSelectedModel(config.modelA.modelId === b.id ? a : b, "red");
     }
+    // Extra battles — swap any non-Turkish fighter for a Turkish-capable default.
+    const extras = config.battles ?? [];
+    let extrasChanged = false;
+    const fixedExtras = extras.map((p) => {
+      let modelA = p.modelA;
+      let modelB = p.modelB;
+      if (!modelIdSupportsLanguage(p.modelA.modelId, locale)) {
+        modelA = toSelectedModel(a, "blue");
+        extrasChanged = true;
+      }
+      if (!modelIdSupportsLanguage(p.modelB.modelId, locale)) {
+        modelB = toSelectedModel(b, "red");
+        extrasChanged = true;
+      }
+      return { modelA, modelB };
+    });
+    if (extrasChanged) patch.battles = fixedExtras;
     if (
       config.judge.enabled &&
       config.judge.mode === "thirdModel" &&
@@ -66,7 +88,7 @@ export default function SetupPage() {
     }
     if (Object.keys(patch).length > 0) setConfig(patch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale, config.modelA.modelId, config.modelB.modelId, config.judge.mode, config.judge.model?.modelId]);
+  }, [locale, config.modelA.modelId, config.modelB.modelId, config.battles, config.judge.mode, config.judge.model?.modelId]);
 
   // Whether the server can run app-side web search (Deep Debate for
   // OpenAI/DeepSeek fighters); null until /api/health resolves → optimistic.
@@ -78,9 +100,13 @@ export default function SetupPage() {
   const topicError =
     attempted || topicTooLong ? validation.errors.topic : undefined;
 
-  const fightersEligibleForDeep =
-    modelSupportsWebSearch(config.modelA.modelId, injectedSearchReady !== false) &&
-    modelSupportsWebSearch(config.modelB.modelId, injectedSearchReady !== false);
+  const pairs = getBattlePairs(config);
+  // Deep Debate requires EVERY fighter across ALL battles to support web search.
+  const fightersEligibleForDeep = pairs.every(
+    (p) =>
+      modelSupportsWebSearch(p.modelA.modelId, injectedSearchReady !== false) &&
+      modelSupportsWebSearch(p.modelB.modelId, injectedSearchReady !== false),
+  );
 
   // Deep Debate fixes the format: 3 rounds, standard serious tone (and the
   // auto length, handled below). Normalize here too so a config persisted
@@ -112,13 +138,57 @@ export default function SetupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.judge.mode, config.judge.enabled]);
 
-  // Swap which fighter is A vs B (keep slot colors: A blue, B red).
-  const swapFighters = () => {
+  // Battle-list handlers. Battle #1 maps to modelA/modelB; battles #2–#3 live in
+  // config.battles. Slot colors are kept (A blue, B red).
+  const setPair = (index: number, pair: BattleFighters) => {
+    if (index === 0) {
+      setConfig({ modelA: pair.modelA, modelB: pair.modelB });
+    } else {
+      const extras = (config.battles ?? []).slice();
+      extras[index - 1] = pair;
+      setConfig({ battles: extras });
+    }
+  };
+
+  const selectFighter = (index: number, slot: "A" | "B", entry: ModelCatalogEntry) => {
+    const pair = pairs[index];
+    setPair(
+      index,
+      slot === "A"
+        ? { ...pair, modelA: toSelectedModel(entry, "blue") }
+        : { ...pair, modelB: toSelectedModel(entry, "red") },
+    );
+  };
+
+  const swapBattle = (index: number) => {
     playSound("buttonClick");
-    setConfig({
-      modelA: { ...config.modelB, color: "blue" },
-      modelB: { ...config.modelA, color: "red" },
+    const pair = pairs[index];
+    setPair(index, {
+      ...pair, // keep the row's stable uid so the swap doesn't remount it
+      modelA: { ...pair.modelB, color: "blue" },
+      modelB: { ...pair.modelA, color: "red" },
     });
+  };
+
+  const addBattle = () => {
+    if (pairs.length >= MAX_BATTLES) return;
+    playSound("modeSelect");
+    const { a, b } = defaultFighters();
+    const extras = (config.battles ?? []).slice();
+    extras.push({
+      uid: createId("battle"),
+      modelA: toSelectedModel(a, "blue"),
+      modelB: toSelectedModel(b, "red"),
+    });
+    setConfig({ battles: extras });
+  };
+
+  const removeBattle = (index: number) => {
+    if (index <= 0) return;
+    playSound("buttonClick");
+    const extras = (config.battles ?? []).slice();
+    extras.splice(index - 1, 1);
+    setConfig({ battles: extras });
   };
 
   const handleStart = () => {
@@ -167,35 +237,15 @@ export default function SetupPage() {
           </GamePanel>
 
           <GamePanel title={d.setup.sections.fighters}>
-            <div className="mb-3 flex justify-end">
-              <IconButton label={d.setup.swapFighters} onClick={swapFighters}>
-                <span aria-hidden>⇄</span>
-              </IconButton>
-            </div>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <ModelSelector
-                label={d.setup.fighterA}
-                accent="blue"
-                selectedId={config.modelA.modelId}
-                conflictId={config.modelB.modelId}
-                availability={availability}
-                requireWebSearch={config.deepDebate}
-                onSelect={(entry) =>
-                  setConfig({ modelA: toSelectedModel(entry, "blue") })
-                }
-              />
-              <ModelSelector
-                label={d.setup.fighterB}
-                accent="red"
-                selectedId={config.modelB.modelId}
-                conflictId={config.modelA.modelId}
-                availability={availability}
-                requireWebSearch={config.deepDebate}
-                onSelect={(entry) =>
-                  setConfig({ modelB: toSelectedModel(entry, "red") })
-                }
-              />
-            </div>
+            <BattleList
+              pairs={pairs}
+              availability={availability}
+              requireWebSearch={config.deepDebate}
+              onSelect={selectFighter}
+              onSwap={swapBattle}
+              onAdd={addBattle}
+              onRemove={removeBattle}
+            />
           </GamePanel>
 
           <GamePanel title={d.setup.sections.rules}>

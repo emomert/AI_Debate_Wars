@@ -32,7 +32,7 @@ import {
   getModelById,
   type ModelCatalogEntry,
 } from "@/lib/models/modelRegistry";
-import { createDebateSession } from "@/lib/debate/orchestrator";
+import { createDebateSessions } from "@/lib/debate/orchestrator";
 import { readClientLocale } from "@/lib/i18n/config";
 import { fetchHealth } from "@/lib/api/debateClient";
 import type { HealthResponse } from "@/lib/api/contracts";
@@ -42,6 +42,37 @@ export type ProviderAvailability = HealthResponse["providers"];
 
 const CONFIG_KEY = "ada:config";
 const SESSION_KEY = "ada:session";
+
+/** Persisted shape of the active match: one or more concurrent battle sessions. */
+interface PersistedMatch {
+  sessions: DebateSession[];
+  activeBattleIndex: number;
+}
+
+/**
+ * Read the persisted match, tolerating the OLD single-session shape (a bare
+ * DebateSession) from before multi-battle — wrap it into a 1-element array so a
+ * match in progress across the upgrade isn't lost.
+ */
+function parsePersistedMatch(raw: string): PersistedMatch | null {
+  const parsed = JSON.parse(raw) as unknown;
+  if (parsed && typeof parsed === "object") {
+    const obj = parsed as Record<string, unknown>;
+    if (Array.isArray(obj.sessions)) {
+      const sessions = obj.sessions as DebateSession[];
+      const idx = typeof obj.activeBattleIndex === "number" ? obj.activeBattleIndex : 0;
+      return {
+        sessions,
+        activeBattleIndex: Math.min(Math.max(0, idx), Math.max(0, sessions.length - 1)),
+      };
+    }
+    // Legacy single-session blob (has its own id/turns) → wrap it.
+    if (typeof obj.id === "string" && Array.isArray(obj.turns)) {
+      return { sessions: [parsed as DebateSession], activeBattleIndex: 0 };
+    }
+  }
+  return null;
+}
 
 /** Map a catalogue entry into a slot-colored SelectedModel. */
 export function toSelectedModel(
@@ -92,10 +123,23 @@ interface ArenaContextValue {
   setConfig: (patch: Partial<DebateConfig>) => void;
   resetConfig: () => void;
 
+  /**
+   * The active match's battle sessions (1–3). Empty when there's no match.
+   * Single-battle matches have exactly one entry.
+   */
+  sessions: DebateSession[];
+  /** 0-based index of the battle currently being viewed in the arena/results. */
+  activeBattleIndex: number;
+  setActiveBattleIndex: (index: number) => void;
+  /** Immutably replace one battle's session (used for per-turn persist + re-judge). */
+  updateSession: (index: number, next: DebateSession) => void;
+
+  /** The currently-viewed battle session (back-compat shim = sessions[active]). */
   session: DebateSession | null;
+  /** Replace the WHOLE match with a single battle (Try-a-Sample, reopen, clear). */
   setSession: (session: DebateSession | null) => void;
-  /** Build a fresh mock session from the current config and store it. */
-  startMatch: () => DebateSession;
+  /** Build a fresh session PER battle from the current config and store them. */
+  startMatch: () => DebateSession[];
 
   soundEnabled: boolean;
   toggleSound: () => void;
@@ -113,7 +157,8 @@ const ArenaContext = createContext<ArenaContextValue | null>(null);
 
 export function ArenaProvider({ children }: { children: ReactNode }) {
   const [config, setConfigState] = useState<DebateConfig>(defaultConfig);
-  const [session, setSessionState] = useState<DebateSession | null>(null);
+  const [sessions, setSessionsState] = useState<DebateSession[]>([]);
+  const [activeBattleIndex, setActiveBattleIndexState] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [musicEnabled, setMusicEnabled] = useState(false);
   const [availability, setAvailability] = useState<ProviderAvailability | null>(null);
@@ -147,7 +192,13 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       const rawConfig = window.sessionStorage.getItem(CONFIG_KEY);
       if (rawConfig) setConfigState(JSON.parse(rawConfig) as DebateConfig);
       const rawSession = window.sessionStorage.getItem(SESSION_KEY);
-      if (rawSession) setSessionState(JSON.parse(rawSession) as DebateSession);
+      if (rawSession) {
+        const match = parsePersistedMatch(rawSession);
+        if (match) {
+          setSessionsState(match.sessions);
+          setActiveBattleIndexState(match.activeBattleIndex);
+        }
+      }
     } catch {
       /* corrupt storage — fall back to defaults */
     }
@@ -168,19 +219,22 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     }
   }, [config, hydrated]);
 
-  // Persist session.
+  // Persist the whole match (all battle sessions + which one is active) under one
+  // key, in one effect — so three near-simultaneous per-battle updates coalesce
+  // into a single serialized write instead of racing.
   useEffect(() => {
     if (!hydrated) return;
     try {
-      if (session) {
-        window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      if (sessions.length > 0) {
+        const payload: PersistedMatch = { sessions, activeBattleIndex };
+        window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
       } else {
         window.sessionStorage.removeItem(SESSION_KEY);
       }
     } catch {
       /* ignore */
     }
-  }, [session, hydrated]);
+  }, [sessions, activeBattleIndex, hydrated]);
 
   // Cross-tab sound/music sync: mirror another tab's toggle into this tab's
   // soundManager + local state so two open tabs don't disagree (and the music
@@ -205,8 +259,28 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     setConfigState(defaultConfig());
   }, []);
 
+  const setActiveBattleIndex = useCallback((index: number) => {
+    setActiveBattleIndexState((prev) => (index === prev ? prev : index));
+  }, []);
+
+  const updateSession = useCallback((index: number, next: DebateSession) => {
+    setSessionsState((prev) => {
+      if (index < 0 || index >= prev.length) return prev;
+      const copy = prev.slice();
+      copy[index] = next;
+      return copy;
+    });
+  }, []);
+
+  // Back-compat shim: replace the WHOLE match with a single battle (Try-a-Sample,
+  // reopen-from-history) or clear it (null). Per-battle updates use updateSession.
+  // Installing a single session means a SINGLE-battle config, so drop any stale
+  // extra battles — otherwise a later Rematch (which rebuilds from config) would
+  // silently resurrect battles the user never set up for this match.
   const setSession = useCallback((next: DebateSession | null) => {
-    setSessionState(next);
+    setSessionsState(next ? [next] : []);
+    setActiveBattleIndexState(0);
+    setConfigState((prev) => (prev.battles && prev.battles.length ? { ...prev, battles: [] } : prev));
   }, []);
 
   const startMatch = useCallback(() => {
@@ -218,9 +292,10 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       : config;
     // Stamp the debate with the language it should run in — the live UI locale,
     // read straight from the cookie so it's correct even if the persisted config
-    // predates the current choice.
-    const next = createDebateSession({ ...effective, language: readClientLocale() });
-    setSessionState(next);
+    // predates the current choice. One session per battle pairing (1–3).
+    const next = createDebateSessions({ ...effective, language: readClientLocale() });
+    setSessionsState(next);
+    setActiveBattleIndexState(0);
     return next;
   }, [config]);
 
@@ -232,11 +307,19 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     setMusicEnabled(soundManager.toggleMusic());
   }, []);
 
+  // Derived active session — back-compat for consumers that still read a single
+  // session (re-judge panels, share/publish, history saver, reopen).
+  const session = sessions[activeBattleIndex] ?? null;
+
   const value = useMemo<ArenaContextValue>(
     () => ({
       config,
       setConfig,
       resetConfig,
+      sessions,
+      activeBattleIndex,
+      setActiveBattleIndex,
+      updateSession,
       session,
       setSession,
       startMatch,
@@ -251,6 +334,10 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       config,
       setConfig,
       resetConfig,
+      sessions,
+      activeBattleIndex,
+      setActiveBattleIndex,
+      updateSession,
       session,
       setSession,
       startMatch,

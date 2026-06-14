@@ -38,6 +38,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 
 - Topic input with AI topic check/improve (`/api/topic/check`, cheap model)
 - Two fighters from 56+ models across OpenAI, DeepSeek, and OpenRouter (free models)
+- Multi-battle: run up to 3 battles on the same topic at once (different or same fighter pairs), all running concurrently — a tab switcher in the arena and results; only the watched battle speaks/sounds; manual pace gates only the watched battle (see `docs/09_UX_FLOWS.md`). Only the fighters differ per battle; all other settings are shared.
 - 3 / 5 / 7 rounds (Quick Match / Ranked Match / Championship)
 - Tone per fighter: serious, aggressive, casual, or custom free text — plus a hidden "unhinged" easter-egg tone (5 rapid clicks on Aggressive in setup; profanity-allowed roast battle, hard ban on slurs/hate speech baked into the prompt)
 - Response length: short / medium / long; pace: manual or auto

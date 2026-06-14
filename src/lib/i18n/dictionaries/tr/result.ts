@@ -30,6 +30,19 @@ export const result = {
     },
   },
 
+  // Çoklu dövüş seçici (yalnızca bir maçta 2–3 dövüş olduğunda görünür)
+  battles: {
+    tab: (n: number) => `Dövüş ${n}`,
+    tabAria: (n: number) => `Dövüş ${n} sonuçlarını görüntüle`,
+    vs: "vs",
+    overviewTitle: "🗂️ Tüm dövüşler",
+    viewing: (n: number, total: number) => `${total} dövüşten ${n}. görüntüleniyor`,
+    winnerA: "A kazandı",
+    winnerB: "B kazandı",
+    tie: "Berabere",
+    inProgress: "Devam ediyor",
+  },
+
   // VerdictCard
   verdict: {
     badge: "🏆 KARAR",

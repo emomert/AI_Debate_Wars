@@ -215,7 +215,13 @@ export function validateSetup(
     errors.topic = m.topicTooLong(TOPIC_MAX_LENGTH);
   }
 
-  if (!config.modelA || !config.modelB) {
+  // Validate fighters across every battle (battle #1 = modelA/modelB, plus any
+  // extra pairings in config.battles).
+  const pairs = [
+    { modelA: config.modelA, modelB: config.modelB },
+    ...(config.battles ?? []),
+  ];
+  if (pairs.some((p) => !p.modelA || !p.modelB)) {
     errors.models = m.modelsRequired;
   }
 
@@ -240,10 +246,13 @@ export function validateSetup(
   const injectedReady = opts?.injectedSearchReady !== false; // unknown → optimistic
   if (
     config.deepDebate &&
-    config.modelA &&
-    config.modelB &&
-    (!modelSupportsWebSearch(config.modelA.modelId, injectedReady) ||
-      !modelSupportsWebSearch(config.modelB.modelId, injectedReady))
+    pairs.some(
+      (p) =>
+        p.modelA &&
+        p.modelB &&
+        (!modelSupportsWebSearch(p.modelA.modelId, injectedReady) ||
+          !modelSupportsWebSearch(p.modelB.modelId, injectedReady)),
+    )
   ) {
     errors.deep = m.deepNeedsSearch;
   }
