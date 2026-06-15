@@ -11,6 +11,7 @@ import "server-only";
 import { ProviderError } from "@/lib/utils/errors";
 import { TTS_COST_USD_PER_1M_CHARS } from "@/lib/cost/pricing";
 import { OPENAI_VOICES } from "@/lib/tts/voices";
+import { VOICE_ENABLED } from "@/lib/tts/config";
 import type { Speaker } from "@/lib/debate/debateTypes";
 
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -24,6 +25,7 @@ function ttsSpeed(): number {
 }
 
 export function isServerTtsConfigured(): boolean {
+  if (!VOICE_ENABLED) return false; // fighter voices hidden behind the feature flag
   if (process.env.TTS_PROVIDER === "none") return false;
   return Boolean(process.env.OPENAI_API_KEY);
 }

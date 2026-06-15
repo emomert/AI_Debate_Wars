@@ -34,6 +34,7 @@ import {
 } from "@/lib/debate/promptBuilder";
 import { createDebateSession } from "@/lib/debate/orchestrator";
 import { FALLBACK_PRICE, TTS_COST_USD_PER_1M_CHARS } from "@/lib/cost/pricing";
+import { VOICE_ENABLED } from "@/lib/tts/config";
 import { DEEP_SEARCH_COST_USD } from "@/lib/debate/citations";
 import { TONE_OPTIONS } from "@/lib/constants";
 import { defaultFighters, toSelectedModel } from "@/lib/state/ArenaContext";
@@ -714,7 +715,9 @@ export default function ReportPage() {
               <li>{d.report.cost.note2(DEEP_SEARCH_COST_USD.toFixed(3))}</li>
               <li>{d.report.cost.note3}</li>
               <li>{d.report.cost.note4}</li>
-              <li>{d.report.cost.note5(TTS_COST_USD_PER_1M_CHARS.toFixed(0))}</li>
+              {VOICE_ENABLED ? (
+                <li>{d.report.cost.note5(TTS_COST_USD_PER_1M_CHARS.toFixed(0))}</li>
+              ) : null}
             </ul>
             <div className="mt-4">
               <CostEstimator />

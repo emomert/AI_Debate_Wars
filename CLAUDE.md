@@ -18,6 +18,7 @@ The product is feature-complete and polished, in pre-public-launch state.
 
 - **Debate Mode only** in the UI. Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface it without an explicit request.
 - **English-only UI for launch.** Turkish localization is fully built but hidden behind `MULTILOCALE_ENABLED = false` in `src/lib/i18n/config.ts`.
+- **Fighter Voices hidden for now.** The opt-in 🔊 voice-over (TTS) is fully built but hidden behind `VOICE_ENABLED = false` in `src/lib/tts/config.ts`: the setup voice card, arena HUD voice toggle + cost badge, and per-message play buttons don't render, the `voicePlayer` engine no-ops, and server TTS reports unconfigured so `/api/tts` never fires. This is separate from the arcade SFX/music toggles, which stay on. Flip the flag to bring voices back with no other changes.
 - Remaining pre-launch work is tracked in `docs/18_RELEASE_REQUIREMENTS.md` and `docs/13_ROADMAP.md`.
 
 ## Core Product Principle
@@ -45,7 +46,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode)
 - Optional judge: auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores
 - Per-message and total cost tracking, cache-aware pricing
-- Optional fighter voices (opt-in 🔊): free Web Speech tier always; premium OpenAI speech via `/api/tts` (~$15/1M chars ≈ 13¢/voiced match, reuses `OPENAI_API_KEY`) with automatic fallback (see `docs/21_VOICE.md`)
+- Optional fighter voices (opt-in 🔊, currently hidden behind `VOICE_ENABLED` — see Current Status): free Web Speech tier always; premium OpenAI speech via `/api/tts` (~$15/1M chars ≈ 13¢/voiced match, reuses `OPENAI_API_KEY`) with automatic fallback (see `docs/21_VOICE.md`)
 - Stateless share links (`/s?d=...`) with generated OG images (`/api/og`)
 - Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars (see `docs/20_COMMUNITY.md`)
 - Optional Supabase auth (magic link + Google); match history and stats on `/profile`

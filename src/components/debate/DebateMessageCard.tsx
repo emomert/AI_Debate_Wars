@@ -25,6 +25,7 @@ import { SourcesList } from "@/components/debate/SourcesList";
 import { useRotatingLine } from "@/components/debate/waitingMessages";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
+import { VOICE_ENABLED } from "@/lib/tts/config";
 
 /**
  * Rotating playful caption shown WHILE a fighter's answer types out, in any
@@ -163,7 +164,7 @@ function DebateMessageCardComponent({
             {citations && citations.length > 0 ? (
               <SourcesList citations={citations} />
             ) : null}
-            {voice ? (
+            {voice && VOICE_ENABLED ? (
               <button
                 type="button"
                 onClick={voice.onToggle}

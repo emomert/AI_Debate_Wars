@@ -29,6 +29,7 @@ import { validateSetup } from "@/lib/debate/validators";
 import { getBattlePairs } from "@/lib/debate/orchestrator";
 import { createId } from "@/lib/utils/ids";
 import { TOPIC_MAX_LENGTH } from "@/lib/constants";
+import { VOICE_ENABLED } from "@/lib/tts/config";
 import {
   modelIdSupportsLanguage,
   modelSupportsWebSearch,
@@ -318,12 +319,14 @@ export default function SetupPage() {
                   onChange={(pace) => setConfig({ pace })}
                 />
               </div>
-              <div>
-                <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                  {d.setup.rules.voice}
-                </p>
-                <VoiceToggle />
-              </div>
+              {VOICE_ENABLED ? (
+                <div>
+                  <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
+                    {d.setup.rules.voice}
+                  </p>
+                  <VoiceToggle />
+                </div>
+              ) : null}
             </div>
           </GamePanel>
 

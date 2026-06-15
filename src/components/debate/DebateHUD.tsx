@@ -20,6 +20,7 @@ import { RoundCounter } from "@/components/debate/RoundCounter";
 import { Badge } from "@/components/game/Badge";
 import { formatCost, formatTokens } from "@/lib/utils/format";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { VOICE_ENABLED } from "@/lib/tts/config";
 
 const PHASE_COLOR: Record<
   RunnerPhase,
@@ -124,20 +125,22 @@ function DebateHUDComponent({
               {pace === "auto" ? d.debate.hud.paceFast : d.debate.hud.paceNormal}
             </button>
           ) : null}
-          <button
-            type="button"
-            onClick={onToggleVoice}
-            aria-pressed={voiceEnabled}
-            aria-label={d.debate.voice.toggleLabel(voiceEnabled)}
-            className={cn(
-              "inline-flex items-center gap-1 rounded-badge border-3 border-ink px-2 py-1 text-[11px] font-extrabold uppercase transition focus-visible:outline-3 focus-visible:outline-offset-2",
-              voiceEnabled
-                ? "bg-arcade-green text-night"
-                : "bg-surface hover:bg-arcade-yellow hover:text-night",
-            )}
-          >
-            {voiceEnabled ? d.debate.voice.hudOn : d.debate.voice.hudOff}
-          </button>
+          {VOICE_ENABLED ? (
+            <button
+              type="button"
+              onClick={onToggleVoice}
+              aria-pressed={voiceEnabled}
+              aria-label={d.debate.voice.toggleLabel(voiceEnabled)}
+              className={cn(
+                "inline-flex items-center gap-1 rounded-badge border-3 border-ink px-2 py-1 text-[11px] font-extrabold uppercase transition focus-visible:outline-3 focus-visible:outline-offset-2",
+                voiceEnabled
+                  ? "bg-arcade-green text-night"
+                  : "bg-surface hover:bg-arcade-yellow hover:text-night",
+              )}
+            >
+              {voiceEnabled ? d.debate.voice.hudOn : d.debate.voice.hudOff}
+            </button>
+          ) : null}
           {canSkip ? (
             <button
               type="button"
@@ -164,7 +167,7 @@ function DebateHUDComponent({
           <span className="text-white/70">{formatTokens(costSummary.totalTokens)}</span>
           <span className="text-white/50">·</span>
           <span className="text-white/70">{messageCount} {d.debate.hud.msgSuffix}</span>
-          {voiceCostUsd > 0 ? (
+          {VOICE_ENABLED && voiceCostUsd > 0 ? (
             <>
               <span className="text-white/50">·</span>
               <span aria-label={d.debate.voice.costLabel} className="text-white/70">

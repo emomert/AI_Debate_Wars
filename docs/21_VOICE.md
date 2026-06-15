@@ -1,7 +1,15 @@
 # 21 · Fighter Voices (TTS)
 
-> Status: ✅ IMPLEMENTED (2026-06-11). Source of truth: `src/lib/tts/`,
-> `src/app/api/tts/route.ts`. Cost facts render live on `/report` §8.
+> Status: ✅ IMPLEMENTED (2026-06-11), 🙈 HIDDEN for launch (2026-06-15).
+> The feature is complete but gated off behind `VOICE_ENABLED = false` in
+> `src/lib/tts/config.ts` (mirrors `MULTILOCALE_ENABLED`): the setup voice card,
+> the arena HUD voice toggle + cost badge, and the per-message play/stop buttons
+> are not rendered; `voicePlayer` no-ops (no Web Speech either); and
+> `isServerTtsConfigured()` returns `false` so `/api/tts` 503s and no paid speech
+> can fire. This is unrelated to the arcade SFX/music toggles, which stay on.
+> Flip `VOICE_ENABLED` to `true` to restore everything below. Source of truth:
+> `src/lib/tts/`, `src/app/api/tts/route.ts`. Cost facts render live on
+> `/report` §8 (also gated by the flag).
 
 Voice-over for debate turns: strictly **opt-in** (🔊 toggle in the arena HUD,
 off by default, persisted as `ada:voice-enabled`), with a per-message

@@ -19,6 +19,7 @@
 import type { Speaker } from "@/lib/debate/debateTypes";
 import { toSpeechText } from "@/lib/tts/speechText";
 import { cancelWebSpeech, speakWithWebSpeech } from "@/lib/tts/webSpeech";
+import { VOICE_ENABLED } from "@/lib/tts/config";
 
 const VOICE_KEY = "ada:voice-enabled";
 
@@ -78,6 +79,13 @@ class VoicePlayer {
   /* ------------------------------ toggle state ----------------------------- */
 
   hydrate(): boolean {
+    // Feature hidden: never read the persisted flag, so voice stays off even
+    // for users who had it on before the flag was flipped.
+    if (!VOICE_ENABLED) {
+      this.hydrated = true;
+      this.enabled = false;
+      return false;
+    }
     if (this.hydrated) return this.enabled;
     if (typeof window !== "undefined") {
       try {
@@ -95,6 +103,7 @@ class VoicePlayer {
   }
 
   setEnabled(value: boolean): void {
+    if (!VOICE_ENABLED) return; // feature hidden — toggling is a no-op
     this.enabled = value;
     if (!value) this.stop();
     if (typeof window !== "undefined") {
@@ -146,7 +155,7 @@ class VoicePlayer {
   ): Promise<PreparedSpeech> {
     this.stop();
     const text = toSpeechText(message.content);
-    if (!this.enabled || text === "" || signal?.aborted) return NOOP_SPEECH;
+    if (!VOICE_ENABLED || !this.enabled || text === "" || signal?.aborted) return NOOP_SPEECH;
 
     // Local controller so a later stop()/prepare() cancels THIS run; the
     // caller's signal (match abort) chains into it.
@@ -165,6 +174,7 @@ class VoicePlayer {
 
   /** Manual replay from a message card — honors the click even if voice is off. */
   replay(message: SpeakableMessage, opts: SpeakOptions): void {
+    if (!VOICE_ENABLED) return; // feature hidden — manual replay disabled too
     const wasEnabled = this.enabled;
     this.enabled = true; // a deliberate click always plays
     void this.prepare(message, opts)
