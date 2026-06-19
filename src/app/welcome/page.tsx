@@ -18,6 +18,7 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { ProfileForm } from "@/components/profile/ProfileEditor";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { TERMS_VERSION } from "@/lib/constants";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 export default function WelcomePage() {
@@ -60,8 +61,26 @@ function WelcomeInner() {
     let cancelled = false;
     supabase.auth.getUser().then(({ data }) => {
       if (cancelled) return;
-      if (!data.user) router.replace("/login");
-      else setUserId(data.user.id);
+      if (!data.user) {
+        router.replace("/login");
+        return;
+      }
+      setUserId(data.user.id);
+      // Record signup consent (P0-7): reaching /welcome means the user just
+      // affirmed 13+ & Terms on the login form (the explicit checkbox for email
+      // signup, or the consent notice for the magic-link / OAuth paths). Stamp it
+      // durably on the profile row. The payload sets ONLY the consent columns, so
+      // it never clobbers a handle/avatar chosen later in the fighter-card form.
+      void supabase.from("profiles").upsert(
+        {
+          user_id: data.user.id,
+          terms_accepted_at: new Date().toISOString(),
+          age_confirmed: true,
+          terms_version: TERMS_VERSION,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
     });
     return () => {
       cancelled = true;

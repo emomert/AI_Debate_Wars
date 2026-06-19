@@ -37,6 +37,16 @@ export const auth = {
     redirecting: "Yönlendiriliyor…",
     googleCta: "Google ile devam edin",
     githubCta: "GitHub ile devam edin",
+    // Kayıt onayı + yaş kapısı (P0-7)
+    consentBefore: "13 yaşında veya daha büyüğüm ve şunları kabul ediyorum: ",
+    consentTerms: "Şartlar",
+    consentAnd: " ve ",
+    consentPrivacy: "Gizlilik Politikası",
+    consentAfter: ".",
+    consentNote:
+      "Bir hesap oluşturarak 13 yaşında veya daha büyük olduğunuzu ve Şartlar ile Gizlilik Politikasını kabul ettiğinizi onaylarsınız.",
+    dataNote:
+      "Bazı yarışmacılar ülkenizin dışında barındırılan modellerde çalışır (Çin'deki DeepSeek dahil); verilerin nasıl işlendiği için Gizlilik Politikasına bakın.",
   },
   /** First-sign-in onboarding (src/app/welcome/page.tsx). */
   welcome: {

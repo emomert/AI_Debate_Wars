@@ -56,6 +56,9 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [sent, setSent] = useState<Sent>(null);
   const [busy, setBusy] = useState<Busy>(null);
+  // Signup consent + age gate (P0-7): the explicit "13+ and agree" affirmation
+  // required to CREATE an account via email + password.
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(
     params.get("error") ? d.auth.login.linkError : null,
   );
@@ -279,11 +282,47 @@ function LoginForm() {
                   <p className="mt-1 text-[11px] text-ink/45">{d.auth.login.passwordHint}</p>
                 ) : null}
               </div>
+              {mode === "signup" ? (
+                <label className="flex items-start gap-2 text-[12px] leading-snug text-ink/70">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-arcade-green"
+                  />
+                  <span>
+                    {d.auth.login.consentBefore}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline decoration-2 underline-offset-2"
+                    >
+                      {d.auth.login.consentTerms}
+                    </a>
+                    {d.auth.login.consentAnd}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline decoration-2 underline-offset-2"
+                    >
+                      {d.auth.login.consentPrivacy}
+                    </a>
+                    {d.auth.login.consentAfter}
+                  </span>
+                </label>
+              ) : null}
               <ArcadeButton
                 type="submit"
                 variant="primary-green"
                 fullWidth
-                disabled={busy !== null || email.trim() === "" || password === ""}
+                disabled={
+                  busy !== null ||
+                  email.trim() === "" ||
+                  password === "" ||
+                  (mode === "signup" && !agreed)
+                }
               >
                 {busy === "password"
                   ? mode === "signin"
@@ -333,6 +372,12 @@ function LoginForm() {
                 </span>
               </ArcadeButton>
             </div>
+
+            {/* Passive consent + data disclosure (P0-7) covering the passwordless
+                paths (magic link / OAuth), which create accounts on first use. */}
+            <p className="mt-3 text-[11px] leading-snug text-ink/45">
+              {d.auth.login.consentNote} {d.auth.login.dataNote}
+            </p>
           </>
         )}
       </GamePanel>

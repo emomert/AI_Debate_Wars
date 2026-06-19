@@ -345,3 +345,10 @@ export function pickSampleTopics(locale: Locale, count: number): string[] {
 
 export const TOPIC_MIN_LENGTH = 8;
 export const TOPIC_MAX_LENGTH = 280;
+
+/**
+ * Terms/Privacy version recorded with a user's signup consent (P0-7). Bump this
+ * (and the legal docs' effective date) whenever the Terms or Privacy Policy
+ * materially change, so re-consent can be required. ISO date for easy ordering.
+ */
+export const TERMS_VERSION = "2026-06-19";
