@@ -19,6 +19,7 @@ export interface SharePayload {
   sb?: number; // score B
   wa?: string; // winning argument
   s?: string; // reasoning (bold markers stripped)
+  g?: string; // HMAC signature over the other fields (server-set; absent → unverified)
 }
 
 function clamp(s: string, n: number): string {
@@ -75,25 +76,70 @@ export function decodeSharePayload(s: string): SharePayload | null {
       sb: optNum(raw.sb),
       wa: optStr(raw.wa),
       s: optStr(raw.s),
+      g: optStr(raw.g),
     };
   } catch {
     return null;
   }
 }
 
-/** Build the (length-bounded) share payload from a finished session. */
-export function sharePayloadFromSession(session: DebateSession): SharePayload {
-  const v = session.verdict;
+/** Verdict fields needed to build a share payload (a subset of DebateVerdict). */
+interface ShareVerdictParts {
+  winner?: string;
+  scoreModelA?: number;
+  scoreModelB?: number;
+  winnerArgument?: string;
+  summary?: string;
+}
+
+/**
+ * Build the (length-bounded) UNSIGNED share payload from raw parts. Both the
+ * verdict route (which signs it) and sharePayloadFromSession use this, so the
+ * canonical that gets signed always matches what the share link carries.
+ */
+export function buildSharePayload(
+  topic: string,
+  aName: string,
+  bName: string,
+  v: ShareVerdictParts | undefined,
+): SharePayload {
   return {
-    t: clamp(session.topic, 140),
-    a: clamp(session.modelA.displayName, 40),
-    b: clamp(session.modelB.displayName, 40),
+    t: clamp(topic, 140),
+    a: clamp(aName, 40),
+    b: clamp(bName, 40),
     w: v?.winner,
     sa: v?.scoreModelA,
     sb: v?.scoreModelB,
     wa: v?.winnerArgument ? clamp(v.winnerArgument, 180) : undefined,
     s: v?.summary ? clamp(v.summary.replace(/\*\*/g, ""), 300) : undefined,
   };
+}
+
+/** Build the share payload from a finished session, carrying the verdict's signature. */
+export function sharePayloadFromSession(session: DebateSession): SharePayload {
+  const v = session.verdict;
+  return {
+    ...buildSharePayload(session.topic, session.modelA.displayName, session.modelB.displayName, v),
+    g: v?.signature,
+  };
+}
+
+/**
+ * Deterministic canonical of the displayed verdict fields (EXCLUDING the
+ * signature `g`), used to sign + verify a share payload. Must be byte-identical
+ * on the signing side (verdict route) and the verifying side (/s, /api/og).
+ */
+export function shareCanonical(p: SharePayload): string {
+  return JSON.stringify({
+    t: p.t,
+    a: p.a,
+    b: p.b,
+    w: p.w ?? null,
+    sa: p.sa ?? null,
+    sb: p.sb ?? null,
+    wa: p.wa ?? null,
+    s: p.s ?? null,
+  });
 }
 
 /** Winner headline used by the share page + OG image. */

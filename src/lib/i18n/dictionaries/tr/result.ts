@@ -148,6 +148,10 @@ export const result = {
     metaDescriptionFallback: "Yapay zekâları fikirlerinizle dövüştürün.",
     verdictBadge: "🏆 KARAR",
     aiVsAi: "AI vs AI",
+    verified: "✓ Doğrulandı",
+    unverifiedBadge: "⚠ Doğrulanmadı",
+    unverifiedNote:
+      "Bu paylaşım gerçek bir Debator sonucu olarak doğrulanamadı — puanları veya metni değiştirilmiş olabilir. Gerçeğini görmek için kendi maçınızı çalıştırın.",
     winningArgument: "💥 Kazanan argüman: ",
     topic: "Konu",
     missingTitle: "Debator",

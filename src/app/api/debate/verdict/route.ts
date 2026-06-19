@@ -35,6 +35,8 @@ import {
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { buildSharePayload } from "@/lib/share/shareLink";
+import { signSharePayload } from "@/lib/share/signing";
 import {
   buildUsage,
   calculateCost,
@@ -180,6 +182,19 @@ export async function POST(req: Request): Promise<NextResponse> {
       latencyMs: result.latencyMs,
       createdAt: now(),
     };
+
+    // Sign the shareable verdict so a forged /s?d= link can't claim a fabricated
+    // result (critical #2). Dormant until SHARE_SECRET is set. The payload mirrors
+    // sharePayloadFromSession so /s + /api/og verify against the same canonical.
+    const signature = await signSharePayload(
+      buildSharePayload(
+        session.topic,
+        session.modelA.displayName,
+        session.modelB.displayName,
+        verdict,
+      ),
+    );
+    if (signature) verdict.signature = signature;
 
     const res: GenerateVerdictResponse = { verdict };
     return NextResponse.json(res);

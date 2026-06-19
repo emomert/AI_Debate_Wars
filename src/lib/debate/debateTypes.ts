@@ -176,6 +176,9 @@ export interface DebateVerdict {
   practicalConclusion?: string;
   scoreModelA?: number;
   scoreModelB?: number;
+  /** HMAC over the shareable verdict fields (server-set), so a forged /s?d= link
+   *  can't claim a fabricated result. Absent when SHARE_SECRET is not configured. */
+  signature?: string;
   usage?: TokenUsage;
   cost?: CostBreakdown;
   latencyMs?: number;

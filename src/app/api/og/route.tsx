@@ -15,6 +15,7 @@ import { ImageResponse } from "next/og";
 import type { CSSProperties } from "react";
 
 import { decodeSharePayload, type SharePayload } from "@/lib/share/shareLink";
+import { verifySharePayload, shareSigningEnabled } from "@/lib/share/signing";
 
 export const runtime = "edge";
 
@@ -77,6 +78,11 @@ export async function GET(request: Request) {
   const d = searchParams.get("d");
   const p: SharePayload | null = d ? decodeSharePayload(d) : null;
 
+  // Verdict-signature check (critical #2). Dormant until SHARE_SECRET is set.
+  const signingOn = shareSigningEnabled();
+  const verified = p && signingOn ? await verifySharePayload(p) : false;
+  const unverified = Boolean(p && signingOn && !verified);
+
   // PRE-TRUNCATE by length — Satori does not reliably honor WebkitLineClamp, so
   // single-line blocks (names, topic) must be capped by char count or they wrap
   // and push the bottom rows out of the fixed frame.
@@ -98,7 +104,7 @@ export async function GET(request: Request) {
 
   // All glyphs we'll draw — passed to the font subsetter for full coverage.
   const glyphs = [
-    "VERDICT DEBATOR Topic: AI vs",
+    "VERDICT UNVERIFIED DEBATOR Topic: AI vs",
     headline,
     wa,
     reasoning,
@@ -160,16 +166,16 @@ export async function GET(request: Request) {
             <div
               style={{
                 display: "flex",
-                background: C.yellow,
+                background: unverified ? C.red : C.yellow,
                 border: `5px solid ${C.ink}`,
                 borderRadius: "14px",
                 padding: "4px 22px",
                 fontSize: "34px",
                 fontFamily: displayFamily,
-                color: C.ink,
+                color: unverified ? "#ffffff" : C.ink,
               }}
             >
-              VERDICT
+              {unverified ? "UNVERIFIED" : "VERDICT"}
             </div>
             <div style={{ display: "flex", fontSize: "32px", fontFamily: displayFamily, color: C.ink }}>
               DEBATOR

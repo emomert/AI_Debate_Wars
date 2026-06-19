@@ -148,6 +148,10 @@ export const result = {
     metaDescriptionFallback: "Make AIs fight your ideas.",
     verdictBadge: "🏆 VERDICT",
     aiVsAi: "AI vs AI",
+    verified: "✓ Verified",
+    unverifiedBadge: "⚠ Unverified",
+    unverifiedNote:
+      "This share couldn't be verified as a genuine Debator result — its scores or text may have been altered. Run your own match to see the real thing.",
     winningArgument: "💥 Winning argument: ",
     topic: "Topic",
     missingTitle: "Debator",

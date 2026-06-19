@@ -18,6 +18,7 @@ import {
   shareHeadline,
   type SharePayload,
 } from "@/lib/share/shareLink";
+import { verifySharePayload, shareSigningEnabled } from "@/lib/share/signing";
 import { getServerDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
@@ -73,13 +74,27 @@ export default async function SharePage({ searchParams }: { searchParams: Search
   const p: SharePayload | null = d ? decodeSharePayload(d) : null;
   const dict = await getServerDictionary();
 
+  // Verify the verdict signature (critical #2). Dormant until SHARE_SECRET is set:
+  // until then nothing is marked unverified, so genuine shares never look broken.
+  const signingOn = shareSigningEnabled();
+  const verified = p && signingOn ? await verifySharePayload(p) : false;
+  const unverified = Boolean(p && signingOn && !verified);
+
   return (
     <GameShell>
       <div className="mx-auto max-w-2xl">
         {p ? (
           <GamePanel className="overflow-hidden">
-            <div className="flex items-center justify-between gap-2">
-              <Badge color="yellow">{dict.result.sharePage.verdictBadge}</Badge>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge color="yellow">{dict.result.sharePage.verdictBadge}</Badge>
+                {verified ? (
+                  <Badge color="green">{dict.result.sharePage.verified}</Badge>
+                ) : null}
+                {unverified ? (
+                  <Badge color="red">{dict.result.sharePage.unverifiedBadge}</Badge>
+                ) : null}
+              </div>
               <Badge color="white">{dict.result.sharePage.aiVsAi}</Badge>
             </div>
 
@@ -115,6 +130,12 @@ export default async function SharePage({ searchParams }: { searchParams: Search
               <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">{dict.result.sharePage.topic}</p>
               <p className="mt-0.5 font-semibold">{p.t}</p>
             </div>
+
+            {unverified ? (
+              <p className="mt-4 rounded-card border-3 border-dashed border-arcade-red bg-arcade-red/10 p-3 text-xs font-semibold text-ink">
+                {dict.result.sharePage.unverifiedNote}
+              </p>
+            ) : null}
           </GamePanel>
         ) : (
           <GamePanel className="text-center">

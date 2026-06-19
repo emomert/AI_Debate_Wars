@@ -22,6 +22,7 @@ import { ReportButton } from "@/components/community/ReportButton";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { SharedComment, SharedMatchRecord } from "@/lib/community/types";
 import { encodeSharePayload, type SharePayload } from "@/lib/share/shareLink";
+import { signSharePayload } from "@/lib/share/signing";
 import { getServerDictionary } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -85,6 +86,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     wa: verdict?.winnerArgument ? clamp(verdict.winnerArgument, 180) : undefined,
     s: verdict?.summary ? clamp(verdict.summary.replace(/\*\*/g, ""), 300) : undefined,
   };
+  // A published match is a trusted, server-stored record, so the server signs its
+  // share payload too (critical #2) — its unfurl is "verified", not flagged.
+  const sig = await signSharePayload(payload);
+  if (sig) payload.g = sig;
   const code = encodeSharePayload(payload);
   const origin = await originFromHeaders();
   const ogUrl = `${origin}/api/og?d=${code}`;
