@@ -55,6 +55,7 @@ function LoginForm() {
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [sent, setSent] = useState<Sent>(null);
   const [busy, setBusy] = useState<Busy>(null);
   // Signup consent + age gate (P0-7): the explicit "13+ and agree" affirmation
@@ -104,6 +105,20 @@ function LoginForm() {
     terms_version: TERMS_VERSION,
   });
 
+  // Map raw GoTrue messages to friendly, on-brand copy so the failure-prone auth
+  // moments don't leak backend strings ("Invalid login credentials", etc.).
+  const friendlyAuthError = (msg: string): string => {
+    const m = (msg || "").toLowerCase();
+    if (m.includes("invalid login credentials")) return d.auth.login.errors.invalidCredentials;
+    if (m.includes("already registered") || m.includes("already exists") || m.includes("already been registered"))
+      return d.auth.login.errors.alreadyRegistered;
+    if (m.includes("security purposes") || m.includes("rate limit") || m.includes("too many"))
+      return d.auth.login.errors.rateLimited;
+    if (m.includes("password") && (m.includes("least") || m.includes("weak") || m.includes("short") || m.includes("6 char")))
+      return d.auth.login.errors.weakPassword;
+    return d.auth.login.errors.generic;
+  };
+
   /** Password sign-ins skip /auth/callback, so the "new user → create your
    *  fighter card" routing happens here instead. */
   const finishSignIn = async (userId: string) => {
@@ -128,10 +143,22 @@ function LoginForm() {
       const { data, error } = await supabase.auth.signInWithPassword(credentials);
       if (error) {
         setBusy(null);
-        setError(error.message);
+        setError(friendlyAuthError(error.message));
         return;
       }
       await finishSignIn(data.user.id);
+      return;
+    }
+    // Signup: enforce an 8-char minimum + confirm-password match BEFORE creating
+    // the account, so a typo can't silently create a login the user can't access.
+    if (password.length < 8) {
+      setBusy(null);
+      setError(d.auth.login.errors.weakPassword);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setBusy(null);
+      setError(d.auth.login.passwordMismatch);
       return;
     }
     const { data, error } = await supabase.auth.signUp({
@@ -140,7 +167,7 @@ function LoginForm() {
     });
     setBusy(null);
     if (error) {
-      setError(error.message);
+      setError(friendlyAuthError(error.message));
       return;
     }
     // With email confirmation enabled there's no session yet — the account
@@ -161,7 +188,7 @@ function LoginForm() {
       options: { emailRedirectTo: callbackUrl(), data: consentMetadata() },
     });
     setBusy(null);
-    if (error) setError(error.message);
+    if (error) setError(friendlyAuthError(error.message));
     else setSent({ kind: "magic", email: email.trim() });
   };
 
@@ -176,7 +203,7 @@ function LoginForm() {
       redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
     });
     setBusy(null);
-    if (error) setError(error.message);
+    if (error) setError(friendlyAuthError(error.message));
     else setSent({ kind: "reset", email: email.trim() });
   };
 
@@ -189,7 +216,7 @@ function LoginForm() {
     });
     if (error) {
       setBusy(null);
-      setError(error.message);
+      setError(friendlyAuthError(error.message));
     }
     // On success the browser navigates to the provider, so no further UI needed.
   };
@@ -281,7 +308,7 @@ function LoginForm() {
                   id="password"
                   type="password"
                   required
-                  minLength={6}
+                  minLength={mode === "signup" ? 8 : 6}
                   autoComplete={mode === "signin" ? "current-password" : "new-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -292,6 +319,24 @@ function LoginForm() {
                   <p className="mt-1 text-[11px] text-ink/45">{d.auth.login.passwordHint}</p>
                 ) : null}
               </div>
+              {mode === "signup" ? (
+                <div>
+                  <label htmlFor="confirm-password" className="block font-heading text-sm font-extrabold">
+                    {d.auth.login.confirmLabel}
+                  </label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder={d.auth.login.passwordPlaceholder}
+                    className="mt-1 w-full rounded-card border-4 border-ink bg-paper px-4 py-3 font-body text-base outline-none focus-visible:outline-[3px] focus-visible:outline-offset-2"
+                  />
+                </div>
+              ) : null}
               {mode === "signup" ? (
                 <label className="flex items-start gap-2 text-[12px] leading-snug text-ink/70">
                   <input
