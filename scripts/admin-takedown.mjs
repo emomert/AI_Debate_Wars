@@ -29,14 +29,31 @@
  */
 
 import process from "node:process";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
-const conn = process.env.SUPABASE_DB_URL;
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// Connection string: prefer the env var; fall back to parsing .env.local.
+let conn = process.env.SUPABASE_DB_URL;
 if (!conn) {
-  console.error(
-    "SUPABASE_DB_URL is not set. Run with:\n" +
-      "  node --env-file=.env.local scripts/admin-takedown.mjs <command> …",
-  );
+  try {
+    const env = readFileSync(join(repoRoot, ".env.local"), "utf8");
+    const m = env.match(/^\s*SUPABASE_DB_URL\s*=\s*(.+)$/m);
+    if (m) conn = m[1].trim().replace(/^["']|["']$/g, "");
+  } catch {
+    /* no .env.local */
+  }
+}
+if (!conn) {
+  console.error("SUPABASE_DB_URL is not set (env or .env.local).");
   process.exit(1);
+}
+// Encrypted connection with libpq 'require' semantics (Supabase presents its own
+// CA, not in Node's trust store); see scripts/apply-migrations.mjs.
+if (!/sslmode=/.test(conn)) {
+  conn += (conn.includes("?") ? "&" : "?") + "uselibpqcompat=true&sslmode=require";
 }
 
 let Client;
