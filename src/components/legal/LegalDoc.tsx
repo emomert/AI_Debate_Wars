@@ -1,7 +1,8 @@
 /**
  * LegalDoc — shared presentational layout for the Terms / Privacy pages. Pure
  * (no hooks), so it renders fine inside a Server Component; the text comes from
- * the localized dictionary slice the page passes in.
+ * the localized dictionary slice the page passes in. The optional identity block
+ * names the operator, governing law and contact (GDPR Art. 13 / KVKK).
  */
 
 import Link from "next/link";
@@ -14,19 +15,28 @@ interface LegalSection {
   body: string;
 }
 
+interface LegalIdentity {
+  operatedByLabel: string;
+  operator: string;
+  governedByLabel: string;
+  jurisdiction: string;
+  contactLabel: string;
+  email: string;
+}
+
 export function LegalDoc({
   title,
   intro,
   sections,
   effective,
-  reviewNote,
+  identity,
   backHome,
 }: {
   title: string;
   intro: string;
   sections: readonly LegalSection[];
   effective?: string;
-  reviewNote?: string;
+  identity?: LegalIdentity;
   backHome: string;
 }) {
   return (
@@ -43,10 +53,25 @@ export function LegalDoc({
         ))}
       </div>
 
-      {reviewNote ? (
-        <p className="mt-5 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-xs text-ink/55">
-          {reviewNote}
-        </p>
+      {identity ? (
+        <div className="mt-5 rounded-card border-3 border-ink bg-card p-4 text-sm leading-relaxed text-ink/80">
+          <p>
+            {identity.operatedByLabel}{" "}
+            <strong className="font-extrabold text-ink">{identity.operator}</strong>.
+          </p>
+          <p className="mt-1">
+            {identity.governedByLabel} {identity.jurisdiction}.
+          </p>
+          <p className="mt-1">
+            {identity.contactLabel}:{" "}
+            <a
+              href={`mailto:${identity.email}`}
+              className="font-semibold text-arcade-blue underline decoration-2 underline-offset-2"
+            >
+              {identity.email}
+            </a>
+          </p>
+        </div>
       ) : null}
 
       <div className="mt-5">

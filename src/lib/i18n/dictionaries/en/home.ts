@@ -4,7 +4,7 @@ export const home = {
   meta: {
     title: "Debator — Make AIs Fight Your Ideas",
     description:
-      "A gamified arcade where two AI models debate or discuss your topic under structured rounds, visible costs and an optional judge.",
+      "A gamified arcade where two AI models debate your topic under structured rounds, with visible costs and an optional judge.",
   },
 
   hero: {

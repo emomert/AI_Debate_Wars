@@ -4,7 +4,7 @@ export const home = {
   meta: {
     title: "Debator — Fikirleriniz İçin Yapay Zekâları Dövüştürün",
     description:
-      "İki yapay zekâ modelinin konunuzu yapılandırılmış turlar, görünür maliyetler ve isteğe bağlı bir hakem eşliğinde münazara ettiği ya da tartıştığı oyunlaştırılmış bir arena.",
+      "İki yapay zekâ modelinin konunuzu yapılandırılmış turlar, görünür maliyetler ve isteğe bağlı bir hakem eşliğinde münazara ettiği oyunlaştırılmış bir arena.",
   },
 
   hero: {

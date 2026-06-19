@@ -155,6 +155,10 @@ export function GameShell({
               {d.legal.privacy}
             </Link>
             <span aria-hidden className="text-ink/30">·</span>
+            <Link href="/contact" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
+              {d.legal.contact}
+            </Link>
+            <span aria-hidden className="text-ink/30">·</span>
             <Link href="/report" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
               {d.shell.techReport}
             </Link>
