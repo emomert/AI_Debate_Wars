@@ -180,13 +180,13 @@ export function VoteWidget({ postId, initialTally, nameA, nameB, aiWinner }: Vot
         </div>
       ) : null}
 
-      {/* Crowd vs AI verdict */}
-      <div className="mt-3 space-y-1 text-sm font-semibold">
+      {/* Crowd vs AI verdict — announce the updated tally after a vote (a11y). */}
+      <div className="mt-3 space-y-1 text-sm font-semibold" aria-live="polite">
         <p>{crowdLine}</p>
         {aiLine ? <p className="text-ink/60">{aiLine}</p> : null}
       </div>
 
-      {error ? <p className="mt-2 text-xs font-semibold text-arcade-red">{t.error}</p> : null}
+      {error ? <p role="alert" className="mt-2 text-xs font-semibold text-arcade-red">{t.error}</p> : null}
 
       {!userId && checked ? (
         <p className="mt-3 text-sm text-ink/55">

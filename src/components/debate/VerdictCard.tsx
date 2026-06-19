@@ -69,6 +69,9 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="relative overflow-hidden rounded-panel border-4 border-ink bg-arcade-purple p-1 shadow-hard-lg"
+      // Announce the verdict to screen readers when it reveals (Batch 4 / a11y).
+      role="status"
+      aria-live="polite"
       aria-label="Final verdict"
     >
       <div className="rounded-[20px] border-3 border-ink bg-card p-4 sm:p-6">

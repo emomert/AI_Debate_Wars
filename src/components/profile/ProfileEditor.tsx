@@ -174,6 +174,8 @@ export function ProfileForm({ userId, onSaved }: ProfileFormProps) {
         </ArcadeButton>
         {fb ? (
           <p
+            role="status"
+            aria-live="polite"
             className={cn(
               "text-xs font-semibold",
               fb.tone === "ok" ? "text-arcade-green" : "text-arcade-red",

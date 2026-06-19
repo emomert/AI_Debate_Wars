@@ -170,7 +170,7 @@ export function CommentsSection({
       {comments.length === 0 ? (
         <p className="text-sm text-ink/55">{t.empty}</p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2" aria-live="polite" aria-relevant="additions">
           {comments.map((c) => (
             <li
               key={c.id}
@@ -229,7 +229,7 @@ export function CommentsSection({
               {t.counter(text.length, MAX_CHARS)}
             </span>
             {error ? (
-              <span className="text-xs font-semibold text-arcade-red">{t.error}</span>
+              <span role="alert" className="text-xs font-semibold text-arcade-red">{t.error}</span>
             ) : null}
           </div>
         </div>

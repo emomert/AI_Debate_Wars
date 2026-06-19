@@ -300,6 +300,32 @@ export function BattleController({
     return () => clearTimeout(t);
   }, [flashRound]);
 
+  // Screen-reader transcript (critical #5): the typewriter reveal is silent to
+  // assistive tech, so without this a blind user hears the phase ping and never
+  // learns a single argument. Announce each FINALIZED turn's text (model + round
+  // + content) in a polite live region — keyed to completed messages, never the
+  // per-frame typewriter, so it never spams. (The verdict announces via the
+  // VerdictCard's own live region.)
+  const [srTranscript, setSrTranscript] = useState("");
+  const announcedCountRef = useRef(0);
+  useEffect(() => {
+    const msgs = runner.messages;
+    if (!isActiveRef.current || msgs.length <= announcedCountRef.current) {
+      announcedCountRef.current = msgs.length;
+      return;
+    }
+    announcedCountRef.current = msgs.length;
+    const m = msgs[msgs.length - 1];
+    if (!m) return;
+    const name =
+      m.speaker === "judge"
+        ? d.debate.message.judge
+        : m.speaker === "modelB"
+          ? session.modelB.displayName
+          : session.modelA.displayName;
+    setSrTranscript(`${name}${m.roundLabel ? `, ${m.roundLabel}` : ""}. ${m.content}`);
+  }, [runner.messages, d, session.modelA.displayName, session.modelB.displayName]);
+
   // Inactive battles keep their runner + hooks alive but render nothing visible.
   if (!isActive) return null;
 
@@ -327,6 +353,10 @@ export function BattleController({
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>
+      {/* Finalized turn content for screen readers (critical #5). */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {srTranscript}
+      </div>
 
       <AnimatePresence>
         {flashRound != null ? (

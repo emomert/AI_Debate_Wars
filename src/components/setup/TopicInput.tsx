@@ -159,9 +159,9 @@ export function TopicInput({ value, onChange, error, availability }: TopicInputP
       {/* AI topic helper — the trigger button is a tilted corner sticker (added
           near the top of this component); here we only render its results. */}
       {helperAvailable ? (
-        <div className="mt-3">
+        <div className="mt-3" aria-live="polite" aria-busy={checking}>
           {checkError ? (
-            <p className="mt-2 text-sm font-bold text-arcade-red">{t.checkError}</p>
+            <p role="alert" className="mt-2 text-sm font-bold text-arcade-red">{t.checkError}</p>
           ) : null}
 
           {result ? (
