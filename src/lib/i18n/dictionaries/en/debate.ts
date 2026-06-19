@@ -64,6 +64,7 @@ export const debate = {
   },
   errorPanel: {
     retryTurn: "↻ Retry turn",
+    seeResults: "📊 See results so far",
     newSetup: "⚙️ New Setup",
   },
 

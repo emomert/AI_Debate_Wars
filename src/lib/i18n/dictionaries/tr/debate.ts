@@ -64,6 +64,7 @@ export const debate = {
   },
   errorPanel: {
     retryTurn: "↻ Turu yeniden dene",
+    seeResults: "📊 Şimdiye kadarki sonuçlar",
     newSetup: "⚙️ Yeni Kurulum",
   },
 

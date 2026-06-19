@@ -516,6 +516,13 @@ export function BattleController({
                 <ArcadeButton variant="primary-green" onClick={runner.retry}>
                   {d.debate.errorPanel.retryTurn}
                 </ArcadeButton>
+                {/* Completed rounds are still in memory — let the user salvage
+                    them instead of only Retry / New Setup (which discards). */}
+                {runner.messages.length > 0 ? (
+                  <ArcadeButton variant="neutral-white" onClick={onResults}>
+                    {d.debate.errorPanel.seeResults}
+                  </ArcadeButton>
+                ) : null}
                 <ArcadeButton variant="neutral-white" onClick={onNewSetup}>
                   {d.debate.errorPanel.newSetup}
                 </ArcadeButton>

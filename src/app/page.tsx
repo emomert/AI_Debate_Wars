@@ -165,9 +165,10 @@ export default function HomePage() {
               {d.home.cta.useDebator}
             </ArcadeButton>
             <ArcadeButton
-              variant="primary-yellow"
+              variant="neutral-white"
               size="lg"
               fullWidth
+              disabled={availability === null}
               onClick={trySample}
             >
               {d.home.cta.trySample}

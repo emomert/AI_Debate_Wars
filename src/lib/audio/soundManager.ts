@@ -378,12 +378,12 @@ class SoundManager {
     if (this.musicHydrated) return this.musicEnabled;
     if (typeof window !== "undefined") {
       try {
-        // ON by default ("positive") — it only turns off when the user presses
-        // the music button, which persists an explicit "false".
+        // OFF by default (matches SFX): no surprise autoplay on first click. It
+        // only turns on when the user presses the music button (persists "true").
         this.musicEnabled =
-          window.localStorage.getItem(MUSIC_STORAGE_KEY) !== "false";
+          window.localStorage.getItem(MUSIC_STORAGE_KEY) === "true";
       } catch {
-        this.musicEnabled = true;
+        this.musicEnabled = false;
       }
       this.installVisibilityHandler();
     }

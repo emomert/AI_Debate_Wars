@@ -62,10 +62,10 @@ function FeedCard({ post, d }: { post: SharedMatchFeedRow; d: Dictionary }) {
           <Badge color="white" size="sm">{t.rounds(post.round_count)}</Badge>
         </div>
 
-        <p className="mt-2 font-heading text-lg font-extrabold leading-snug">
+        <p className="mt-2 line-clamp-2 font-heading text-lg font-extrabold leading-snug">
           {post.topic}
         </p>
-        <p className="mt-1 text-sm font-semibold text-ink/65">{vsLine}</p>
+        <p className="mt-1 line-clamp-1 text-sm font-semibold text-ink/65">{vsLine}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/55">
           <span className="font-mono font-bold">{t.votes(post.vote_count)}</span>
