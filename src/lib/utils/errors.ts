@@ -72,6 +72,12 @@ export function httpStatusForCode(code: AppErrorCode): number {
  * Friendly, on-brand UI copy for each error code (docs/09 error UX). Used by the
  * client so it never has to show a raw provider error.
  */
+/**
+ * @deprecated User-facing error copy now lives ONLY in the i18n dictionaries
+ * (`d.debate.errors[code]`), which the arena and RejudgePanel render. This
+ * duplicate is no longer referenced — don't wire it back; edit the dictionaries
+ * instead (otherwise the two drift, as TOO_MANY_REQUESTS already had).
+ */
 export function friendlyMessage(code: AppErrorCode): { title: string; body: string } {
   switch (code) {
     case "MISSING_API_KEY":

@@ -19,7 +19,7 @@ import type {
 import { getModelById, type ModelCatalogEntry } from "@/lib/models/modelRegistry";
 import { generateVerdict } from "@/lib/api/debateClient";
 import { recomputeCostSummary } from "@/lib/cost/calculateCost";
-import { friendlyMessage, toAppError, type AppErrorShape } from "@/lib/utils/errors";
+import { toAppError, type AppErrorShape } from "@/lib/utils/errors";
 import { playSound, playVerdictRoll, stopDrumRoll } from "@/lib/audio/soundManager";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { ModelSelector } from "@/components/setup/ModelSelector";
@@ -146,10 +146,10 @@ export function RejudgePanel({ session, availability, onSession }: RejudgePanelP
           {error ? (
             <div className="rounded-card border-3 border-arcade-red bg-arcade-red/10 p-3">
               <p className="font-heading text-sm font-extrabold">
-                {friendlyMessage(error.code).title}
+                {d.debate.errors[error.code].title}
               </p>
               <p className="mt-0.5 text-sm text-ink/70">
-                {friendlyMessage(error.code).body}
+                {d.debate.errors[error.code].body}
               </p>
             </div>
           ) : null}
