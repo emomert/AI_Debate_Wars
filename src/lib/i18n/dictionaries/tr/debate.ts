@@ -70,8 +70,8 @@ export const debate = {
   // Error copy, keyed by AppErrorCode (replaces friendlyMessage on this screen)
   errors: {
     MISSING_API_KEY: {
-      title: "Arena'nın güç kaynağı yok",
-      body: "Sunucu tarafındaki bir API anahtarı eksik ya da reddedildi. Yarışmacıların OPENAI_API_KEY, DEEPSEEK_API_KEY veya OPENROUTER_API_KEY'e ihtiyacı var; Derin Münazara ise web araması için geçerli bir BRAVE_SEARCH_API_KEY ister.",
+      title: "Bu yarışmacının köşesi çevrimdışı",
+      body: "Bu maç şu anda başlayamıyor — arena tam olarak çalışmıyor. Farklı bir yarışmacı deneyin ya da biraz sonra tekrar bakın.",
     },
     PROVIDER_TIMEOUT: {
       title: "Yarışmacı tur ortasında dondu",

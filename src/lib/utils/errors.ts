@@ -76,8 +76,8 @@ export function friendlyMessage(code: AppErrorCode): { title: string; body: stri
   switch (code) {
     case "MISSING_API_KEY":
       return {
-        title: "The arena has no power source",
-        body: "A server-side API key is missing or rejected. Fighters need OPENAI_API_KEY, DEEPSEEK_API_KEY, or OPENROUTER_API_KEY; Deep Debate also needs a valid BRAVE_SEARCH_API_KEY for web search.",
+        title: "This fighter's corner is offline",
+        body: "This match can't start right now — the arena isn't fully powered up. Try a different fighter, or check back in a little while.",
       };
     case "PROVIDER_TIMEOUT":
       return {
