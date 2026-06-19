@@ -13,6 +13,8 @@ export const setup = {
   swapFighters: "Swap fighters A and B",
   fighterA: "Fighter A",
   fighterB: "Fighter B",
+  fightersDeepNote:
+    "🌐 Deep Debate is on — only web-search-capable fighters can be picked. Turn it off above to choose any model.",
   backToHome: "← Back to home",
 
   // Multi-battle: run up to 3 fights on the same topic at once (only the

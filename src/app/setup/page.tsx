@@ -238,6 +238,11 @@ export default function SetupPage() {
           </GamePanel>
 
           <GamePanel title={d.setup.sections.fighters}>
+            {config.deepDebate ? (
+              <div className="mb-3 rounded-card border-3 border-arcade-purple bg-arcade-purple/10 p-3 text-sm font-semibold text-ink">
+                {d.setup.fightersDeepNote}
+              </div>
+            ) : null}
             <BattleList
               pairs={pairs}
               availability={availability}

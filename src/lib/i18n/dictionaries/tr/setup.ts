@@ -13,6 +13,8 @@ export const setup = {
   swapFighters: "A ve B yarışmacılarını yer değiştir",
   fighterA: "Yarışmacı A",
   fighterB: "Yarışmacı B",
+  fightersDeepNote:
+    "🌐 Derin Münazara açık — yalnızca web aramasına uygun yarışmacılar seçilebilir. Herhangi bir modeli seçmek için yukarıdan kapatın.",
   backToHome: "← Ana sayfaya dön",
 
   // Çoklu dövüş: aynı konuda en fazla 3 dövüş (dövüşler arasında yalnızca
