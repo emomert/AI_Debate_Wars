@@ -91,6 +91,9 @@ export function ToneSelector({
       const clicks = [...aggressiveClicksRef.current.filter((t) => now - t < 3000), now];
       aggressiveClicksRef.current = clicks;
       if (clicks.length >= 5) {
+        // Reveal the hidden chip but DON'T auto-select profanity mode — the user
+        // must click the now-visible 🤬 chip explicitly. Stray rapid clicks (esp.
+        // on a shared screen) no longer drop anyone into adult-content mode.
         setUnhingedUnlocked(true);
         setShakeNonce((n) => n + 1);
         try {
@@ -98,8 +101,8 @@ export function ToneSelector({
         } catch {
           /* ignore */
         }
-        playSound("modeSelect");
-        onChange("unhinged");
+        playSound("buttonClick");
+        onChange("aggressive");
         return;
       }
     }
