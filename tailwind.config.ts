@@ -64,9 +64,6 @@ const config: Config = {
         "hard-sm": "3px 3px 0 var(--shadow-ink)",
         "hard-lg": "8px 8px 0 var(--shadow-ink)",
         "hard-pressed": "2px 2px 0 var(--shadow-ink)",
-        "hard-blue": "6px 6px 0 #1d4ed8",
-        "hard-red": "6px 6px 0 #c81e1e",
-        "hard-purple": "6px 6px 0 #6d28d9",
       },
       keyframes: {
         "caret-blink": {

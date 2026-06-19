@@ -103,8 +103,8 @@ export const debate = {
       body: "The match data was rejected. Head back to setup and start a fresh match.",
     },
     TOO_MANY_REQUESTS: {
-      title: "Whoa — slow down, champ",
-      body: "You're starting matches faster than the arena can run them. Wait a few seconds and try again.",
+      title: "Too many requests",
+      body: "That's a lot of requests in a short time — wait a few seconds and try again.",
     },
     DAILY_LIMIT_REACHED: {
       title: "The arena hit today's limit",
@@ -129,8 +129,8 @@ export const debate = {
       body: "This shared match doesn't exist anymore — it may have been unpublished.",
     },
     UNKNOWN_ERROR: {
-      title: "The arena lights flickered",
-      body: "The model didn't respond cleanly. Try again or switch models.",
+      title: "Something went sideways",
+      body: "An unexpected error interrupted the match. Try again, or head back to setup.",
     },
   },
 

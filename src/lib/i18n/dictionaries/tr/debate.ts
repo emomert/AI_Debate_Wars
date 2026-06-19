@@ -103,8 +103,8 @@ export const debate = {
       body: "Maç verisi reddedildi. Kuruluma dönüp yeni bir maç başlatın.",
     },
     TOO_MANY_REQUESTS: {
-      title: "Yavaş olun, şampiyon",
-      body: "Maçları arenanın yetişebileceğinden daha hızlı başlatıyorsunuz. Birkaç saniye bekleyip tekrar deneyin.",
+      title: "Çok fazla istek",
+      body: "Kısa sürede çok fazla istek geldi — birkaç saniye bekleyip tekrar deneyin.",
     },
     DAILY_LIMIT_REACHED: {
       title: "Arena bugünkü sınırına ulaştı",
@@ -129,8 +129,8 @@ export const debate = {
       body: "Bu paylaşılan maç artık yok — yayından kaldırılmış olabilir.",
     },
     UNKNOWN_ERROR: {
-      title: "Arena ışıkları titredi",
-      body: "Model düzgün bir yanıt vermedi. Tekrar deneyin ya da modelleri değiştirin.",
+      title: "Beklenmedik bir hata",
+      body: "Beklenmedik bir hata maçı yarıda kesti. Tekrar deneyin ya da kuruluma dönün.",
     },
   },
 
