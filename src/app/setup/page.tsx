@@ -289,8 +289,8 @@ export default function SetupPage() {
                   onCustomToneAChange={(customToneA) => setConfig({ customToneA })}
                   customToneB={config.customToneB ?? ""}
                   onCustomToneBChange={(customToneB) => setConfig({ customToneB })}
-                  fighterALabel={config.modelA.displayName}
-                  fighterBLabel={config.modelB.displayName}
+                  fighterALabel={pairs.length > 1 ? d.setup.fighterA : config.modelA.displayName}
+                  fighterBLabel={pairs.length > 1 ? d.setup.fighterB : config.modelB.displayName}
                   error={attempted ? validation.errors.tone : undefined}
                   disabled={config.deepDebate}
                 />
