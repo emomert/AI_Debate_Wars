@@ -18,8 +18,9 @@ The product is feature-complete and polished, in pre-public-launch state.
 
 - **Debate Mode only** in the UI. Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface it without an explicit request.
 - **English-only UI for launch.** Turkish localization is fully built but hidden behind `MULTILOCALE_ENABLED = false` in `src/lib/i18n/config.ts`.
-- **Fighter Voices hidden for now.** The opt-in 🔊 voice-over (TTS) is fully built but hidden behind `VOICE_ENABLED = false` in `src/lib/tts/config.ts`: the setup voice card, arena HUD voice toggle + cost badge, and per-message play buttons don't render, the `voicePlayer` engine no-ops, and server TTS reports unconfigured so `/api/tts` never fires. This is separate from the arcade SFX/music toggles, which stay on. Flip the flag to bring voices back with no other changes.
-- Remaining pre-launch work is tracked in `docs/18_RELEASE_REQUIREMENTS.md` and `docs/13_ROADMAP.md`.
+- **Fighter Voices hidden for now.** The opt-in 🔊 voice-over (TTS) is fully built but hidden behind `VOICE_ENABLED = false` in `src/lib/tts/config.ts`: the setup voice card, arena HUD voice toggle + cost badge, and per-message play buttons don't render, the `voicePlayer` engine no-ops, and server TTS reports unconfigured so `/api/tts` never fires. This is separate from the arcade SFX/music toggles, which stay available (background music now defaults **off**, matching SFX). Flip the flag to bring voices back with no other changes.
+- **Launch hardening + UX/accessibility audit (in progress).** Two remediation passes are underway and shipping incrementally to `main`: (1) pre-launch security/trust/cost blockers, and (2) a 109-finding honest UX/a11y audit. Done so far: topic + publish moderation, a spoof-proof rate-limit IP, a Brave metered-billing guard, signed share verdicts (verified/unverified), a reduce-motion/instant-text escape hatch + screen-reader live regions, contrast + tab-semantics + responsive fixes, a `/contact` page + data-controller identity, a report/flag + admin-takedown system, and a signup consent/13+ age gate. **The single tracker for what's done and what remains is `Debator-Launch-Checklist.md`** (the full audit findings live in `Debator-UX-Inspection-Report.html`).
+- Remaining pre-launch work is tracked in `Debator-Launch-Checklist.md` (plus `docs/18_RELEASE_REQUIREMENTS.md` and `docs/13_ROADMAP.md`).
 
 ## Core Product Principle
 
@@ -43,20 +44,21 @@ The AI models only generate individual turn responses based on strict prompts. T
 - 3 / 5 / 7 rounds (Quick Match / Ranked Match / Championship)
 - Tone per fighter: serious, aggressive, casual, or custom free text — plus a hidden "unhinged" easter-egg tone (5 rapid clicks on Aggressive in setup; profanity-allowed roast battle, hard ban on slurs/hate speech baked into the prompt)
 - Response length: short / medium / long; pace: manual or auto
-- Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode)
+- Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode). Brave's free tier ended (Feb 2026): `SEARCH_COST_USD` defaults to ~$0.005/query and a hard daily search-count cap (`SEARCH_DAILY_MAX`) backstops the dollar caps.
 - Optional judge: auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores
+- Topic + published-transcript moderation: every user topic runs through OpenAI's free `omni-moderation` before any paid provider call and again at community publish; the profanity-allowed "unhinged" tone is barred from publishing (`src/lib/moderation/`).
 - Per-message and total cost tracking, cache-aware pricing
 - Optional fighter voices (opt-in 🔊, currently hidden behind `VOICE_ENABLED` — see Current Status): free Web Speech tier always; premium OpenAI speech via `/api/tts` (~$15/1M chars ≈ 13¢/voiced match, reuses `OPENAI_API_KEY`) with automatic fallback (see `docs/21_VOICE.md`)
-- Stateless share links (`/s?d=...`) with generated OG images (`/api/og`)
-- Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars (see `docs/20_COMMUNITY.md`)
-- Optional Supabase auth (magic link + Google); match history and stats on `/profile`
-- Per-IP rate limits and global/per-IP daily spend caps (Supabase RPCs, fail-open)
-- Arcade UI: synth SFX, generative background music, sound toggle, mobile-responsive
-- Legal pages (`/about`, `/privacy`, `/terms`) and a living tech report (`/report`)
+- Stateless share links (`/s?d=...`) with generated OG images (`/api/og`). The verdict is HMAC-signed at generation (`src/lib/share/signing.ts`); `/s` + OG render verified vs ⚠ unverified to defeat forged share links. Dormant + safe until `SHARE_SECRET` is set.
+- Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars, and a **report/flag** path on matches + comments with an operator admin-takedown script (see `docs/20_COMMUNITY.md`)
+- Optional Supabase auth (magic link + Google); a signup consent + **13+ age gate** (recorded on the profile) and match history/stats on `/profile`
+- Per-IP rate limits (spoof-proof trusted IP) and global/per-IP daily spend caps (Supabase RPCs, fail-open)
+- Arcade UI: synth SFX, generative background music (off by default), sound toggle, a **reduce-motion / instant-text** toggle + OS `prefers-reduced-motion` support, screen-reader live regions, mobile-responsive
+- Legal pages (`/about`, `/privacy`, `/terms`, `/contact`) with a named operator / data-controller identity and governing-law clause (values are placeholders in `src/lib/legal/identity.ts` — set before launch), and a living tech report (`/report`)
 
 ## Repository Map
 
-- `src/app/` — pages (home, setup, debate, result, s, community, m/[id], profile, login, report, legal) and API routes (`api/debate/turn`, `api/debate/verdict`, `api/topic/check`, `api/health`, `api/og`, `api/community/{publish,vote,comment}`)
+- `src/app/` — pages (home, setup, debate, result, s, community, m/[id], profile, login, welcome, report, contact, legal) and API routes (`api/debate/{turn,verdict}`, `api/topic/check`, `api/health`, `api/og`, `api/tts`, `api/community/{publish,vote,comment,report}`)
 - `src/lib/debate/` — orchestrator, round plans, prompt builder, verdict parser, validators, citations, topic check
 - `src/lib/providers/` — provider interface + OpenAI / DeepSeek / OpenRouter implementations, registry with retry and auto-judge resolution
 - `src/lib/models/modelRegistry.ts` — model catalog (display info, cost tiers, debate ratings, Turkish support, web-search capability)
@@ -64,11 +66,16 @@ The AI models only generate individual turn responses based on strict prompts. T
 - `src/lib/search/` — injected web search (Brave) behind a search-provider interface
 - `src/lib/supabase/` — auth clients, match persistence, stats
 - `src/lib/community/` — shared-match types, publish-time snapshot sanitizer, profile presets, community API client
-- `src/lib/security/rateLimit.ts` — rate limits and spend caps
-- `src/lib/share/` — stateless share-link encoding
+- `src/lib/security/rateLimit.ts` — rate limits, daily spend caps, trusted client IP, and the Brave search-count cap
+- `src/lib/moderation/` — OpenAI `omni-moderation` gate (topics + published transcripts), fail-open
+- `src/lib/share/` — stateless share-link encoding + `signing.ts` (HMAC verdict signatures)
+- `src/lib/motion/` — reduce-motion preference store + `useReduceMotion` hook (OS flag OR in-app toggle)
+- `src/lib/legal/identity.ts` — operator / data-controller identity (placeholders; set before launch)
 - `src/lib/i18n/` — locale config, dictionaries (en/tr), providers
-- `src/lib/audio/soundManager.ts` — synth SFX and music
+- `src/lib/audio/soundManager.ts` — synth SFX and music (both off by default)
 - `src/lib/state/ArenaContext.tsx` — client session/config state
+- `scripts/` — node+pg admin tooling: `apply-migrations.mjs` (applies SQL migrations via `SUPABASE_DB_URL`), `admin-takedown.mjs` (remove reported content)
+- `supabase/migrations/` — SQL migrations 0001–0006 (matches, match guards, rate limits, social/community, consent, reports)
 - `docs/` — product and technical reference docs (see `docs/13_ROADMAP.md` for what's next)
 
 ## Required Architecture Rules
@@ -80,16 +87,21 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Debate orchestration is separated from UI; prompt construction is separated from provider calls.
 - Round logic is deterministic; infinite debates are impossible by design.
 - Rate limits and spend caps run BEFORE any paid provider work.
+- User topics are moderated (free `omni-moderation`) before any paid provider call; published transcripts are moderated before they go public. Both fail open.
+- Shareable verdicts are HMAC-signed server-side; `/s` and the OG image must never present an unsigned/forged verdict as verified.
+- Honor reduced motion (OS flag or the in-app toggle): no infinite/continuous animation, and reveal turns instantly when it's set — see `src/lib/motion/`.
 - Supabase is optional: the app must keep working signed-out and without Supabase configured (limits fail open).
 - The `/report` page must keep rendering from the real source of truth (prompt builder, model registry, pricing).
 
 ## Environment Variables
 
 Providers: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
-Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD`, `DEEP_SEARCH_MODE` (`unified` | `hybrid`).
+Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD` (default ~`0.005`/query), `SEARCH_DAILY_MAX` (hard daily search-count cap, default 2000), `DEEP_SEARCH_MODE` (`unified` | `hybrid`).
+Moderation: on whenever `OPENAI_API_KEY` is set; `MODERATION_ENABLED=false` disables, `MODERATION_MODEL` (default `omni-moderation-latest`).
+Sharing: `SHARE_SECRET` — HMAC key for signing share verdicts. Unset = signing dormant (shares render normally, never falsely "verified"). **Set a strong random value in prod to activate verification.**
 Voice: `TTS_PROVIDER` (`none` disables; otherwise on whenever `OPENAI_API_KEY` is set), `TTS_OPENAI_MODEL` (default `gpt-4o-mini-tts`), `TTS_SPEED` (0.25–4.0, default 1.3), `TTS_COST_USD_PER_1M` (price override), `RL_TTS_PER_MIN`.
-Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
+Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Admin/migrations (server-only, never client): `SUPABASE_DB_URL`.
+Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `RL_REPORT_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
 
 ## Development Workflow
 
