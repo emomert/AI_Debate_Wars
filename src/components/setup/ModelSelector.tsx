@@ -35,10 +35,14 @@ import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 
 type Accent = "blue" | "red" | "purple";
 
+// Keep the INK comic outline on selection (matching the dark-mode guard in
+// globals.css) — a thin arcade-color stroke on a 10% tint is low-contrast,
+// especially in dark mode. Selection reads from the colored fill + bigger hard
+// shadow + the "PICKED" badge instead.
 const ACCENT_SELECTED: Record<Accent, string> = {
-  blue: "border-arcade-blue bg-arcade-blue/10 shadow-hard",
-  red: "border-arcade-red bg-arcade-red/10 shadow-hard",
-  purple: "border-arcade-purple bg-arcade-purple/10 shadow-hard",
+  blue: "border-ink bg-arcade-blue/10 shadow-hard",
+  red: "border-ink bg-arcade-red/10 shadow-hard",
+  purple: "border-ink bg-arcade-purple/10 shadow-hard",
 };
 
 const ACCENT_BAR: Record<Accent, string> = {
