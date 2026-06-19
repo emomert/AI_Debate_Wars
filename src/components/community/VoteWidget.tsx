@@ -83,7 +83,13 @@ export function VoteWidget({ postId, initialTally, nameA, nameB, aiWinner }: Vot
   }, [supabase, userId, postId]);
 
   const vote = async (choice: VoteChoice) => {
-    if (!userId || busy || choice === myChoice) return;
+    if (busy || choice === myChoice) return;
+    // Signed-out: the buttons stay focusable (not `disabled`), so route to login
+    // instead of being three dead controls a keyboard/SR user can't reach (a11y).
+    if (!userId) {
+      window.location.assign(nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login");
+      return;
+    }
     setBusy(true);
     setError(false);
     try {
@@ -130,7 +136,7 @@ export function VoteWidget({ postId, initialTally, nameA, nameB, aiWinner }: Vot
               key={choice}
               type="button"
               onClick={() => vote(choice)}
-              disabled={!userId || busy}
+              disabled={busy}
               aria-pressed={active}
               className={cn(
                 "rounded-card border-3 border-ink p-3 text-center font-heading text-sm font-extrabold transition",
@@ -144,7 +150,7 @@ export function VoteWidget({ postId, initialTally, nameA, nameB, aiWinner }: Vot
                           : "bg-arcade-red text-white",
                     )
                   : "bg-card hover:bg-surface",
-                !userId || busy ? "cursor-not-allowed opacity-60" : "",
+                busy ? "cursor-not-allowed opacity-60" : "",
               )}
             >
               <span className="block truncate">{labelFor(choice)}</span>
@@ -172,8 +178,10 @@ export function VoteWidget({ postId, initialTally, nameA, nameB, aiWinner }: Vot
             tally[c] > 0 ? (
               <span
                 key={c}
-                className={SEGMENT[c]}
-                style={{ width: `${(tally[c] / tally.total) * 100}%` }}
+                // min width so a tiny minority is never an invisible sliver; a
+                // divider between segments separates the color-only fills.
+                className={cn(SEGMENT[c], "border-ink/30 [&:not(:last-child)]:border-r-2")}
+                style={{ width: `${(tally[c] / tally.total) * 100}%`, minWidth: "4px" }}
               />
             ) : null,
           )}

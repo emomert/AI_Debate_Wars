@@ -30,8 +30,11 @@ const config: Config = {
         arcade: {
           yellow: "#FFD91A",
           green: "#4CAF50",
-          blue: "#3B82F6",
-          red: "#FF4D4D",
+          // blue/red carry WHITE text on fighter chips, STOP, vote + winner
+          // badges; deepened from #3B82F6 / #FF4D4D so white passes WCAG AA
+          // (~4.5:1+) while staying vivid arcade A/B colors (audit contrast fix).
+          blue: "#2563EB",
+          red: "#DC2626",
           pink: "#FF75C3",
           purple: "#8B5CF6",
           orange: "#FF9F1C",

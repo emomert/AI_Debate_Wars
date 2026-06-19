@@ -23,8 +23,8 @@ const C = {
   paper: "#f7f7f2",
   ink: "#050505",
   card: "#ffffff",
-  blue: "#3B82F6",
-  red: "#FF4D4D",
+  blue: "#2563EB",
+  red: "#DC2626",
   yellow: "#FFD91A",
   sub: "#5b5b55",
 };
