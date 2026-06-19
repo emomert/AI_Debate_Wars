@@ -122,7 +122,7 @@ function DebateHUDComponent({
               aria-label={d.debate.hud.paceLabel(pace)}
               className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
             >
-              {pace === "auto" ? d.debate.hud.paceFast : d.debate.hud.paceNormal}
+              {pace === "auto" ? d.debate.hud.paceSwitchNormal : d.debate.hud.paceSwitchFast}
             </button>
           ) : null}
           {VOICE_ENABLED ? (

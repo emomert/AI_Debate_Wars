@@ -4,8 +4,8 @@ export const auth = {
   login: {
     loading: "Yükleniyor…",
     linkError: "Bu giriş bağlantısı işe yaramadı — lütfen tekrar deneyin.",
-    notSetUpTitle: "Giriş henüz ayarlanmadı",
-    notSetUpBody: "Hesaplar yakında geliyor. Hesabınız olmadan da münazaralara devam edebilirsiniz.",
+    notSetUpTitle: "Giriş burada kullanılamıyor",
+    notSetUpBody: "Bu dağıtımda hesaplar etkin değil — hesabınız olmadan da münazaralara devam edebilirsiniz.",
     title: "Giriş yapın",
     subtitle:
       "Maçlarınızı, geçmişinizi ve istatistiklerinizi kaydedin. İsteğe bağlıdır — münazaralar hesapsız da çalışır.",

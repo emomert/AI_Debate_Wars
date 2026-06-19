@@ -145,10 +145,14 @@ export const debate = {
       stopped: "Stopped",
       error: "Error",
     },
-    paceLabel: (pace: "auto" | "manual") =>
-      `Pacing: ${pace === "auto" ? "Fast" : "Normal"}. Click to switch.`,
+    paceLabel: (pace: "auto" | "manual"): string =>
+      pace === "auto"
+        ? "Pacing is Fast. Switch to Normal."
+        : "Pacing is Normal. Switch to Fast.",
     paceFast: "⚡ Fast",
     paceNormal: "🚶 Normal",
+    paceSwitchFast: "Switch to ⚡ Fast",
+    paceSwitchNormal: "Switch to 🚶 Normal",
     totalCost: "Total cost so far",
     msgSuffix: "msg",
   },

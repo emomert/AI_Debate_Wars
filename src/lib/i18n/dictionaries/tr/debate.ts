@@ -145,10 +145,14 @@ export const debate = {
       stopped: "Durduruldu",
       error: "Hata",
     },
-    paceLabel: (pace: "auto" | "manual") =>
-      `Tempo: ${pace === "auto" ? "Hızlı" : "Normal"}. Değiştirmek için tıklayın.`,
+    paceLabel: (pace: "auto" | "manual"): string =>
+      pace === "auto"
+        ? "Tempo Hızlı. Normal'e geçin."
+        : "Tempo Normal. Hızlı'ya geçin.",
     paceFast: "⚡ Hızlı",
     paceNormal: "🚶 Normal",
+    paceSwitchFast: "⚡ Hızlı'ya geç",
+    paceSwitchNormal: "🚶 Normal'e geç",
     totalCost: "Şimdiye kadarki toplam maliyet",
     msgSuffix: "mesaj",
   },

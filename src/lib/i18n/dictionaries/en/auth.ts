@@ -4,8 +4,8 @@ export const auth = {
   login: {
     loading: "Loading…",
     linkError: "That sign-in link didn't work — please try again.",
-    notSetUpTitle: "Sign-in isn't set up yet",
-    notSetUpBody: "Accounts arrive soon. You can keep running debates without one.",
+    notSetUpTitle: "Sign-in isn't available here",
+    notSetUpBody: "This deployment doesn't have accounts enabled — you can still run debates without one.",
     title: "Sign in",
     subtitle:
       "Save your matches, history and stats. Optional — debates work without an account.",
