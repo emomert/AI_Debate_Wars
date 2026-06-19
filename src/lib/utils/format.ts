@@ -29,3 +29,24 @@ export function formatLatency(ms?: number): string {
 export function costBadgeText(cost: number, tokens: number, latencyMs?: number): string {
   return `${formatCost(cost)} • ${formatTokens(tokens)} • ${formatLatency(latencyMs)}`;
 }
+
+/**
+ * A short relative timestamp ("just now", "3 days ago"), falling back to a stable
+ * YYYY-MM-DD past ~30 days. Pair with a <time dateTime={iso}> element for
+ * machine-readability. Locale is pinned to "en" so server-rendered output is
+ * stable (the UI is English-only for launch).
+ */
+export function formatRelativeDate(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return iso.slice(0, 10);
+  const sec = Math.round((Date.now() - then) / 1000);
+  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  if (sec < 45) return "just now";
+  const min = Math.round(sec / 60);
+  if (min < 60) return rtf.format(-min, "minute");
+  const hr = Math.round(min / 60);
+  if (hr < 24) return rtf.format(-hr, "hour");
+  const day = Math.round(hr / 24);
+  if (day < 30) return rtf.format(-day, "day");
+  return new Date(iso).toLocaleDateString("en-CA"); // YYYY-MM-DD
+}

@@ -20,6 +20,7 @@ import { VoteWidget } from "@/components/community/VoteWidget";
 import { CommentsSection } from "@/components/community/CommentsSection";
 import { ReportButton } from "@/components/community/ReportButton";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { formatRelativeDate } from "@/lib/utils/format";
 import type { SharedComment, SharedMatchRecord } from "@/lib/community/types";
 import { encodeSharePayload, type SharePayload } from "@/lib/share/shareLink";
 import { signSharePayload } from "@/lib/share/signing";
@@ -183,7 +184,7 @@ export default async function SharedMatchPage({ params }: { params: Params }) {
             {t.sharedBy(author.username ?? d.community.anonymous)}
           </span>
           <span aria-hidden className="text-ink/30">·</span>
-          <span>{post.created_at.slice(0, 10)}</span>
+          <time dateTime={post.created_at}>{formatRelativeDate(post.created_at)}</time>
         </p>
       </div>
 

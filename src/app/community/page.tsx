@@ -18,6 +18,7 @@ import {
   type SharedMatchFeedRow,
 } from "@/lib/community/types";
 import { getServerDictionary } from "@/lib/i18n/server";
+import { formatRelativeDate } from "@/lib/utils/format";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,7 @@ function FeedCard({ post, d }: { post: SharedMatchFeedRow; d: Dictionary }) {
             <span aria-hidden>{avatar}</span>
             <span>{t.by(author)}</span>
             <span aria-hidden className="text-ink/30">·</span>
-            <span>{post.created_at.slice(0, 10)}</span>
+            <time dateTime={post.created_at}>{formatRelativeDate(post.created_at)}</time>
           </span>
         </div>
       </Link>
