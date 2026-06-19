@@ -300,28 +300,33 @@ export function ModelSelector({
     const isSelected = m.id === selectedId;
     const isConflict = !isSelected && m.id === conflictId;
     const ready = backendReady(m.providerId, availability);
+    // Provider has no server key (per /api/health) — selecting it would fail
+    // mid-match. `ready === false` only after health resolves, so stay optimistic
+    // (don't disable) while it's still null/unknown.
+    const notReady = ready === false;
     // Deep Debate: OpenRouter models search natively; OpenAI/DeepSeek need
     // the server's search key (reported by /api/health — optimistic until
     // it resolves so eligible models don't flash disabled).
     const noWeb =
       requireWebSearch &&
       !modelSupportsWebSearch(m.id, availability ? availability.webSearch : true);
+    const blocked = noWeb || notReady;
     return (
       <button
         key={m.id}
         type="button"
         aria-pressed={isSelected}
-        disabled={noWeb}
-        aria-disabled={noWeb}
+        disabled={blocked}
+        aria-disabled={blocked}
         onClick={() => {
-          if (noWeb) return;
+          if (blocked) return;
           playSound("modelSelected");
           onSelect(m);
         }}
         className={cn(
           "flex w-full items-center gap-3 rounded-card border-4 p-3 text-left transition",
           "focus-visible:outline-3 focus-visible:outline-offset-2",
-          noWeb && "cursor-not-allowed opacity-45",
+          blocked && "cursor-not-allowed opacity-45",
           isSelected
             ? ACCENT_SELECTED[accent]
             : "border-ink bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
@@ -337,6 +342,7 @@ export function ModelSelector({
               {m.displayName}
             </span>
             {isSelected ? <Badge color="green" size="sm">{d.setup.models.picked}</Badge> : null}
+            {notReady ? <Badge color="ink" size="sm">{d.setup.models.unavailable}</Badge> : null}
           </span>
           <span className="block text-xs font-semibold text-ink/55">
             {m.nickname}

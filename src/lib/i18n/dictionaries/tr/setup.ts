@@ -157,6 +157,7 @@ export const setup = {
     needsOpenRouterKey: "OPENROUTER_API_KEY gerektirir",
     zeroCost: "çalıştırması $0",
     picked: "Seçildi",
+    unavailable: "Kullanılamıyor",
     pickedWith: (name: string) => `Seçildi: ${name}`,
     modelsCount: (n: number) => `${n} model`,
     debateFit: "Münazara becerisi",
