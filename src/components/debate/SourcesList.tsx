@@ -57,6 +57,7 @@ export function SourcesList({
       </button>
 
       {open ? (
+        <>
         <ol className="mt-2 space-y-2 rounded-card border-3 border-ink bg-surface p-3">
           {citations.map((c) => {
             const domain = domainOf(c.url);
@@ -91,6 +92,20 @@ export function SourcesList({
             );
           })}
         </ol>
+        {/* Brave attribution (P0-9): injected web search is Brave by default
+            (DEEP_SEARCH_MODE=unified); displaying its name is required to keep
+            Brave's API terms/credit. In hybrid mode some citations come from a
+            fighter's native search, but the default config is Brave. */}
+        <a
+          href="https://search.brave.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1.5 inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wide text-ink/55 transition hover:text-ink"
+        >
+          <span aria-hidden>🔎</span>
+          {d.debate.sources.attribution}
+        </a>
+        </>
       ) : null}
     </div>
   );

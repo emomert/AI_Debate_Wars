@@ -45,7 +45,11 @@ import {
   injectedSearchCostUsd,
 } from "@/lib/search/searchRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
-import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import {
+  enforceLimits,
+  enforceSearchBudget,
+  recordSpend,
+} from "@/lib/security/rateLimit";
 import { assertTextAllowed } from "@/lib/moderation/moderate";
 import {
   DEEP_SEARCH_COST_USD,
@@ -132,6 +136,9 @@ export async function POST(req: Request): Promise<NextResponse> {
           "Web search is not configured on the server (BRAVE_SEARCH_API_KEY)",
         );
       }
+      // Hard daily query cap (P0-9): Brave is metered with no overage cap, so a
+      // count-based backstop gates each search before it's billed.
+      await enforceSearchBudget();
       injectedSources = await search.search(session.topic, {
         count: 5,
         timeoutMs: 10_000,

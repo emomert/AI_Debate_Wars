@@ -245,6 +245,7 @@ export const debate = {
   // SourcesList
   sources: {
     label: "Kaynaklar",
+    attribution: "Sonuçlar Brave Search ile",
   },
 
   // CitationViewer

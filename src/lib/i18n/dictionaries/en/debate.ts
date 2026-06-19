@@ -245,6 +245,7 @@ export const debate = {
   // SourcesList
   sources: {
     label: "Sources",
+    attribution: "Results via Brave Search",
   },
 
   // CitationViewer

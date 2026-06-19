@@ -61,6 +61,13 @@ const PER_MIN: Record<RouteKind, number> = {
 const GLOBAL_DAILY_CAP_USD = num(process.env.SPEND_GLOBAL_DAILY_USD, 15);
 const IP_DAILY_CAP_USD = num(process.env.SPEND_IP_DAILY_USD, 3);
 
+// Hard global daily cap on injected web-search (Brave) QUERIES — a count-based
+// backstop independent of the dollar caps. Brave killed its free tier (Feb 2026):
+// ~$5/1k queries with NO overage cap by default, so an unbounded burst of Deep
+// Debate searches is its own runaway-cost risk. ~2000/day ≈ $10/day ceiling.
+const SEARCH_DAILY_CAP = num(process.env.SEARCH_DAILY_MAX, 2000);
+const DAY_SECONDS = 86_400;
+
 /**
  * Trusted client IP for the per-IP guards.
  *
@@ -139,6 +146,33 @@ export async function enforceLimits(req: Request, kind: RouteKind): Promise<void
   } catch (err) {
     if (err instanceof ProviderError) throw err;
     console.error("[rate-limit] spend_allowed threw (allowing):", err);
+  }
+}
+
+/**
+ * Hard global daily cap on injected web-search (Brave) queries — a COUNT-based
+ * backstop that sits alongside (not inside) the dollar spend caps. Reuses the
+ * same atomic fixed-window RPC with a 1-day window, so no extra schema is needed.
+ * Call right BEFORE issuing a search. Throws DAILY_LIMIT_REACHED when tripped;
+ * fail-open like the other guards (a DB blip never blocks a search).
+ */
+export async function enforceSearchBudget(): Promise<void> {
+  const supabase = await getSupabaseServerClient();
+  if (!supabase) return; // fail-open
+  try {
+    const { data: allowed, error } = await supabase.rpc("rl_hit", {
+      p_bucket: "search:global",
+      p_limit: SEARCH_DAILY_CAP,
+      p_window_seconds: DAY_SECONDS,
+    });
+    if (error) {
+      console.error("[rate-limit] search rl_hit failed (allowing):", error.message);
+    } else if (allowed === false) {
+      throw new ProviderError("DAILY_LIMIT_REACHED", "Daily web-search budget reached");
+    }
+  } catch (err) {
+    if (err instanceof ProviderError) throw err;
+    console.error("[rate-limit] search rl_hit threw (allowing):", err);
   }
 }
 

@@ -27,8 +27,16 @@ export function isInjectedSearchConfigured(): boolean {
   return getSearchProvider().isConfigured();
 }
 
-/** Per-search fee for injected searches ($0 on Brave's free tier). */
+/**
+ * Per-search fee surfaced in the cost HUD and added to the daily spend ledger.
+ *
+ * Brave KILLED its free tier (Feb 2026): the metered plan is ~$5 / 1,000 queries
+ * ≈ $0.005 each, with no overage cap by default. So the default is now a real,
+ * conservative per-query fee (not $0) — without it, every Deep Debate search
+ * would bill $0 and silently sit outside the dollar spend caps. Override the
+ * exact rate with SEARCH_COST_USD to match your Brave plan.
+ */
 export function injectedSearchCostUsd(): number {
   const raw = Number(process.env.SEARCH_COST_USD);
-  return Number.isFinite(raw) && raw >= 0 ? raw : 0;
+  return Number.isFinite(raw) && raw >= 0 ? raw : 0.005;
 }
