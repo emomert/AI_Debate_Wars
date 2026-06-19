@@ -239,10 +239,10 @@ export default function ResultPage() {
         <ArcadeButton variant="neutral-white" onClick={() => router.push("/setup")}>
           {d.result.page.actions.newSetup}
         </ArcadeButton>
-        <ArcadeButton variant="primary-yellow" onClick={rematch}>
+        <ArcadeButton variant="primary-green" onClick={rematch}>
           {d.result.page.actions.rematch}
         </ArcadeButton>
-        <ArcadeButton variant="primary-green" onClick={() => router.push("/")}>
+        <ArcadeButton variant="neutral-white" onClick={() => router.push("/")}>
           {d.result.page.actions.home}
         </ArcadeButton>
       </div>

@@ -96,7 +96,7 @@ export function TopicInput({ value, onChange, error, availability }: TopicInputP
       ? { color: "green" as const, label: t.verdictStrong }
       : result?.verdict === "unclear"
         ? { color: "orange" as const, label: t.verdictUnclear }
-        : { color: "orange" as const, label: t.verdictWeak };
+        : { color: "yellow" as const, label: t.verdictWeak };
 
   return (
     <div>
