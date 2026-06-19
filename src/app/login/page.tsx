@@ -226,13 +226,12 @@ function LoginForm() {
         ) : (
           <>
             {/* Sign in ↔ create account toggle */}
-            <div className="mt-5 grid grid-cols-2 gap-1.5" role="tablist">
+            <div className="mt-5 grid grid-cols-2 gap-1.5" role="group" aria-label={d.auth.login.title}>
               {(["signin", "signup"] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
-                  role="tab"
-                  aria-selected={mode === m}
+                  aria-pressed={mode === m}
                   onClick={() => {
                     setMode(m);
                     setError(null);

@@ -1,6 +1,8 @@
 /** Turkish — app shell. Register: formal "siz"; fighters = "yarışmacı"; Debate = "Münazara". */
 export const shell = {
   homeAria: "Debator — ana sayfa",
+  skipToContent: "İçeriğe geç",
+  primaryNav: "Birincil",
   techReport: "Teknik Rapor",
   techReportAria: "Teknik rapor",
   help: {

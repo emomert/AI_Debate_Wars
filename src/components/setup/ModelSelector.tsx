@@ -155,8 +155,7 @@ export function ModelSelector({
       <button
         key={b.brand}
         type="button"
-        role="tab"
-        aria-selected={active}
+        aria-pressed={active}
         onClick={() => {
           playSound("buttonClick");
           setActiveBrand(b.brand);
@@ -191,7 +190,7 @@ export function ModelSelector({
       </div>
 
       {/* Step 1 — brand tabs (OpenRouter brands behind a collapsible menu) */}
-      <div className="mb-2 flex flex-wrap items-center gap-2" role="tablist" aria-label={`${label} brand`}>
+      <div className="mb-2 flex flex-wrap items-center gap-2" role="group" aria-label={`${label} brand`}>
         {primaryBrands.map((b) => renderTab(b))}
         {freeBrands.length > 0 ? (
           <button
@@ -232,7 +231,7 @@ export function ModelSelector({
                 ? d.setup.models.needsOpenRouterKey
                 : d.setup.models.zeroCost}
             </p>
-            <div className="flex flex-wrap gap-2" role="tablist" aria-label={d.setup.models.freeBrands}>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={d.setup.models.freeBrands}>
               {freeBrands.map((b) => renderTab(b))}
             </div>
           </motion.div>

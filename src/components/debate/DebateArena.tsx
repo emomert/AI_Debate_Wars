@@ -256,7 +256,7 @@ function BattleTabs({
   const d = useT();
   return (
     <div className="mb-3">
-      <div className="flex items-stretch gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Battles">
+      <div className="flex items-stretch gap-2 overflow-x-auto pb-1" role="group" aria-label="Battles">
         {sessions.map((s, i) => {
           const snap = snapshots[i];
           const active = i === activeIndex;
@@ -264,8 +264,7 @@ function BattleTabs({
             <button
               key={s.id}
               type="button"
-              role="tab"
-              aria-selected={active}
+              aria-pressed={active}
               aria-label={d.debate.battles.tabAria(i + 1)}
               onClick={() => onSelect(i)}
               className={cn(

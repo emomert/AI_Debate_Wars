@@ -213,6 +213,7 @@ export function CommentsSection({
             value={text}
             onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS))}
             placeholder={t.placeholder}
+            aria-label={t.placeholder}
             rows={3}
             className="w-full resize-y rounded-card border-3 border-ink bg-paper p-3 text-sm focus-visible:outline-3 focus-visible:outline-offset-2"
           />

@@ -79,6 +79,12 @@ export function GameShell({
   const d = useT();
   return (
     <div className="relative flex min-h-dvh flex-col">
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-btn border-3 border-ink bg-arcade-yellow px-3 py-1.5 font-heading font-extrabold text-night focus:not-sr-only focus:absolute focus:left-4 focus:top-2"
+      >
+        {d.shell.skipToContent}
+      </a>
       <DottedBackground />
 
       <header className="sticky top-0 z-30 border-b-4 border-ink bg-paper/85 backdrop-blur">
@@ -89,7 +95,7 @@ export function GameShell({
             wide ? "max-w-7xl" : "max-w-5xl",
           )}
         >
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <nav className="flex min-w-0 items-center gap-2 sm:gap-3" aria-label={d.shell.primaryNav}>
             <Logo />
             <Link
               href="/community"
@@ -98,7 +104,7 @@ export function GameShell({
             >
               🏟️ <span className="hidden sm:inline">{d.community.nav}</span>
             </Link>
-          </div>
+          </nav>
           <div className="flex items-center gap-1.5 sm:gap-2">
             {headerExtras ? (
               <>
@@ -128,8 +134,10 @@ export function GameShell({
       </header>
 
       <main
+        id="main"
+        tabIndex={-1}
         className={cn(
-          "mx-auto w-full flex-1 px-4 pt-6 sm:px-6 sm:pt-10",
+          "mx-auto w-full flex-1 px-4 pt-6 sm:px-6 sm:pt-10 focus-visible:outline-none",
           // With the footer hidden (debate page) the sticky bottom controls
           // dock flush with the page end — no bottom padding gap beneath them.
           hideFooter ? "pb-0" : "pb-6 sm:pb-10",

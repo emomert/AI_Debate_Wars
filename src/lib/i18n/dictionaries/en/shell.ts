@@ -1,6 +1,8 @@
 /** App shell — header nav + the "How to play" help modal. */
 export const shell = {
   homeAria: "Debator — home",
+  skipToContent: "Skip to content",
+  primaryNav: "Primary",
   techReport: "Tech Report",
   techReportAria: "Technical report",
   help: {

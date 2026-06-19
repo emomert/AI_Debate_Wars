@@ -123,7 +123,7 @@ export default function ResultPage() {
         <div className="mb-5">
           <div
             className="flex items-stretch gap-2 overflow-x-auto pb-1"
-            role="tablist"
+            role="group"
             aria-label={d.result.battles.overviewTitle}
           >
             {sessions.map((s, i) => {
@@ -143,8 +143,7 @@ export default function ResultPage() {
                 <button
                   key={s.id}
                   type="button"
-                  role="tab"
-                  aria-selected={active}
+                  aria-pressed={active}
                   aria-label={d.result.battles.tabAria(i + 1)}
                   onClick={() => setActiveBattleIndex(i)}
                   className={

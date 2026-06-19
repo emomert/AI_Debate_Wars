@@ -144,6 +144,7 @@ export default async function CommunityPage({
           <Link
             key={s}
             href={tabHref(s)}
+            aria-current={sort === s ? "page" : undefined}
             className={
               "rounded-btn border-3 border-ink px-3 py-1.5 font-heading text-sm font-extrabold transition " +
               (sort === s
