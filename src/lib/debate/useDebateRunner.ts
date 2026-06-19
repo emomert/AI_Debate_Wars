@@ -316,7 +316,11 @@ export function useDebateRunner(
       // core experience and a text reveal isn't vestibular-trigger motion, so
       // every visitor gets the same playback. Decorative bounces elsewhere still
       // honor the OS setting.
-      if (total === 0 || reduceMotionRef.current) {
+      // Skip the per-frame typewriter entirely for reduced motion OR for a
+      // BACKGROUND battle (not audible/watched) — its text is never on screen, so
+      // running a ~30fps setState loop for it just burns the main thread (with up
+      // to 3 concurrent battles, that's 2 invisible typewriters). Reveal instantly.
+      if (total === 0 || reduceMotionRef.current || !audible()) {
         setState((p) => ({ ...p, streamingText: content }));
         return;
       }
