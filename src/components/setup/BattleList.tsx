@@ -68,7 +68,7 @@ export function BattleList({
             </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5 lg:grid-cols-2">
             <ModelSelector
               label={d.setup.fighterA}
               accent="blue"

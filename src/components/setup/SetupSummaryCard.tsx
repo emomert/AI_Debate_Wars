@@ -163,19 +163,24 @@ export function SetupSummaryCard({
         </ul>
       ) : null}
 
-      <ArcadeButton
-        variant="primary-green"
-        size="lg"
-        fullWidth
-        className="mt-4"
-        disabled={!validation.valid}
-        onClick={onStart}
-      >
-        {d.setup.summary.start}
-      </ArcadeButton>
-      <p className="mt-2 text-center text-[11px] text-night/55">
-        {d.setup.summary.footnote}
-      </p>
+      {/* Desktop Start. On mobile the sticky bottom-bar CTA provides Start, so
+          this one is hidden below lg — otherwise two identical Start buttons
+          show on screen at once (the summary card's + the sticky bar's). */}
+      <div className="hidden lg:block">
+        <ArcadeButton
+          variant="primary-green"
+          size="lg"
+          fullWidth
+          className="mt-4"
+          disabled={!validation.valid}
+          onClick={onStart}
+        >
+          {d.setup.summary.start}
+        </ArcadeButton>
+        <p className="mt-2 text-center text-[11px] text-night/55">
+          {d.setup.summary.footnote}
+        </p>
+      </div>
     </div>
   );
 }

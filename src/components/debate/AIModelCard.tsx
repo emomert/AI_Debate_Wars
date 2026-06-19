@@ -145,7 +145,9 @@ function AIModelCardComponent({
           </Badge>
         ) : null}
       </div>
-      <p className="mt-2 text-xs text-ink/60">{role}</p>
+      {/* Role sentence is hidden on the cramped mobile two-up cards (it only
+          shows in the roomy lg+ side cards) so A/B cards don't balloon unevenly. */}
+      <p className="mt-2 hidden text-xs text-ink/60 lg:block">{role}</p>
     </motion.div>
   );
 }

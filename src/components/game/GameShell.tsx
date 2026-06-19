@@ -61,7 +61,7 @@ function Logo() {
       <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow text-base">
         ⚔️
       </span>
-      <span className="font-display text-lg leading-none tracking-tight sm:text-xl">
+      <span className="hidden font-display text-lg leading-none tracking-tight sm:inline sm:text-xl">
         {d.common.brand}
       </span>
     </Link>
