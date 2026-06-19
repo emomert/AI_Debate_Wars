@@ -219,14 +219,30 @@ export function BattleController({
     runner.skipTurn();
   }, [runner.skipTurn]);
 
+  // Stable per-message voice handle so DebateMessageCard's memo() actually holds.
+  // The timeline calls voiceFor(m) for EVERY card on every typewriter frame;
+  // returning a fresh {playing,onToggle} each time gave each completed card a
+  // referentially-new prop and re-rendered it (+ its MarkdownText) ~30x/s. Cache
+  // by message id, rebuilding only when THIS message's `playing` flips; onToggle
+  // reads speakingId via a ref so it never changes identity.
+  const speakingIdRef = useRef(speakingId);
+  speakingIdRef.current = speakingId;
+  const voiceCacheRef = useRef(new Map<string, { playing: boolean; onToggle: () => void }>());
   const voiceFor = useCallback(
-    (m: DebateMessage) => ({
-      playing: speakingId === m.id,
-      onToggle: () => {
-        if (speakingId === m.id) voicePlayer.stop();
-        else voicePlayer.replay(m, speakOptsRef.current);
-      },
-    }),
+    (m: DebateMessage) => {
+      const playing = speakingId === m.id;
+      const cached = voiceCacheRef.current.get(m.id);
+      if (cached && cached.playing === playing) return cached;
+      const onToggle =
+        cached?.onToggle ??
+        (() => {
+          if (speakingIdRef.current === m.id) voicePlayer.stop();
+          else voicePlayer.replay(m, speakOptsRef.current);
+        });
+      const handle = { playing, onToggle };
+      voiceCacheRef.current.set(m.id, handle);
+      return handle;
+    },
     [speakingId],
   );
 
