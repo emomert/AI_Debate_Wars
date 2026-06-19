@@ -74,6 +74,24 @@ export const community = {
     deleting: "Siliniyor…",
     error: "Yorum gönderilemedi. Tekrar dene.",
   },
+  report: {
+    cta: "Bildir",
+    ariaLabel: "İncelenmek üzere bildir",
+    prompt: "Bunda yanlış olan ne?",
+    reasons: {
+      hate: "Nefret",
+      harassment: "Taciz",
+      sexual: "Cinsel",
+      violence: "Şiddet",
+      spam: "Spam / dolandırıcılık",
+      other: "Diğer",
+    },
+    sending: "Bildiriliyor…",
+    thanks: "✓ Bildirildi — teşekkürler",
+    signIn: "Bildirmek için giriş yapın",
+    error: "Bildirilemedi — tekrar deneyin",
+    cancel: "Vazgeç",
+  },
   publish: {
     title: "🏟️ Topluluk Arenasında Paylaş",
     blurb:

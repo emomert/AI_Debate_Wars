@@ -93,6 +93,18 @@ export interface AddCommentResponse {
   createdAt: string;
 }
 
+/** POST /api/community/report — flag a shared match or comment for review. */
+export interface ReportContentRequest {
+  postId: string;
+  /** Omit for a match-level report; set to flag a specific comment. */
+  commentId?: string;
+  reason: string;
+}
+
+export interface ReportContentResponse {
+  ok: true;
+}
+
 export interface ApiErrorBody {
   error: {
     code: AppErrorCode;

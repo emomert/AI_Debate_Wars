@@ -18,6 +18,7 @@ import { SharedTranscript } from "@/components/community/SharedTranscript";
 import { SharedVerdictCard } from "@/components/community/SharedVerdictCard";
 import { VoteWidget } from "@/components/community/VoteWidget";
 import { CommentsSection } from "@/components/community/CommentsSection";
+import { ReportButton } from "@/components/community/ReportButton";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { SharedComment, SharedMatchRecord } from "@/lib/community/types";
 import { encodeSharePayload, type SharePayload } from "@/lib/share/shareLink";
@@ -222,6 +223,11 @@ export default async function SharedMatchPage({ params }: { params: Params }) {
         <Link href="/setup">
           <ArcadeButton variant="primary-green">{t.runYourOwn}</ArcadeButton>
         </Link>
+      </div>
+
+      {/* Report this match for review (P0-8) */}
+      <div className="mt-3 flex justify-center">
+        <ReportButton postId={post.id} />
       </div>
     </GameShell>
   );

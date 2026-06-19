@@ -15,6 +15,7 @@ import { addComment } from "@/lib/community/client";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
+import { ReportButton } from "@/components/community/ReportButton";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 const MAX_CHARS = 500;
@@ -186,6 +187,11 @@ export function CommentsSection({
                   <span className="text-ink/40">{c.created_at.slice(0, 10)}</span>
                 </p>
                 <p className="mt-1 whitespace-pre-wrap break-words text-sm">{c.body}</p>
+                {userId && userId !== c.user_id ? (
+                  <div className="mt-1.5">
+                    <ReportButton postId={postId} commentId={c.id} />
+                  </div>
+                ) : null}
               </div>
               {userId && (userId === c.user_id || userId === postOwnerId) ? (
                 <DeleteCommentButton

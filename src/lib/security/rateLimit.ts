@@ -21,7 +21,15 @@ import "server-only";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ProviderError } from "@/lib/utils/errors";
 
-type RouteKind = "turn" | "verdict" | "topic" | "tts" | "publish" | "vote" | "comment";
+type RouteKind =
+  | "turn"
+  | "verdict"
+  | "topic"
+  | "tts"
+  | "publish"
+  | "vote"
+  | "comment"
+  | "report";
 
 // Spend caps only make sense for routes that call a paid provider; community
 // writes (publish/vote/comment) are DB-only and skip the spend check — a maxed
@@ -55,6 +63,7 @@ const PER_MIN: Record<RouteKind, number> = {
   publish: num(process.env.RL_PUBLISH_PER_MIN, 4),
   vote: num(process.env.RL_VOTE_PER_MIN, 20),
   comment: num(process.env.RL_COMMENT_PER_MIN, 6),
+  report: num(process.env.RL_REPORT_PER_MIN, 6),
 };
 // Daily spend caps: a 3-battle match can cost ~3× a single debate, so the per-IP
 // cap is raised so one multi-battle match can't trip it mid-way.

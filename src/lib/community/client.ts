@@ -12,6 +12,8 @@ import type {
   CastVoteResponse,
   PublishMatchRequest,
   PublishMatchResponse,
+  ReportContentRequest,
+  ReportContentResponse,
 } from "@/lib/api/contracts";
 import type { DebateSession } from "@/lib/debate/debateTypes";
 import type { PublishOptions, VoteChoice, VoteTally } from "@/lib/community/types";
@@ -58,4 +60,14 @@ export async function addComment(
 ): Promise<AddCommentResponse> {
   const body: AddCommentRequest = { postId, body: text };
   return postJson<AddCommentResponse>("/api/community/comment", body);
+}
+
+/** Flag a shared match (commentId omitted) or one of its comments for review. */
+export async function reportContent(
+  postId: string,
+  reason: string,
+  commentId?: string,
+): Promise<void> {
+  const body: ReportContentRequest = { postId, reason, commentId };
+  await postJson<ReportContentResponse>("/api/community/report", body);
 }

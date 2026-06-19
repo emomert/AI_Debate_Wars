@@ -75,6 +75,24 @@ export const community = {
     deleting: "Deleting…",
     error: "Couldn't post the comment. Try again.",
   },
+  report: {
+    cta: "Report",
+    ariaLabel: "Report this for review",
+    prompt: "What's wrong with this?",
+    reasons: {
+      hate: "Hate",
+      harassment: "Harassment",
+      sexual: "Sexual",
+      violence: "Violence",
+      spam: "Spam / scam",
+      other: "Other",
+    },
+    sending: "Reporting…",
+    thanks: "✓ Reported — thanks",
+    signIn: "Sign in to report",
+    error: "Couldn't report — try again",
+    cancel: "Cancel",
+  },
   publish: {
     title: "🏟️ Share to the Community Arena",
     blurb:
