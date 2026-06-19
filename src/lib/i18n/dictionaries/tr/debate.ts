@@ -109,6 +109,10 @@ export const debate = {
       title: "Arena bugünkü sınırına ulaştı",
       body: "Debator, ışıkları açık tutmak için günlük harcamasını sınırlar. Şimdilik sınıra ulaşıldı — yarın tekrar gelin ya da bu sınıra dahil olmayan, $0 faturalandırılan açık ağırlıklı modelleri seçin.",
     },
+    CONTENT_BLOCKED: {
+      title: "Bu konu arenaya giremez",
+      body: "Bu konu güvenlik filtremize takıldı, bu yüzden maç başlayamıyor. Konuyu yeniden ifade edin ya da farklı bir münazara seçin.",
+    },
     PROVIDER_ERROR: {
       title: "Arena ışıkları titredi",
       body: "Model düzgün bir yanıt vermedi. Tekrar deneyin ya da modelleri değiştirin.",

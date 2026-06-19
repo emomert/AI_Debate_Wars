@@ -26,6 +26,7 @@ import {
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { moderateText } from "@/lib/moderation/moderate";
 import {
   buildUsage,
   calculateCost,
@@ -80,6 +81,25 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw new ProviderError("INVALID_REQUEST", "Topic is too long");
     }
     const language = body?.language === "tr" ? "tr" : "en";
+
+    // Early moderation gate: reject a disallowed topic with friendly arcade copy
+    // BEFORE spending anything on the checker model. This is advisory (the topic
+    // checker is optional from the UI); /api/debate/turn is the authoritative
+    // block before any paid match work. Fails open (moderateText.checked=false).
+    const moderation = await moderateText(topic, req.signal);
+    if (moderation.flagged) {
+      const blocked: TopicCheckResponse = {
+        result: {
+          verdict: "unclear",
+          assessment:
+            language === "tr"
+              ? "Bu konu güvenlik filtremize takıldı ve arenada kullanılamaz. Farklı bir münazara konusu deneyin."
+              : "This topic trips our safety filter and can't be used in the arena. Try a different debate topic.",
+          suggestions: [],
+        },
+      };
+      return NextResponse.json(blocked);
+    }
 
     const { providerId, modelId } = resolveTopicCheckModel();
     const modelConfig = getProviderModelConfig(modelId);

@@ -61,11 +61,26 @@ const PER_MIN: Record<RouteKind, number> = {
 const GLOBAL_DAILY_CAP_USD = num(process.env.SPEND_GLOBAL_DAILY_USD, 15);
 const IP_DAILY_CAP_USD = num(process.env.SPEND_IP_DAILY_USD, 3);
 
-/** Best-effort client IP from the proxy headers Vercel/most hosts set. */
+/**
+ * Trusted client IP for the per-IP guards.
+ *
+ * The LEFTMOST `x-forwarded-for` entry is CLIENT-SUPPLIED and trivially spoofable
+ * — sending `X-Forwarded-For: <random>` would mint a fresh identity per request
+ * and dodge both the per-IP rate limit and the per-IP spend cap. So we prefer the
+ * headers the PLATFORM sets and the client cannot overwrite: Vercel injects
+ * `x-vercel-forwarded-for` (and `x-real-ip`) with the real TCP peer on every
+ * request, discarding any inbound copy. Only when neither is present (e.g. local
+ * dev with no proxy) do we fall back to the legacy `x-forwarded-for` parse.
+ */
 export function clientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
+  const h = req.headers;
+  const vercel = h.get("x-vercel-forwarded-for");
+  if (vercel) return vercel.split(",")[0]!.trim();
+  const real = h.get("x-real-ip");
+  if (real) return real.trim();
+  const xff = h.get("x-forwarded-for");
   if (xff) return xff.split(",")[0]!.trim();
-  return req.headers.get("x-real-ip")?.trim() || "unknown";
+  return "unknown";
 }
 
 let warnedUnconfigured = false;

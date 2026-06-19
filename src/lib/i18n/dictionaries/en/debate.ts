@@ -109,6 +109,10 @@ export const debate = {
       title: "The arena hit today's limit",
       body: "Debator caps how much it can spend per day to keep the lights on. The limit's reached for now — come back tomorrow, or pick open-weight models (they bill $0 and don't count against it).",
     },
+    CONTENT_BLOCKED: {
+      title: "That topic can't enter the arena",
+      body: "This topic tripped our safety filter, so the match can't start. Try rephrasing it or pick a different debate.",
+    },
     PROVIDER_ERROR: {
       title: "The arena lights flickered",
       body: "The model didn't respond cleanly. Try again or switch models.",

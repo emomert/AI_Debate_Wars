@@ -18,6 +18,7 @@ export type AppErrorCode =
   // never silently auto-retries past them):
   | "TOO_MANY_REQUESTS" // per-IP request rate limit on the paid routes
   | "DAILY_LIMIT_REACHED" // global/per-IP daily spend cap
+  | "CONTENT_BLOCKED" // topic/transcript rejected by the moderation filter
   | "INSUFFICIENT_CREDITS"
   | "TOKEN_LIMIT_EXCEEDED"
   // Community hub routes (publish/vote/comment):
@@ -45,6 +46,7 @@ export function httpStatusForCode(code: AppErrorCode): number {
     case "INVALID_REQUEST":
     case "INVALID_SESSION":
     case "INVALID_MODEL":
+    case "CONTENT_BLOCKED":
       return 400;
     case "MISSING_API_KEY":
     case "AUTH_REQUIRED":
@@ -96,6 +98,11 @@ export function friendlyMessage(code: AppErrorCode): { title: string; body: stri
       return {
         title: "The arena hit today's limit",
         body: "Debator caps how much it can spend per day to keep the lights on. The limit's reached for now — come back tomorrow, or pick open-weight models (they bill $0 and don't count against it).",
+      };
+    case "CONTENT_BLOCKED":
+      return {
+        title: "That topic can't enter the arena",
+        body: "This topic tripped our safety filter, so the match can't start. Try rephrasing it or pick a different debate.",
       };
     case "INSUFFICIENT_CREDITS":
       return {

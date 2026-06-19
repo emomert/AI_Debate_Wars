@@ -21,6 +21,7 @@ import {
 } from "@/lib/debate/validators";
 import { readJsonBody } from "@/lib/api/serverBody";
 import { enforceLimits } from "@/lib/security/rateLimit";
+import { assertTextAllowed } from "@/lib/moderation/moderate";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
   ProviderError,
@@ -76,6 +77,23 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (session.messages.length === 0) {
       throw new ProviderError("INVALID_REQUEST", "Match transcript is empty");
     }
+
+    // Publish-time moderation (P0-11): a published snapshot is the raw, unfiltered
+    // transcript — permanently public, indexed and OG-imaged. The
+    // profanity-allowed "unhinged" easter-egg tone can make offensive content
+    // permanently crawlable, so it's barred from the community hub outright;
+    // every other match has its topic + full transcript screened before it goes
+    // public. Moderation fails OPEN, but the unhinged block is unconditional.
+    if (session.tone === "unhinged") {
+      throw new ProviderError(
+        "CONTENT_BLOCKED",
+        "Unhinged-tone matches can't be published to the community.",
+      );
+    }
+    await assertTextAllowed(
+      [session.topic, ...session.messages.map((m) => m.content)],
+      req.signal,
+    );
 
     const options = normalizeOptions(body?.options);
     // "Include the verdict" is meaningless without one — store the truth.

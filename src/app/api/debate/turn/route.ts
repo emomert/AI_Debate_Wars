@@ -46,6 +46,7 @@ import {
 } from "@/lib/search/searchRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { assertTextAllowed } from "@/lib/moderation/moderate";
 import {
   DEEP_SEARCH_COST_USD,
   narrowCitationsToCited,
@@ -97,6 +98,16 @@ export async function POST(req: Request): Promise<NextResponse> {
     const next = getNextTurn(session);
     if (!next || next.id !== turn.id) {
       throw new ProviderError("INVALID_REQUEST", "Turns must be generated in order");
+    }
+
+    // Topic moderation gate (P0-3): screen the user's topic through the free
+    // moderation endpoint BEFORE the first paid generation of the match — an
+    // ungated topic flows verbatim to the paid providers + Brave (abuse + TOS
+    // risk). Runs once per battle, on its opening turn (no completed turns yet):
+    // the topic can't change mid-match, so re-screening every turn would only add
+    // latency. Fails OPEN, so a moderation outage never breaks a match.
+    if (!session.turns.some((t) => t.status === "complete")) {
+      await assertTextAllowed(session.topic, req.signal);
     }
 
     const model = speakerModel(session, turn.speaker);
