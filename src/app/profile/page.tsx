@@ -14,6 +14,7 @@ import { Badge } from "@/components/game/Badge";
 import { ReopenButton } from "@/components/profile/ReopenButton";
 import { DeleteMatchButton } from "@/components/profile/DeleteMatchButton";
 import { DeleteAllButton } from "@/components/profile/DeleteAllButton";
+import { AccountActions } from "@/components/profile/AccountActions";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 import { UnpublishButton } from "@/components/profile/UnpublishButton";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -241,6 +242,9 @@ export default async function ProfilePage() {
           </div>
         ) : null}
       </GamePanel>
+
+      {/* Data export + full account deletion (GDPR/CCPA). */}
+      <AccountActions userId={user.id} />
     </GameShell>
   );
 }

@@ -1,8 +1,8 @@
 /** Turkish — Profile page. Must mirror ../en/profile.ts. */
 export const profile = {
   notices: {
-    noAccountsTitle: "Hesaplar henüz hazır değil",
-    noAccountsBody: "Maç geçmişi yakında geliyor — münazaralar hesap olmadan da çalışır.",
+    noAccountsTitle: "Hesaplar burada kullanılamıyor",
+    noAccountsBody: "Bu dağıtımda hesaplar etkin değil — münazaralar hesap olmadan da çalışır.",
     signedOutTitle: "Profilinizi görmek için giriş yapın",
     signedOutBody: "Kaydettiğiniz maçlar, geçmişiniz ve istatistikleriniz giriş yaptığınızda burada görünür.",
     signIn: "Giriş yapın",
@@ -47,5 +47,18 @@ export const profile = {
     deleteAllConfirm: (n: number) => `${n} maçın tümü silinsin mi? Bu işlem geri alınamaz.`,
     deleteAllAction: "Tümünü sil",
     deletingAll: "Siliniyor…",
+  },
+  account: {
+    title: "Hesabınız",
+    exportCta: "⬇ Verilerimi indir",
+    exporting: "Hazırlanıyor…",
+    exportError: "Verileriniz dışa aktarılamadı — tekrar deneyin.",
+    deleteCta: "Hesabımı sil",
+    deleteWarn:
+      "Bu işlem hesabınızı, profilinizi, maç geçmişinizi, paylaşılan maçlarınızı, oylarınızı ve yorumlarınızı kalıcı olarak siler. Geri alınamaz.",
+    deleteConfirm: "Evet, her şeyi sil",
+    deleting: "Siliniyor…",
+    deleteCancel: "İptal",
+    deleteError: "Hesabınız silinemedi — tekrar deneyin.",
   },
 };
