@@ -12,6 +12,7 @@
  */
 
 import type { ReactNode } from "react";
+import { memo, useMemo } from "react";
 
 import type { Citation } from "@/lib/debate/debateTypes";
 import { useCitationViewer } from "@/components/debate/CitationViewer";
@@ -146,7 +147,7 @@ function stripIncompleteMarkdown(text: string): string {
   return t;
 }
 
-export function MarkdownText({
+export const MarkdownText = memo(function MarkdownText({
   content,
   className,
   streaming,
@@ -165,18 +166,25 @@ export function MarkdownText({
   // opener is stable, so this doesn't churn the memoized message cards.
   const viewer = useCitationViewer();
   const onCite = viewer && citations.length > 0 ? viewer.open : undefined;
-  const source = streaming ? stripIncompleteMarkdown(content) : content;
-  const blocks = source.split(/\n\s*\n/);
-  const lineGroups = blocks.map((b) => b.split("\n").filter((l) => l.trim() !== ""));
+  // Memoize the block/line parse so it only re-runs when the text (or streaming
+  // flag) actually changes — not on every parent re-render or cursor/citation
+  // change. The streaming card still re-parses per frame (content grows), but
+  // completed cards parse exactly once.
+  const { blocks, lineGroups, lastIdx } = useMemo(() => {
+    const source = streaming ? stripIncompleteMarkdown(content) : content;
+    const blocks = source.split(/\n\s*\n/);
+    const lineGroups = blocks.map((b) => b.split("\n").filter((l) => l.trim() !== ""));
 
-  // Index of the last non-empty block — the cursor attaches at its end.
-  let lastIdx = -1;
-  for (let i = lineGroups.length - 1; i >= 0; i--) {
-    if (lineGroups[i].length > 0) {
-      lastIdx = i;
-      break;
+    // Index of the last non-empty block — the cursor attaches at its end.
+    let lastIdx = -1;
+    for (let i = lineGroups.length - 1; i >= 0; i--) {
+      if (lineGroups[i].length > 0) {
+        lastIdx = i;
+        break;
+      }
     }
-  }
+    return { blocks, lineGroups, lastIdx };
+  }, [content, streaming]);
 
   return (
     <div
@@ -248,4 +256,4 @@ export function MarkdownText({
       })}
     </div>
   );
-}
+});
