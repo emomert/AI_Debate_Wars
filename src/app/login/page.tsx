@@ -19,6 +19,7 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { GitHubIcon, GoogleIcon } from "@/components/auth/ProviderIcons";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { TERMS_VERSION } from "@/lib/constants";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
 
@@ -93,6 +94,16 @@ function LoginForm() {
       nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""
     }`;
 
+  // Consent recorded at the SIGNUP gesture (P0-7), straight into the user's auth
+  // metadata. This captures consent unconditionally for the email + magic-link
+  // paths, independent of the /welcome profile stamp (which only runs for
+  // brand-new, profile-less users and is skipped once any profile row exists).
+  const consentMetadata = () => ({
+    age_confirmed: true,
+    terms_accepted_at: new Date().toISOString(),
+    terms_version: TERMS_VERSION,
+  });
+
   /** Password sign-ins skip /auth/callback, so the "new user → create your
    *  fighter card" routing happens here instead. */
   const finishSignIn = async (userId: string) => {
@@ -125,7 +136,7 @@ function LoginForm() {
     }
     const { data, error } = await supabase.auth.signUp({
       ...credentials,
-      options: { emailRedirectTo: callbackUrl() },
+      options: { emailRedirectTo: callbackUrl(), data: consentMetadata() },
     });
     setBusy(null);
     if (error) {
@@ -147,7 +158,7 @@ function LoginForm() {
     setError(null);
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: callbackUrl() },
+      options: { emailRedirectTo: callbackUrl(), data: consentMetadata() },
     });
     setBusy(null);
     if (error) setError(error.message);

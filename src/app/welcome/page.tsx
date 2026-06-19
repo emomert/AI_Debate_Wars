@@ -71,16 +71,22 @@ function WelcomeInner() {
       // signup, or the consent notice for the magic-link / OAuth paths). Stamp it
       // durably on the profile row. The payload sets ONLY the consent columns, so
       // it never clobbers a handle/avatar chosen later in the fighter-card form.
-      void supabase.from("profiles").upsert(
-        {
-          user_id: data.user.id,
-          terms_accepted_at: new Date().toISOString(),
-          age_confirmed: true,
-          terms_version: TERMS_VERSION,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id" },
-      );
+      // Log (don't swallow) a failed write so a dropped consent record is visible.
+      supabase
+        .from("profiles")
+        .upsert(
+          {
+            user_id: data.user.id,
+            terms_accepted_at: new Date().toISOString(),
+            age_confirmed: true,
+            terms_version: TERMS_VERSION,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        )
+        .then(({ error }) => {
+          if (error) console.error("[welcome] consent upsert failed:", error.message);
+        });
     });
     return () => {
       cancelled = true;
