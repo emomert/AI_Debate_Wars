@@ -23,6 +23,7 @@ import { CostBadge } from "@/components/debate/CostBadge";
 import { MarkdownText } from "@/components/debate/MarkdownText";
 import { SourcesList } from "@/components/debate/SourcesList";
 import { useRotatingLine } from "@/components/debate/waitingMessages";
+import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
 import { VOICE_ENABLED } from "@/lib/tts/config";
@@ -82,6 +83,7 @@ function DebateMessageCardComponent({
   voice,
 }: DebateMessageCardProps) {
   const d = useT();
+  const reduce = useReduceMotion();
   const isJudge = speaker === "judge";
   const isModelB = speaker === "modelB";
   // Mirror-symmetric lean at EVERY breakpoint (incl. phones): Model A leans left,
@@ -99,9 +101,9 @@ function DebateMessageCardComponent({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 10 }}
+      initial={reduce ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
+      transition={{ duration: reduce ? 0 : 0.22, ease: "easeOut" }}
       className={cn(
         // Capped under full width on phones too (was w-full), so the lean above
         // actually has room to push A left / B right instead of filling the row.

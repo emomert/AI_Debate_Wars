@@ -49,7 +49,7 @@ function FeedCard({ post, d }: { post: SharedMatchFeedRow; d: Dictionary }) {
     <li>
       <Link
         href={`/m/${post.id}`}
-        className="block rounded-card border-3 border-ink bg-card p-4 shadow-hard-sm transition hover:-translate-y-0.5 hover:shadow-hard focus-visible:outline-3 focus-visible:outline-offset-2"
+        className="block rounded-card border-3 border-ink bg-card p-4 shadow-hard-sm transition hover:shadow-hard focus-visible:outline-3 focus-visible:outline-offset-2 motion-safe:hover:-translate-y-0.5"
       >
         <div className="flex flex-wrap items-center gap-1.5">
           {post.include_verdict ? (

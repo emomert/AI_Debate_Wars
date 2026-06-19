@@ -29,6 +29,7 @@ import {
 import { Badge } from "@/components/game/Badge";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
+import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 
@@ -78,6 +79,7 @@ export function ModelSelector({
 }: ModelSelectorProps) {
   const { locale } = useLocale();
   const d = useT();
+  const reduce = useReduceMotion();
   const selected = getModelById(selectedId);
   const [activeBrand, setActiveBrand] = useState<string>(
     selected?.brand ?? BRANDS[0]?.brand ?? "OpenAI",
@@ -218,10 +220,10 @@ export function ModelSelector({
         {freeOpen ? (
           <motion.div
             key="free-brands"
-            initial={{ opacity: 0, scale: 0.96, y: -6 }}
+            initial={reduce ? false : { opacity: 0, scale: 0.96, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: -4 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -4 }}
+            transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
             className="mb-3 origin-top rounded-card border-3 border-dashed border-ink/40 bg-paper p-2.5"
           >
             <p className="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/45">
@@ -273,10 +275,10 @@ export function ModelSelector({
               {showRest ? (
                 <motion.div
                   key="rest"
-                  initial={{ height: 0, opacity: 0 }}
+                  initial={reduce ? false : { height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                  transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
                   className="overflow-hidden"
                 >
                   <div className="space-y-2 pt-1">

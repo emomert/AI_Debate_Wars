@@ -37,6 +37,7 @@ import { readClientLocale } from "@/lib/i18n/config";
 import { fetchHealth } from "@/lib/api/debateClient";
 import type { HealthResponse } from "@/lib/api/contracts";
 import { soundManager } from "@/lib/audio/soundManager";
+import { initReduceMotion } from "@/lib/motion/reduceMotion";
 
 export type ProviderAvailability = HealthResponse["providers"];
 
@@ -204,6 +205,8 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     }
     setSoundEnabled(soundManager.hydrate());
     setMusicEnabled(soundManager.hydrateMusic());
+    // Apply the persisted reduce-motion class so CSS loops freeze on first paint.
+    initReduceMotion();
     setHydrated(true);
   }, []);
 

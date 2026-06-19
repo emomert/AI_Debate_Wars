@@ -16,6 +16,7 @@ import { MULTILOCALE_ENABLED } from "@/lib/i18n/config";
 import { DottedBackground } from "@/components/game/DottedBackground";
 import { SoundToggle } from "@/components/game/SoundToggle";
 import { MusicToggle } from "@/components/game/MusicToggle";
+import { MotionToggle } from "@/components/game/MotionToggle";
 import { HelpButton } from "@/components/game/HelpButton";
 import { LanguageToggle } from "@/components/game/LanguageToggle";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -92,9 +93,10 @@ export function GameShell({
             <Logo />
             <Link
               href="/community"
+              aria-label={d.community.nav}
               className="shrink-0 rounded-btn border-3 border-ink bg-card px-2 py-1 font-heading text-[11px] font-extrabold uppercase tracking-wide transition hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2 sm:text-xs"
             >
-              🏟️ <span>{d.community.nav}</span>
+              🏟️ <span className="hidden sm:inline">{d.community.nav}</span>
             </Link>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -107,6 +109,7 @@ export function GameShell({
             ) : null}
             {authEnabled ? <AuthButton /> : null}
             {MULTILOCALE_ENABLED ? <LanguageToggle /> : null}
+            <MotionToggle />
             <MusicToggle />
             <SoundToggle />
             <HelpButton />

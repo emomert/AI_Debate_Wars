@@ -5,10 +5,11 @@
  * settings). Same press feel as ArcadeButton.
  */
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils/cn";
+import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { playSound } from "@/lib/audio/soundManager";
 
 export type IconButtonColor = "white" | "yellow" | "purple" | "red" | "ink";
@@ -44,7 +45,7 @@ export function IconButton({
   silent,
   flat,
 }: IconButtonProps) {
-  const reduce = useReducedMotion();
+  const reduce = useReduceMotion();
   return (
     <motion.button
       type="button"

@@ -9,13 +9,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 
 import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
+import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { getSampleTopics, pickSampleTopics, TONE_OPTIONS } from "@/lib/constants";
 import {
   useArena,
@@ -84,7 +85,7 @@ const HOW_IT_WORKS_EMOJI = ["📝", "🎚️", "🍿"] as const;
 
 export default function HomePage() {
   const router = useRouter();
-  const reduce = useReducedMotion();
+  const reduce = useReduceMotion();
   const { setConfig, setSession, availability } = useArena();
   const d = useT();
   const { locale } = useLocale();

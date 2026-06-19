@@ -31,6 +31,7 @@ import {
 } from "@/lib/cost/calculateCost";
 import { generateTurn, generateVerdict } from "@/lib/api/debateClient";
 import { type AppErrorShape, type AppErrorCode, toAppError } from "@/lib/utils/errors";
+import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import {
   playKeystroke,
   playSound,
@@ -236,6 +237,13 @@ export function useDebateRunner(
   // gate instead of actually retrying).
   const retryRef = useRef(false);
 
+  // Reduced motion (OS flag or in-app toggle): skip the per-character typewriter
+  // and reveal each turn instantly. The app-driven pacing/gates still apply. Read
+  // via a ref so the long-lived run effect sees the live value without re-running.
+  const reduceMotion = useReduceMotion();
+  const reduceMotionRef = useRef(reduceMotion);
+  reduceMotionRef.current = reduceMotion;
+
   const stop = useCallback(() => {
     controllerRef.current?.abort();
     if (audible()) stopDrumRoll(); // don't leave the suspense loop playing after a stop
@@ -308,7 +316,7 @@ export function useDebateRunner(
       // core experience and a text reveal isn't vestibular-trigger motion, so
       // every visitor gets the same playback. Decorative bounces elsewhere still
       // honor the OS setting.
-      if (total === 0) {
+      if (total === 0 || reduceMotionRef.current) {
         setState((p) => ({ ...p, streamingText: content }));
         return;
       }

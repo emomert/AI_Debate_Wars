@@ -139,7 +139,12 @@ html[lang="tr"] .font-display {
   border-color: #050505;
 }
 
-/* Respect users who prefer reduced motion (docs/12_SOUND_ANIMATION.md). */
+/* Respect users who prefer reduced motion (WCAG 2.2.2 / 2.3.3,
+   docs/12_SOUND_ANIMATION.md). Triggered by EITHER the OS `prefers-reduced-motion`
+   flag OR the in-app "Reduce motion" toggle (which adds html.reduce-motion).
+   Freezes ALL animation + transition — including the live caret, thinking dots
+   and status pulse — instead of re-enabling them; the typewriter is skipped in
+   JS (see useReduceMotion / useDebateRunner) so the full turn shows instantly. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -149,23 +154,14 @@ html[lang="tr"] .font-display {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-
-  /* …but keep the live-typing companions (caret, thinking dots, status pulse):
-     they ARE the product experience, are small/contained, and every visitor
-     should see the same playback. Values mirror tailwind.config.ts (pulse is
-     Tailwind's built-in 2s default). */
-  .animate-caret-blink {
-    animation-duration: 1.05s !important;
-    animation-iteration-count: infinite !important;
-  }
-  .animate-thinking-bounce {
-    animation-duration: 1.2s !important;
-    animation-iteration-count: infinite !important;
-  }
-  .animate-pulse {
-    animation-duration: 2s !important;
-    animation-iteration-count: infinite !important;
-  }
+}
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* Print: strip the arcade chrome so a printed / "Save as PDF" page (e.g. the

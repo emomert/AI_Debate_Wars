@@ -22,5 +22,7 @@ export const shell = {
     soundEnable: "Enable sound",
     musicOff: "Turn music off",
     musicOn: "Turn music on",
+    motionReduce: "Reduce motion",
+    motionAllow: "Allow motion",
   },
 };

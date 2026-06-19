@@ -12,6 +12,7 @@ import type { ModelColor, SelectedModel, Stance } from "@/lib/debate/debateTypes
 import { getModelById } from "@/lib/models/modelRegistry";
 import { Badge } from "@/components/game/Badge";
 import { cn } from "@/lib/utils/cn";
+import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 export type ModelCardStatus =
@@ -64,22 +65,23 @@ function AIModelCardComponent({
   className,
 }: AIModelCardProps) {
   const d = useT();
+  const reduce = useReduceMotion();
   const entry = getModelById(model.modelId);
   const avatar = entry?.avatar ?? "🤖";
   const color = model.color;
   const speaking = status === "speaking";
   const thinking = status === "thinking";
+  // Reduced motion: hold the card still instead of bouncing it forever while the
+  // fighter speaks (framer drives this in JS, so the CSS reduce-motion freeze
+  // can't reach it).
+  const bounce = speaking && !reduce;
   const badge = { label: d.debate.card.status[status], color: STATUS_COLOR[status] };
 
   return (
     <motion.div
-      animate={
-        speaking
-          ? { y: [0, -3, 0] }
-          : { y: 0 }
-      }
+      animate={bounce ? { y: [0, -3, 0] } : { y: 0 }}
       transition={
-        speaking
+        bounce
           ? { duration: 1.1, repeat: Infinity, ease: "easeInOut" }
           : { duration: 0.2 }
       }
