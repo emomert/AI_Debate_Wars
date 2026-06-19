@@ -304,11 +304,20 @@ function BattleTabs({
                   R{snap?.currentRound ?? 1}/{snap?.totalRounds ?? s.roundCount}
                 </span>
                 {snap?.hasVerdict && snap.winner === "modelA" ? (
-                  <Badge color="blue" size="sm">🏆 A</Badge>
+                  <Badge color="blue" size="sm">
+                    <span aria-hidden>🏆 A</span>
+                    <span className="sr-only">{d.debate.battles.winnerA}</span>
+                  </Badge>
                 ) : snap?.hasVerdict && snap.winner === "modelB" ? (
-                  <Badge color="red" size="sm">🏆 B</Badge>
+                  <Badge color="red" size="sm">
+                    <span aria-hidden>🏆 B</span>
+                    <span className="sr-only">{d.debate.battles.winnerB}</span>
+                  </Badge>
                 ) : snap?.hasVerdict && snap.winner === "tie" ? (
-                  <Badge color="white" size="sm">🤝</Badge>
+                  <Badge color="white" size="sm">
+                    <span aria-hidden>🤝</span>
+                    <span className="sr-only">{d.debate.battles.winnerTie}</span>
+                  </Badge>
                 ) : null}
               </div>
             </button>

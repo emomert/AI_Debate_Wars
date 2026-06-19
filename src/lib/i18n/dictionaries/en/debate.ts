@@ -45,6 +45,9 @@ export const debate = {
     vs: "vs",
     allBattles: "All",
     finishedCount: (done: number, total: number) => `${done}/${total} done`,
+    winnerA: "Fighter A won this battle",
+    winnerB: "Fighter B won this battle",
+    winnerTie: "This battle was a tie",
   },
 
   // Panels under the timeline
