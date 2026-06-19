@@ -27,7 +27,7 @@ import {
   SHARED_MATCH_SUMMARY_COLUMNS,
   type SharedMatchSummary,
 } from "@/lib/community/types";
-import { formatCost } from "@/lib/utils/format";
+import { formatCost, formatRelativeDate } from "@/lib/utils/format";
 import { getServerDictionary } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
@@ -163,7 +163,7 @@ export default async function ProfilePage() {
                       ? d.community.myShared.publicBadge
                       : d.community.myShared.unlistedBadge}
                   </Badge>
-                  <Badge color="white" size="sm">{p.created_at.slice(0, 10)}</Badge>
+                  <Badge color="white" size="sm"><time dateTime={p.created_at}>{formatRelativeDate(p.created_at)}</time></Badge>
                   <Link href={`/m/${p.id}`}>
                     <ArcadeButton size="sm" variant="neutral-white">
                       {d.community.myShared.view}
@@ -227,7 +227,7 @@ export default async function ProfilePage() {
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   {m.deep_debate ? <Badge color="purple" size="sm">{d.profile.history.deepBadge}</Badge> : null}
-                  <Badge color="white" size="sm">{m.created_at.slice(0, 10)}</Badge>
+                  <Badge color="white" size="sm"><time dateTime={m.created_at}>{formatRelativeDate(m.created_at)}</time></Badge>
                   <ReopenButton matchId={m.id} />
                   <DeleteMatchButton matchId={m.id} />
                 </div>
