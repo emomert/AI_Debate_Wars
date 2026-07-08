@@ -16,7 +16,7 @@ The desired product feeling is:
 
 The product is feature-complete and polished, in pre-public-launch state.
 
-- **Debate Mode only** in the UI. Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface it without an explicit request.
+- **Debate + Blitz Modes** in the UI (setup has a mode toggle). Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface Discussion without an explicit request.
 - **English-only UI for launch.** Turkish localization is fully built but hidden behind `MULTILOCALE_ENABLED = false` in `src/lib/i18n/config.ts`.
 - **Fighter Voices hidden for now.** The opt-in 🔊 voice-over (TTS) is fully built but hidden behind `VOICE_ENABLED = false` in `src/lib/tts/config.ts`: the setup voice card, arena HUD voice toggle + cost badge, and per-message play buttons don't render, the `voicePlayer` engine no-ops, and server TTS reports unconfigured so `/api/tts` never fires. This is separate from the arcade SFX/music toggles, which stay available (background music now defaults **off**, matching SFX). Flip the flag to bring voices back with no other changes.
 - **Launch hardening + UX/accessibility audit (in progress).** Two remediation passes are underway and shipping incrementally to `main`: (1) pre-launch security/trust/cost blockers, and (2) a 109-finding honest UX/a11y audit. Done so far: topic + publish moderation, a spoof-proof rate-limit IP, a Brave metered-billing guard, signed share verdicts (verified/unverified), a reduce-motion/instant-text escape hatch + screen-reader live regions, contrast + tab-semantics + responsive fixes, a `/contact` page + data-controller identity, a report/flag + admin-takedown system, and a signup consent/13+ age gate. **The single tracker for what's done and what remains is `Debator-Launch-Checklist.md`** (the full audit findings live in `Debator-UX-Inspection-Report.html`).
@@ -40,6 +40,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 
 - Topic input with AI topic check/improve (`/api/topic/check`, cheap model)
 - Two fighters from 56+ models across OpenAI, DeepSeek, and OpenRouter (free models)
+- Blitz Mode: a fast 4-round / 8-turn variant on an animated arena stage — per-turn move-tag splashes (OBJECTION/COUNTER/…), buffer-then-stream generation (`useBlitzRunner`), an in-scene verdict, and a curated ~12-model roster (`blitzRoster.ts`). Reuses the debate pipeline; `punchy` length is blitz-internal. Phase 1 ships on the reusable fighter *panel* (bespoke per-model character art is Phase 2). Design spec: `docs/superpowers/specs/2026-07-08-blitz-mode-design.md`.
 - Multi-battle: run up to 3 battles on the same topic at once (different or same fighter pairs), all running concurrently — a tab switcher in the arena and results; only the watched battle speaks/sounds; manual pace gates only the watched battle (see `docs/09_UX_FLOWS.md`). Only the fighters differ per battle; all other settings are shared.
 - 3 / 5 / 7 rounds (Quick Match / Ranked Match / Championship)
 - Tone per fighter: serious, aggressive, casual, or custom free text — plus a hidden "unhinged" easter-egg tone (5 rapid clicks on Aggressive in setup; profanity-allowed roast battle, hard ban on slurs/hate speech baked into the prompt)

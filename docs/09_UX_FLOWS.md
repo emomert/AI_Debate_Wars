@@ -1,6 +1,6 @@
 # 09 — UX Flows
 
-> Updated 2026-06-10 to the shipped flow.
+> Updated 2026-07-08 (added Blitz Mode).
 
 ## Primary Flow
 
@@ -14,6 +14,30 @@
 8. Costs update after each turn; citations appear as chips in Deep Debate.
 9. After the final round, the judge deliberates (drum roll) and the verdict reveals.
 10. Result screen: verdict, scores, summary, total cost — with **share** (auto-unfurling link + image), **save to profile** (signed-in), **change judge & re-judge**, and rematch options.
+
+## Blitz Mode
+
+Setup has a **mode toggle** (Debate / Blitz). Blitz is a fast, spectacle-first
+variant designed for share clips:
+
+- **Fixed format:** 4 rounds / 8 turns (Opening Shot · Cross-Fire · Counter-Fire ·
+  Final Blow), `punchy` length (1–2 sentences), **auto pace only**. The rounds/
+  tone/length/pace/deep/multi-battle controls are hidden — Blitz forces them.
+- **Curated roster:** the fighter picker is restricted to `blitzRoster.ts`
+  (~12 models). Non-roster models stay available in Debate mode only.
+- **The stage:** instead of transcript cards, Blitz renders `BlitzStage` — two
+  fighter panels, a round-title card, a bottom dialogue box (one line at a time),
+  and full-frame **move splashes** (OBJECTION / COUNTER / RECEIPTS / TOUCHE /
+  FINISHER) parsed from each turn's leading tag server-side.
+- **Speed:** `useBlitzRunner` buffers the first `BLITZ_BUFFER` (4) turns behind a
+  VS intro, then streams playback while the rest generate — no mid-show stall.
+- **Verdict:** the same judge decides, but it's revealed **in-scene** (winner
+  banner + CTAs: Rematch / Full result / transcript), not on the results card.
+- **Accessibility:** an always-on screen-reader transcript announces each line;
+  reduce-motion collapses the stage to instant captioned text (no splash/shake).
+- **Phase 1** ships on the reusable fighter *panel*; bespoke per-model character
+  sprites + hero MP3 stings are Phase 2. Spec:
+  `docs/superpowers/specs/2026-07-08-blitz-mode-design.md`.
 
 ## Multi-Battle Matches
 
