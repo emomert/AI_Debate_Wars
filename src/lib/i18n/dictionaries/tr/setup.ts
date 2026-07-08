@@ -178,6 +178,8 @@ export const setup = {
     fighterB: "Yarışmacı B",
     badgeDebate: "⚔️ Münazara",
     badgeDiscussion: "🧠 Tartışma",
+    badgeBlitz: "⚡ Blitz",
+    blitzRounds: "⚡ 8 raunt",
     roundLine: (count: number, label: string) => `${count} · ${label}`,
     deepTemplate: "🔒 Derin şablon",
     deepDebate: "🌐 Derin Münazara",

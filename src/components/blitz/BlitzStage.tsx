@@ -56,6 +56,10 @@ export function BlitzStage({ session }: { session: DebateSession }) {
           </div>
         ) : r.phase === "roundTitle" && r.roundLabel ? (
           <div className="text-center font-display text-2xl text-ink sm:text-3xl">{r.roundLabel}</div>
+        ) : r.phase === "judging" ? (
+          <div className="text-center font-display text-xl text-ink" role="status">
+            The judge is deciding…
+          </div>
         ) : null}
       </div>
 
@@ -81,8 +85,25 @@ export function BlitzStage({ session }: { session: DebateSession }) {
           <MoveSplash key="splash" move={r.move} side={r.speaker === "modelA" ? "A" : "B"} />
         ) : null}
       </AnimatePresence>
-      {r.phase === "verdict" && r.verdict ? (
+      {/* The verdict stays on screen through the terminal `done` phase (not just
+          the brief `verdict` beat), so the winner + CTAs don't vanish. */}
+      {(r.phase === "verdict" || r.phase === "done") && r.verdict ? (
         <VerdictReveal session={session} verdict={r.verdict} onReplay={r.replay} />
+      ) : null}
+
+      {/* No-judge matches still get an end state with a way out. */}
+      {r.phase === "done" && !r.verdict ? (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-paper/95 p-6">
+          <div className="rounded-panel border-4 border-ink bg-arcade-yellow px-8 py-4 font-display text-2xl text-night shadow-hard">
+            Match over
+          </div>
+          <button
+            onClick={r.replay}
+            className="rounded-btn border-4 border-ink bg-arcade-green px-4 py-2 font-display text-night shadow-hard"
+          >
+            Rematch
+          </button>
+        </div>
       ) : null}
     </div>
   );

@@ -127,12 +127,22 @@ export function SetupSummaryCard({
 
         <div className="flex flex-wrap gap-1.5">
           <Badge color="white" size="sm">
-            {config.mode === "debate" ? d.setup.summary.badgeDebate : d.setup.summary.badgeDiscussion}
+            {config.mode === "blitz"
+              ? d.setup.summary.badgeBlitz
+              : config.mode === "debate"
+                ? d.setup.summary.badgeDebate
+                : d.setup.summary.badgeDiscussion}
           </Badge>
           {pairs.length > 1 ? (
             <Badge color="purple" size="sm">⚔️ {d.setup.battles.summaryCount(pairs.length)}</Badge>
           ) : null}
-          <Badge color="white" size="sm">{d.setup.summary.roundLine(config.roundCount, roundLabel ?? "")}</Badge>
+          {/* Blitz ignores the round count (fixed 4 rounds / 8 turns), so show a
+              blitz-specific badge instead of the misleading "3 · Quick Match". */}
+          <Badge color="white" size="sm">
+            {config.mode === "blitz"
+              ? d.setup.summary.blitzRounds
+              : d.setup.summary.roundLine(config.roundCount, roundLabel ?? "")}
+          </Badge>
           <Badge color="white" size="sm" className="max-w-[12rem] truncate">{toneLabel}</Badge>
           <Badge color="white" size="sm">
             {config.deepDebate ? d.setup.summary.deepTemplate : config.responseLength}

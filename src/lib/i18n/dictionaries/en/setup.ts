@@ -180,6 +180,8 @@ export const setup = {
     fighterB: "Fighter B",
     badgeDebate: "⚔️ Debate",
     badgeDiscussion: "🧠 Discussion",
+    badgeBlitz: "⚡ Blitz",
+    blitzRounds: "⚡ 8 turns",
     roundLine: (count: number, label: string) => `${count} · ${label}`,
     deepTemplate: "🔒 Deep template",
     deepDebate: "🌐 Deep Debate",

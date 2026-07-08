@@ -41,6 +41,7 @@ export type BlitzPhase =
   | "roundTitle"
   | "speaking"
   | "moveSplash"
+  | "judging"
   | "verdict"
   | "done"
   | "error";
@@ -260,6 +261,7 @@ export function useBlitzRunner(
 
         // Judge.
         if (working.judge.enabled) {
+          setState((p) => ({ ...p, phase: "judging", line: "", move: null, speaker: null }));
           let verdict: DebateVerdict | undefined;
           let attempt = 0;
           for (;;) {
