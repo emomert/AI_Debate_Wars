@@ -130,3 +130,41 @@ export async function assertTextAllowed(
     );
   }
 }
+
+// Topics that received a REAL "allowed" verdict from the API (checked:true and
+// not flagged). Only genuine verdicts are cached — a fail-open pass
+// (checked:false) is never cached, so a moderation outage can't whitelist a
+// topic for the instance's lifetime. Bounded FIFO so a flood of unique topics
+// can't grow memory unboundedly.
+const ALLOWED_TOPIC_CACHE_MAX = 500;
+const allowedTopics = new Set<string>();
+
+/**
+ * Per-turn topic gate for the paid debate routes. The server is stateless, so
+ * "moderation already ran on this match's opening turn" cannot be inferred
+ * from client-supplied turn state (a forged `status:"complete"` round would
+ * skip the gate). Instead EVERY turn/verdict call re-asserts the topic; the
+ * warm-instance cache above keeps the repeat calls free. Same fail-open
+ * semantics as assertTextAllowed.
+ */
+export async function assertTopicAllowed(
+  topic: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  const key = topic.trim();
+  if (allowedTopics.has(key)) return;
+  const { flagged, checked } = await moderateText(key, signal);
+  if (flagged) {
+    throw new ProviderError(
+      "CONTENT_BLOCKED",
+      "This content was blocked by the safety filter",
+    );
+  }
+  if (checked) {
+    if (allowedTopics.size >= ALLOWED_TOPIC_CACHE_MAX) {
+      const oldest = allowedTopics.values().next().value;
+      if (oldest !== undefined) allowedTopics.delete(oldest);
+    }
+    allowedTopics.add(key);
+  }
+}

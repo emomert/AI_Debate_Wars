@@ -29,7 +29,8 @@ type RouteKind =
   | "publish"
   | "vote"
   | "comment"
-  | "report";
+  | "report"
+  | "og";
 
 // Spend caps only make sense for routes that call a paid provider; community
 // writes (publish/vote/comment) are DB-only and skip the spend check — a maxed
@@ -64,6 +65,11 @@ const PER_MIN: Record<RouteKind, number> = {
   vote: num(process.env.RL_VOTE_PER_MIN, 20),
   comment: num(process.env.RL_COMMENT_PER_MIN, 6),
   report: num(process.env.RL_REPORT_PER_MIN, 6),
+  // OG images: no provider spend, but each cache-miss render costs Satori
+  // compute. Generous — social crawlers legitimately burst when a link is
+  // shared widely, and the CDN cache absorbs repeats of the same payload; this
+  // only stops one IP from iterating unbounded DISTINCT payloads.
+  og: num(process.env.RL_OG_PER_MIN, 30),
 };
 // Daily spend caps: a 3-battle match can cost ~3× a single debate, so the per-IP
 // cap is raised so one multi-battle match can't trip it mid-way.

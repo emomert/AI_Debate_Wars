@@ -34,6 +34,7 @@ import {
   getProviderModelConfig,
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
+import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
 import { buildSharePayload } from "@/lib/share/shareLink";
 import { signSharePayload } from "@/lib/share/signing";
@@ -101,6 +102,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     if (session.messages.length === 0) {
       throw new ProviderError("INVALID_REQUEST", "Debate transcript is empty");
     }
+
+    // Same P0-3 gate as /turn: this route is directly reachable with a fully
+    // fabricated "complete" session, so the topic must be screened here too
+    // before it reaches the paid judge. Cached, fail-open (see moderate.ts).
+    await assertTopicAllowed(session.topic, req.signal);
 
     const judgeModelId = resolveJudgeModelId(session);
     const modelConfig = getProviderModelConfig(judgeModelId);

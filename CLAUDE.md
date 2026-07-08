@@ -51,7 +51,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Optional fighter voices (opt-in 🔊, currently hidden behind `VOICE_ENABLED` — see Current Status): free Web Speech tier always; premium OpenAI speech via `/api/tts` (~$15/1M chars ≈ 13¢/voiced match, reuses `OPENAI_API_KEY`) with automatic fallback (see `docs/21_VOICE.md`)
 - Stateless share links (`/s?d=...`) with generated OG images (`/api/og`). The verdict is HMAC-signed at generation (`src/lib/share/signing.ts`); `/s` + OG render verified vs ⚠ unverified to defeat forged share links. Dormant + safe until `SHARE_SECRET` is set.
 - Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars, and a **report/flag** path on matches + comments with an operator admin-takedown script (see `docs/20_COMMUNITY.md`)
-- Optional Supabase auth (magic link + Google); a signup consent + **13+ age gate** (recorded on the profile) and match history/stats on `/profile`
+- Optional Supabase auth (magic link + Google); a signup consent + **13+ age gate** (recorded on the profile), match history/stats on `/profile`, and self-serve account deletion + JSON data export (`delete_my_account` cascade RPC, migration 0007)
 - Per-IP rate limits (spoof-proof trusted IP) and global/per-IP daily spend caps (Supabase RPCs, fail-open)
 - Arcade UI: synth SFX, generative background music (off by default), sound toggle, a **reduce-motion / instant-text** toggle + OS `prefers-reduced-motion` support, screen-reader live regions, mobile-responsive
 - Legal pages (`/about`, `/privacy`, `/terms`, `/contact`) with a named operator / data-controller identity and governing-law clause (values are placeholders in `src/lib/legal/identity.ts` — set before launch), and a living tech report (`/report`)
@@ -75,7 +75,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - `src/lib/audio/soundManager.ts` — synth SFX and music (both off by default)
 - `src/lib/state/ArenaContext.tsx` — client session/config state
 - `scripts/` — node+pg admin tooling: `apply-migrations.mjs` (applies SQL migrations via `SUPABASE_DB_URL`), `admin-takedown.mjs` (remove reported content)
-- `supabase/migrations/` — SQL migrations 0001–0006 (matches, match guards, rate limits, social/community, consent, reports)
+- `supabase/migrations/` — SQL migrations 0001–0007 (matches, match guards, rate limits, social/community, consent, reports, account deletion)
 - `docs/` — product and technical reference docs (see `docs/13_ROADMAP.md` for what's next)
 
 ## Required Architecture Rules
@@ -101,7 +101,7 @@ Moderation: on whenever `OPENAI_API_KEY` is set; `MODERATION_ENABLED=false` disa
 Sharing: `SHARE_SECRET` — HMAC key for signing share verdicts. Unset = signing dormant (shares render normally, never falsely "verified"). **Set a strong random value in prod to activate verification.**
 Voice: `TTS_PROVIDER` (`none` disables; otherwise on whenever `OPENAI_API_KEY` is set), `TTS_OPENAI_MODEL` (default `gpt-4o-mini-tts`), `TTS_SPEED` (0.25–4.0, default 1.3), `TTS_COST_USD_PER_1M` (price override), `RL_TTS_PER_MIN`.
 Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Admin/migrations (server-only, never client): `SUPABASE_DB_URL`.
-Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `RL_REPORT_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
+Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `RL_REPORT_PER_MIN`, `RL_OG_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
 
 ## Development Workflow
 

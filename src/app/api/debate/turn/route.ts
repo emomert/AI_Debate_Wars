@@ -50,7 +50,7 @@ import {
   enforceSearchBudget,
   recordSpend,
 } from "@/lib/security/rateLimit";
-import { assertTextAllowed } from "@/lib/moderation/moderate";
+import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import {
   DEEP_SEARCH_COST_USD,
   narrowCitationsToCited,
@@ -105,14 +105,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     // Topic moderation gate (P0-3): screen the user's topic through the free
-    // moderation endpoint BEFORE the first paid generation of the match — an
-    // ungated topic flows verbatim to the paid providers + Brave (abuse + TOS
-    // risk). Runs once per battle, on its opening turn (no completed turns yet):
-    // the topic can't change mid-match, so re-screening every turn would only add
-    // latency. Fails OPEN, so a moderation outage never breaks a match.
-    if (!session.turns.some((t) => t.status === "complete")) {
-      await assertTextAllowed(session.topic, req.signal);
-    }
+    // moderation endpoint BEFORE any paid generation — an ungated topic flows
+    // verbatim to the paid providers + Brave (abuse + TOS risk). Gating "only
+    // the opening turn" is NOT safe here: the server is stateless and turn
+    // statuses come from the client, so a forged `status:"complete"` round 1
+    // would skip the gate entirely. Every turn re-asserts instead; a
+    // warm-instance cache of allowed topics keeps repeat turns free. Fails
+    // OPEN, so a moderation outage never breaks a match.
+    await assertTopicAllowed(session.topic, req.signal);
 
     const model = speakerModel(session, turn.speaker);
     const modelConfig = getProviderModelConfig(model.modelId);

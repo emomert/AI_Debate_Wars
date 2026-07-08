@@ -3,17 +3,23 @@
  * verdict as a 1200x630 PNG from the URL-encoded payload — no DB, no auth.
  * Edge runtime via next/og (Satori): inline styles only, no emoji.
  *
- * On-brand fonts (Lilita One display + Baloo 2 headings) are fetched at render
- * time via the Google Fonts `&text=` subset trick (returns a TTF Satori can
- * use). If the fetch fails the image still renders with the bundled default
- * font — a font hiccup must never break the preview. Every text block is
- * line-clamped + flex-shrink:0 and the card is overflow-hidden, so a long
- * verdict can never overlap or spill past the frame.
+ * On-brand fonts (Lilita One display + Baloo 2 headings) are fetched from
+ * Google Fonts ONCE per warm instance and cached at module scope. If the fetch
+ * fails the image still renders with the bundled default font — a font hiccup
+ * must never break the preview. Every text block is line-clamped +
+ * flex-shrink:0 and the card is overflow-hidden, so a long verdict can never
+ * overlap or spill past the frame.
+ *
+ * Abuse guard: repeats of the same `?d` are absorbed by the immutable CDN
+ * cache, but the DISTINCT-payload space is unbounded and each cache miss costs
+ * a Satori render — so the route is per-IP rate limited (RL_OG_PER_MIN,
+ * fail-open like every other guard).
  */
 
 import { ImageResponse } from "next/og";
 import type { CSSProperties } from "react";
 
+import { enforceLimits } from "@/lib/security/rateLimit";
 import { decodeSharePayload, type SharePayload } from "@/lib/share/shareLink";
 import { verifySharePayload, shareSigningEnabled } from "@/lib/share/signing";
 
@@ -44,19 +50,13 @@ function clampLines(n: number): CSSProperties {
 }
 
 /**
- * Fetch a Google font as TTF bytes for the exact glyphs in `text` (the `&text=`
- * subset makes Google return `format('truetype')`, which Satori supports —
- * unlike the default woff2). Returns null on any failure.
+ * Fetch a Google font as full-charset TTF bytes. Returns null on any failure.
  */
-async function loadFont(
-  family: string,
-  weight: number,
-  text: string,
-): Promise<ArrayBuffer | null> {
+async function fetchFont(family: string, weight: number): Promise<ArrayBuffer | null> {
   try {
     const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(
       family,
-    )}:wght@${weight}&text=${encodeURIComponent(text)}`;
+    )}:wght@${weight}`;
     // A legacy UA makes Google serve TTF (Satori can't use woff2), and a hard
     // timeout means a slow/degraded Google Fonts can never hang the unfurl —
     // an abort falls through to the default-font fallback below.
@@ -66,14 +66,47 @@ async function loadFont(
     }).then((r) => (r.ok ? r.text() : ""));
     const src = css.match(/src:\s*url\(([^)]+)\)\s*format\('(?:opentype|truetype)'\)/);
     if (!src) return null;
-    const res = await fetch(src[1], { signal: AbortSignal.timeout(1500) });
+    const res = await fetch(src[1], { signal: AbortSignal.timeout(2500) });
     return res.ok ? await res.arrayBuffer() : null;
   } catch {
     return null;
   }
 }
 
+// Module-scope font cache: fetched once per warm instance, shared across
+// requests. The previous per-request `&text=` subsetting refetched from Google
+// up to 3× per DISTINCT payload — an outbound-amplification vector under a
+// flood of crafted `?d` values (and a way to get the deployment throttled by
+// Google Fonts). Full-charset fonts render the same glyphs the subsets did
+// (these families are Latin-only either way). Failures are NOT cached, so a
+// Google Fonts blip only degrades the requests it actually hit.
+const fontCache = new Map<string, Promise<ArrayBuffer | null>>();
+
+function loadFont(family: string, weight: number): Promise<ArrayBuffer | null> {
+  const key = `${family}:${weight}`;
+  let cached = fontCache.get(key);
+  if (!cached) {
+    cached = fetchFont(family, weight); // never rejects (returns null instead)
+    fontCache.set(key, cached);
+    void cached.then((buf) => {
+      if (!buf) fontCache.delete(key);
+    });
+  }
+  return cached;
+}
+
 export async function GET(request: Request) {
+  // Crawler-facing endpoint: on a tripped limit return a plain uncached 429
+  // (not the app's JSON error shape) so unfurlers just retry later.
+  try {
+    await enforceLimits(request, "og");
+  } catch {
+    return new Response("Too many requests", {
+      status: 429,
+      headers: { "cache-control": "no-store" },
+    });
+  }
+
   const { searchParams } = new URL(request.url);
   const d = searchParams.get("d");
   const p: SharePayload | null = d ? decodeSharePayload(d) : null;
@@ -102,24 +135,12 @@ export async function GET(request: Request) {
           ? "It's a draw"
           : `${a} vs ${b}`;
 
-  // All glyphs we'll draw — passed to the font subsetter for full coverage.
-  const glyphs = [
-    "VERDICT UNVERIFIED DEBATOR Topic: AI vs",
-    headline,
-    wa,
-    reasoning,
-    topic,
-    a,
-    b,
-    hasScores ? `${p!.sa} ${p!.sb}` : "",
-  ].join(" ");
-
   // Baloo at BOTH 400 (reasoning/topic) and 700 (headings) so body text isn't
   // forced bold; Lilita One (single weight) for the display elements.
   const [lilita, baloo700, baloo400] = await Promise.all([
-    loadFont(DISPLAY, 400, glyphs),
-    loadFont(HEADING, 700, glyphs),
-    loadFont(HEADING, 400, glyphs),
+    loadFont(DISPLAY, 400),
+    loadFont(HEADING, 700),
+    loadFont(HEADING, 400),
   ]);
   const fonts = [
     lilita && { name: DISPLAY, data: lilita, weight: 400 as const, style: "normal" as const },
