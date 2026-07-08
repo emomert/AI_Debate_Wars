@@ -42,6 +42,15 @@ export const MODE_OPTIONS: ModeOption[] = [
     modelBRole: "Critical Evaluator",
     emoji: "🧠",
   },
+  {
+    id: "blitz",
+    title: "Blitz Mode",
+    tagline: "Fast hits. One winner.",
+    description: "Two models trade rapid one-liners on the arena stage.",
+    modelARole: "Pro side",
+    modelBRole: "Against side",
+    emoji: "⚡",
+  },
 ];
 
 export interface RoundOption {

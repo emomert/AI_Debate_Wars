@@ -414,7 +414,68 @@ const DISCUSSION_7_TR: RoundPlanEntry[] = [
   },
 ];
 
-const PLANS: Record<Locale, Record<DebateMode, Record<RoundCount, RoundPlanEntry[]>>> = {
+// Blitz mode: a fixed 4-round plan, independent of the 3/5/7 round count. Turns
+// are punchy (1–2 sentences) and the labels drive the stage's round title cards.
+const BLITZ_4: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "Opening Shot",
+    modelATask: "In one or two punchy sentences, hit your strongest point FOR the topic.",
+    modelBTask: "In one or two punchy sentences, hit your strongest point AGAINST the topic.",
+  },
+  {
+    round: 2,
+    label: "Cross-Fire",
+    modelATask: "Attack the single weakest part of the opponent's last line. Stay sharp and short.",
+    modelBTask: "Attack the single weakest part of the opponent's last line. Stay sharp and short.",
+  },
+  {
+    round: 3,
+    label: "Counter-Fire",
+    modelATask: "Defend against their hit and fire back in one or two sentences.",
+    modelBTask: "Defend against their hit and fire back in one or two sentences.",
+  },
+  {
+    round: 4,
+    label: "Final Blow",
+    modelATask: "Land your closing one-liner. Make it stick.",
+    modelBTask: "Land your closing one-liner. Make it stick.",
+  },
+];
+
+const BLITZ_4_TR: RoundPlanEntry[] = [
+  {
+    round: 1,
+    label: "Açılış Vuruşu",
+    modelATask: "Bir iki vurucu cümleyle konu LEHİNE en güçlü noktanı söyle.",
+    modelBTask: "Bir iki vurucu cümleyle konu ALEYHİNE en güçlü noktanı söyle.",
+  },
+  {
+    round: 2,
+    label: "Çapraz Ateş",
+    modelATask: "Rakibin son sözündeki en zayıf yeri vur. Keskin ve kısa ol.",
+    modelBTask: "Rakibin son sözündeki en zayıf yeri vur. Keskin ve kısa ol.",
+  },
+  {
+    round: 3,
+    label: "Karşı Ateş",
+    modelATask: "Vuruşuna karşı savun ve bir iki cümleyle karşılık ver.",
+    modelBTask: "Vuruşuna karşı savun ve bir iki cümleyle karşılık ver.",
+  },
+  {
+    round: 4,
+    label: "Son Darbe",
+    modelATask: "Kapanış tek cümleni söyle. Akılda kalsın.",
+    modelBTask: "Kapanış tek cümleni söyle. Akılda kalsın.",
+  },
+];
+
+// Blitz is handled by getRoundPlan's short-circuit below, so the round-count
+// table only needs debate + discussion (hence Exclude<DebateMode, "blitz">).
+const PLANS: Record<
+  Locale,
+  Record<Exclude<DebateMode, "blitz">, Record<RoundCount, RoundPlanEntry[]>>
+> = {
   en: {
     debate: { 3: DEBATE_3, 5: DEBATE_5, 7: DEBATE_7 },
     discussion: { 3: DISCUSSION_3, 5: DISCUSSION_5, 7: DISCUSSION_7 },
@@ -430,5 +491,8 @@ export function getRoundPlan(
   roundCount: RoundCount,
   language: Locale = "en",
 ): RoundPlanEntry[] {
+  if (mode === "blitz") {
+    return language === "tr" ? BLITZ_4_TR : BLITZ_4;
+  }
   return (PLANS[language] ?? PLANS.en)[mode][roundCount];
 }
