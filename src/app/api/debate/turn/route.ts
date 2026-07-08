@@ -51,6 +51,7 @@ import {
   recordSpend,
 } from "@/lib/security/rateLimit";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
+import { parseMove } from "@/lib/debate/parseMove";
 import {
   DEEP_SEARCH_COST_USD,
   narrowCitationsToCited,
@@ -222,6 +223,16 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Record what this turn actually cost against the daily spend ledger.
     await recordSpend(req, cost.totalCost);
 
+    // Blitz: pull the leading move tag off the model's reply, strip it from the
+    // shown text, and attach it to the message so the stage can fire a splash.
+    // Non-blitz sessions are untouched. Unknown/missing tag → move stays undefined.
+    let move: DebateMessage["move"];
+    if (session.mode === "blitz") {
+      const parsed = parseMove(content);
+      content = parsed.content;
+      move = parsed.move ?? undefined;
+    }
+
     const message: DebateMessage = {
       id: createId("msg"),
       sessionId: session.id,
@@ -234,6 +245,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       roundNumber: turn.roundNumber,
       roundLabel: turn.roundLabel,
       content,
+      move,
       usage,
       cost,
       citations,
