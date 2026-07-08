@@ -18,12 +18,23 @@ import type {
   DebateMessage,
   DebateSession,
   DebateVerdict,
+  SessionStatus,
 } from "@/lib/debate/debateTypes";
 import { generateTurn, generateVerdict } from "@/lib/api/debateClient";
+import { recomputeCostSummary } from "@/lib/cost/calculateCost";
 import { type AppErrorShape, toAppError } from "@/lib/utils/errors";
 import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { playSound } from "@/lib/audio/soundManager";
 import { canStartPlayback } from "@/lib/debate/blitzBuffer";
+
+export interface BlitzRunnerOptions {
+  /**
+   * Persist the running/finished session (to ArenaContext) so /result, match
+   * history, and share links see the blitz match — mirrors useDebateRunner's
+   * onPersist. Called after each locked-in turn and on completion.
+   */
+  onPersist?: (session: DebateSession) => void;
+}
 
 export type BlitzPhase =
   | "intro"
@@ -75,7 +86,12 @@ function delay(ms: number, signal: AbortSignal): Promise<void> {
 }
 const isAbort = (e: unknown) => e instanceof DOMException && e.name === "AbortError";
 
-export function useBlitzRunner(initialSession: DebateSession): BlitzRunnerState {
+export function useBlitzRunner(
+  initialSession: DebateSession,
+  options: BlitzRunnerOptions = {},
+): BlitzRunnerState {
+  const onPersistRef = useRef(options.onPersist);
+  onPersistRef.current = options.onPersist;
   const [state, setState] = useState<Omit<BlitzRunnerState, "replay">>(() => ({
     phase: "intro",
     roundLabel: null,
@@ -107,6 +123,18 @@ export function useBlitzRunner(initialSession: DebateSession): BlitzRunnerState 
       messages: [],
     };
     const generated: DebateMessage[] = [];
+
+    const persist = (status: SessionStatus) => {
+      onPersistRef.current?.({
+        ...working,
+        status,
+        turns: working.turns.map((t) => ({ ...t })),
+        messages: [...working.messages],
+        verdict: working.verdict,
+        costSummary: recomputeCostSummary(working),
+        updatedAt: new Date().toISOString(),
+      });
+    };
 
     // Reset state for a replay.
     setState((p) => ({
@@ -169,6 +197,7 @@ export function useBlitzRunner(initialSession: DebateSession): BlitzRunnerState 
             turn.status = "complete";
             working.messages = [...working.messages, msg];
             generated.push(msg);
+            persist("running"); // keep ArenaContext in sync for /result + history
             setState((p) => ({ ...p, bufferedCount: generated.length }));
           }
         })();
@@ -245,10 +274,12 @@ export function useBlitzRunner(initialSession: DebateSession): BlitzRunnerState 
             }
           }
           if (!verdict || signal.aborted) return;
+          working.verdict = verdict;
           setState((p) => ({ ...p, phase: "verdict", verdict: verdict!, line: "", move: null }));
           sfx("blitzKO");
           await delay(900, signal);
         }
+        persist("complete");
         setState((p) => ({ ...p, phase: "done" }));
       } catch (err) {
         if (isAbort(err)) return;

@@ -34,6 +34,7 @@ import {
   type BattleControls,
   type BattleSnapshot,
 } from "@/components/debate/BattleController";
+import { BlitzStage } from "@/components/blitz/BlitzStage";
 
 export function DebateArena() {
   const router = useRouter();
@@ -49,6 +50,12 @@ export function DebateArena() {
 
   if (sessions.length === 0) {
     return <EmptyArena hydrated={hydrated} onNewSetup={() => router.push("/setup")} />;
+  }
+
+  // Blitz mode renders the dedicated animated stage instead of the transcript
+  // cards + tab chrome. Blitz is always 1v1, so there's exactly one session.
+  if (sessions[0].mode === "blitz") {
+    return <BlitzStage key={sessions[0].id} session={sessions[0]} />;
   }
 
   // Key by the match identity so a rematch (new sessions) gives MatchArena fresh
