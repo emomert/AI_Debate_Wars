@@ -25,12 +25,14 @@ flow.
 ## 2. Goals & non-goals
 
 **Goals**
+
 - A distinct, high-energy mode that feels like a fast-paced live debate, not a calm turn reveal.
 - Speed is the #1 priority: no perceptible stalls during the show.
 - Reuse the existing debate pipeline (providers, cost, rate limits, moderation, judge, share).
 - An art/asset system that scales without code changes and never blocks launch.
 
 **Non-goals (explicitly out of v1)**
+
 - Momentum / health meter or any per-turn LLM scoring (owner chose "judge decides, as usual").
 - Token streaming from providers (that is the tracked P2-3 item; overkill for 1–2 sentence turns).
 - Multi-battle Blitz — Blitz is strictly 1v1.
@@ -38,18 +40,18 @@ flow.
 
 ## 3. Locked decisions (from brainstorming)
 
-| Decision | Choice |
-|---|---|
-| Interjection model | **Every turn is a move** — model prepends a move tag; app strips it and fires the matching splash + sting. Deterministic, zero extra API cost. |
-| Win condition | **The existing judge decides**, exactly as today. Only the *reveal* changes (in-scene). |
-| Screen during play | **Persistent animated "stage"** (meme environment): two fighter panels, a bottom dialogue box showing the current line only, full-frame splashes, in-scene verdict. |
+| Decision               | Choice                                                                                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Interjection model     | **Every turn is a move** — model prepends a move tag; app strips it and fires the matching splash + sting. Deterministic, zero extra API cost.                                               |
+| Win condition          | **The existing judge decides**, exactly as today. Only the *reveal* changes (in-scene).                                                                                                      |
+| Screen during play     | **Persistent animated "stage"** (meme environment): two fighter panels, a bottom dialogue box showing the current line only, full-frame splashes, in-scene verdict.                          |
 | Fighter representation | **Bespoke character per model**, delivered as a **curated Blitz-only roster** (~12 models). Non-roster models are simply not selectable in Blitz; they stay available in normal Debate mode. |
-| Audio | **Hybrid** — procedural synth for frequent small cues (whoosh, hit, momentum tick) + ~2 preloaded hero MP3s (an "OBJECTION!" shout, a KO stinger). |
-| Match length | **4 rounds / 8 turns** — labels: Opening Shot · Cross-Fire · Counter-Fire · Final Blow. |
-| Pacing | **Auto only** (manual gating would kill momentum). Reduce-motion still collapses to instant reveals. |
-| Pre-generation | **Buffer 4 turns, then stream the rest** during playback (video-buffering model). Buffer size is a single tunable constant. |
-| Playback engine | A **separate `useBlitzRunner`** (not an extension of `useDebateRunner`). |
-| Rollout | **Phase 1 ships on the reusable panel**; bespoke art layers in as Phase 2. |
+| Audio                  | **Hybrid** — procedural synth for frequent small cues (whoosh, hit, momentum tick) + ~2 preloaded hero MP3s (an "OBJECTION!" shout, a KO stinger).                                           |
+| Match length           | **4 rounds / 8 turns** — labels: Opening Shot · Cross-Fire · Counter-Fire · Final Blow.                                                                                                      |
+| Pacing                 | **Auto only** (manual gating would kill momentum). Reduce-motion still collapses to instant reveals.                                                                                         |
+| Pre-generation         | **Buffer 4 turns, then stream the rest** during playback (video-buffering model). Buffer size is a single tunable constant.                                                                  |
+| Playback engine        | A **separate `useBlitzRunner`** (not an extension of `useDebateRunner`).                                                                                                                     |
+| Rollout                | **Phase 1 ships on the reusable panel**; bespoke art layers in as Phase 2.                                                                                                                   |
 
 ## 4. Match structure & UX flow
 
@@ -74,6 +76,7 @@ The Blitz prompt instructs each fighter to **begin its turn with exactly one mov
 fixed enum, on its own line, e.g. `OBJECTION:` followed by the punchy line.
 
 Server-side, a new `parseMove(raw)` utility:
+
 1. Reads the leading tag (case-insensitive, tolerant of `OBJECTION!`, `OBJECTION:`, etc.).
 2. Validates it against the enum. Unknown or missing → `move = null` (no splash; never errors).
 3. **Strips** the tag from the content so the client only ever receives clean display text plus
@@ -82,13 +85,13 @@ Server-side, a new `parseMove(raw)` utility:
 Move enum (original / trademark-safe — "objection" is generic courtroom language; deliberately
 avoids Ace Attorney's specific "HOLD IT" / "TAKE THAT" wording):
 
-| Tag | Fires when | Splash treatment |
-|---|---|---|
-| `OBJECTION` | rebutting / attacking a claim | red full-frame slam |
-| `COUNTER` | flipping the opponent's point back | blue slam |
-| `RECEIPTS` | citing a fact / concrete example | yellow "evidence" card |
-| `TOUCHE` | (rare) conceding a point | small gray, light shake |
-| `FINISHER` | final-round closer | big KO-style splash |
+| Tag         | Fires when                         | Splash treatment        |
+| ----------- | ---------------------------------- | ----------------------- |
+| `OBJECTION` | rebutting / attacking a claim      | red full-frame slam     |
+| `COUNTER`   | flipping the opponent's point back | blue slam               |
+| `RECEIPTS`  | citing a fact / concrete example   | yellow "evidence" card  |
+| `TOUCHE`    | (rare) conceding a point           | small gray, light shake |
+| `FINISHER`  | final-round closer                 | big KO-style splash     |
 
 Move names are display-tunable; the enum is the contract. The prompt biases tag choice by round
 (e.g. Final Blow favors `FINISHER`) but the model picks; the app tolerates any valid tag.
