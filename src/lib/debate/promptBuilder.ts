@@ -107,17 +107,33 @@ function languageSystemAddendum(language: Locale): string {
   return language === "tr" ? TURKISH_SYSTEM_ADDENDUM : "";
 }
 
+// Blitz mode: appended to the debate base. Instructs the leading move tag (parsed
+// + stripped server-side by parseMove) and the punchy one-to-two-sentence style.
+const BLITZ_SYSTEM_ADDENDUM = `
+
+BLITZ RULES:
+- Begin your reply with EXACTLY ONE move tag on the first line, then your line.
+- Allowed tags: OBJECTION, COUNTER, RECEIPTS, TOUCHE, FINISHER.
+  OBJECTION = attack a claim · COUNTER = flip their point back ·
+  RECEIPTS = cite a fact/example · TOUCHE = concede a small point (rare) ·
+  FINISHER = your closing line (use in the final round).
+- Format: \`OBJECTION: <your one or two sentences>\`.
+- Keep it to 1–2 punchy sentences. No lists, no headers, no preamble.`;
+
 export function buildSystemPrompt(
   mode: DebateMode,
   deepDebate = false,
   deepSourcesAvailable = true,
   language: Locale = "en",
 ): string {
-  const base = mode === "debate" ? DEBATE_SYSTEM_PROMPT : DISCUSSION_SYSTEM_PROMPT;
+  // Blitz argues to win like debate, so it shares the debate base; only
+  // discussion uses the collaborative prompt.
+  const base = mode === "discussion" ? DISCUSSION_SYSTEM_PROMPT : DEBATE_SYSTEM_PROMPT;
   const withDeep = !deepDebate
     ? base
     : base + (deepSourcesAvailable ? DEEP_DEBATE_SYSTEM_ADDENDUM : DEEP_DEBATE_NO_SOURCES_ADDENDUM);
-  return withDeep + languageSystemAddendum(language);
+  const withBlitz = mode === "blitz" ? withDeep + BLITZ_SYSTEM_ADDENDUM : withDeep;
+  return withBlitz + languageSystemAddendum(language);
 }
 
 // Built-in tone presets. "custom" is handled separately (free text).
@@ -184,6 +200,7 @@ const LENGTH_PRESETS: Record<ResponseLength, LengthPreset> = {
   short: { maxTokens: 380, description: "100–160 words, at most 3 bullets or short paragraphs" },
   medium: { maxTokens: 700, description: "180–300 words, 3–5 bullets or paragraphs" },
   long: { maxTokens: 1200, description: "350–600 words, use short sections where helpful" },
+  punchy: { maxTokens: 90, description: "1–2 sentences, at most ~40 words, no lists" },
 };
 
 export function lengthPreset(length: ResponseLength): LengthPreset {
