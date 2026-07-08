@@ -12,9 +12,9 @@
 
 import type { Locale } from "@/lib/i18n/config";
 
-export type DebateMode = "debate" | "discussion";
+export type DebateMode = "debate" | "discussion" | "blitz";
 
-export type ResponseLength = "short" | "medium" | "long";
+export type ResponseLength = "short" | "medium" | "long" | "punchy";
 
 /** Playback pacing: "auto" reveals each turn automatically, "manual" waits for a click. */
 export type DebatePace = "auto" | "manual";
@@ -26,6 +26,22 @@ export type Speaker = "modelA" | "modelB" | "judge";
 export type Stance = "pro" | "against";
 
 export type ModelColor = "blue" | "red" | "yellow" | "purple";
+
+/**
+ * A fighter's rhetorical "move" in Blitz mode. The model prepends one of these
+ * as a leading tag; the server validates + strips it (see parseMove) and the
+ * stage maps it to a splash + sting. The enum is the contract; display names are
+ * tunable. Trademark-safe (no Ace Attorney "HOLD IT"/"TAKE THAT").
+ */
+export type BlitzMove = "OBJECTION" | "COUNTER" | "RECEIPTS" | "TOUCHE" | "FINISHER";
+
+export const BLITZ_MOVES: readonly BlitzMove[] = [
+  "OBJECTION",
+  "COUNTER",
+  "RECEIPTS",
+  "TOUCHE",
+  "FINISHER",
+];
 
 // "academic" was promoted out of tones into the Deep Debate capability; the
 // 4th slot is now a free-text "custom" tone the user describes. "unhinged" is
@@ -152,6 +168,8 @@ export interface DebateMessage {
   latencyMs?: number;
   /** Web sources for a Deep Debate turn (omitted for normal turns). */
   citations?: Citation[];
+  /** Blitz-mode rhetorical move parsed from the turn's leading tag (see parseMove). */
+  move?: BlitzMove;
   status: MessageStatus;
   createdAt: string;
 }
