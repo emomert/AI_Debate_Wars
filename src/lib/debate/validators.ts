@@ -20,9 +20,9 @@ import {
 import { getModelById, modelSupportsWebSearch } from "@/lib/models/modelRegistry";
 import { ProviderError } from "@/lib/utils/errors";
 
-const VALID_MODES = ["debate", "discussion"];
+const VALID_MODES = ["debate", "discussion", "blitz"];
 const VALID_ROUNDS = [3, 5, 7];
-const VALID_LENGTHS = ["short", "medium", "long"];
+const VALID_LENGTHS = ["short", "medium", "long", "punchy"];
 const VALID_TONES = ["serious", "aggressive", "casual", "custom", "unhinged"];
 
 // Generous per-message ceiling: the "long" preset allows ~1200 output tokens
@@ -100,6 +100,20 @@ export function assertValidSession(session: DebateSession): void {
   if (session.turns.length > 14) {
     // 7 rounds × 2 speakers is the hard ceiling (docs/11 max rounds).
     throw new ProviderError("INVALID_REQUEST", "Too many turns");
+  }
+  if (session.mode === "blitz") {
+    // Blitz is a fixed-shape mode: exactly 8 turns (4 rounds × A/B), auto pace,
+    // punchy length. Guard here so a forged session can't smuggle a longer/slower
+    // blitz match past the shared validator.
+    if (session.turns.length !== 8) {
+      throw new ProviderError("INVALID_REQUEST", "Blitz matches are exactly 8 turns");
+    }
+    if (session.pace !== "auto") {
+      throw new ProviderError("INVALID_REQUEST", "Blitz runs on auto pace");
+    }
+    if (session.responseLength !== "punchy") {
+      throw new ProviderError("INVALID_REQUEST", "Blitz uses punchy length");
+    }
   }
 }
 

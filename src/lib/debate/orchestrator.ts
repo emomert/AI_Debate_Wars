@@ -49,7 +49,7 @@ export function createDebateSession(config: DebateConfig): DebateSession {
       speaker: "modelA",
       task: entry.modelATask,
       role: roles.a,
-      stance: config.mode === "debate" ? "pro" : undefined,
+      stance: config.mode === "debate" || config.mode === "blitz" ? "pro" : undefined,
       modelId: config.modelA.modelId,
       status: "pending",
     });
@@ -60,7 +60,7 @@ export function createDebateSession(config: DebateConfig): DebateSession {
       speaker: "modelB",
       task: entry.modelBTask,
       role: roles.b,
-      stance: config.mode === "debate" ? "against" : undefined,
+      stance: config.mode === "debate" || config.mode === "blitz" ? "against" : undefined,
       modelId: config.modelB.modelId,
       status: "pending",
     });
