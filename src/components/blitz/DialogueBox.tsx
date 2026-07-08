@@ -26,7 +26,11 @@ export function DialogueBox({
           </span>
         ) : null}
       </div>
-      <p className="min-h-[3.5rem] text-base leading-snug text-ink sm:text-lg">{line}</p>
+      {/* Punchy turns should be plain, but models sometimes emit ** for emphasis;
+          strip any asterisk markers so they never show raw as the line types. */}
+      <p className="min-h-[3.5rem] text-base leading-snug text-ink sm:text-lg">
+        {line.replace(/\*+/g, "")}
+      </p>
     </div>
   );
 }
