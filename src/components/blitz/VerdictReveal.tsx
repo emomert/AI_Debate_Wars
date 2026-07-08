@@ -50,7 +50,11 @@ export function VerdictReveal({
         </motion.div>
       )}
       {verdict.summary ? (
-        <p className="max-w-md text-center text-ink">{verdict.summary}</p>
+        <p className="max-w-md text-center text-ink">
+          {/* Strip markdown emphasis markers — the judge wraps decisive phrases in
+              ** for the debate card; the stage renders plain text. */}
+          {verdict.summary.replace(/\*\*/g, "")}
+        </p>
       ) : null}
       <div className="flex gap-3">
         <button
