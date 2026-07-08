@@ -24,7 +24,12 @@ export type SoundKey =
   | "judgeEnter"
   | "verdictReveal"
   | "next"
-  | "error";
+  | "error"
+  | "blitzHit"
+  | "blitzWhoosh"
+  | "blitzObjection"
+  | "blitzKO"
+  | "blitzRoundTitle";
 
 const STORAGE_KEY = "ada:sound-enabled";
 const MUSIC_STORAGE_KEY = "ada:music-enabled";
@@ -126,6 +131,27 @@ const PATTERNS: Record<SoundKey, Note[]> = {
   error: [
     { freq: 200, start: 0, dur: 0.16, type: "sawtooth", gain: 0.16 },
     { freq: 140, start: 0.16, dur: 0.22, type: "sawtooth", gain: 0.16 },
+  ],
+  // Blitz cues (Phase 1 synth; blitzObjection/blitzKO get hero MP3 overrides in
+  // Phase 2 via SFX_ASSETS).
+  blitzWhoosh: [{ freq: 300, start: 0, dur: 0.09, type: "sine", gain: 0.08 }],
+  blitzHit: [
+    { freq: 180, start: 0, dur: 0.05, type: "square", gain: 0.18 },
+    { freq: 90, start: 0.05, dur: 0.08, type: "sawtooth", gain: 0.16 },
+  ],
+  blitzObjection: [
+    { freq: 440, start: 0, dur: 0.06, type: "square", gain: 0.2 },
+    { freq: 660, start: 0.06, dur: 0.06, type: "square", gain: 0.2 },
+    { freq: 880, start: 0.12, dur: 0.14, type: "square", gain: 0.2 },
+  ],
+  blitzKO: [
+    { freq: 784, start: 0, dur: 0.1, type: "square", gain: 0.2 },
+    { freq: 523, start: 0.1, dur: 0.1, type: "square", gain: 0.2 },
+    { freq: 262, start: 0.2, dur: 0.28, type: "sawtooth", gain: 0.2 },
+  ],
+  blitzRoundTitle: [
+    { freq: 523, start: 0, dur: 0.08, type: "triangle", gain: 0.14 },
+    { freq: 784, start: 0.08, dur: 0.12, type: "triangle", gain: 0.14 },
   ],
 };
 
