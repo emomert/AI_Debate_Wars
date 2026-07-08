@@ -24,6 +24,10 @@ interface BattleListProps {
   onSwap: (index: number) => void;
   onAdd: () => void;
   onRemove: (index: number) => void;
+  /** When set, restrict every fighter picker to these ids (Blitz roster). */
+  allowedModelIds?: string[];
+  /** Hide the "add battle" control (Blitz is strictly 1v1). */
+  allowAddBattle?: boolean;
 }
 
 export function BattleList({
@@ -34,6 +38,8 @@ export function BattleList({
   onSwap,
   onAdd,
   onRemove,
+  allowedModelIds,
+  allowAddBattle = true,
 }: BattleListProps) {
   const d = useT();
   const multi = pairs.length > 1;
@@ -76,6 +82,7 @@ export function BattleList({
               conflictId={pair.modelB.modelId}
               availability={availability}
               requireWebSearch={requireWebSearch}
+              allowedModelIds={allowedModelIds}
               onSelect={(entry) => onSelect(i, "A", entry)}
             />
             <ModelSelector
@@ -85,18 +92,21 @@ export function BattleList({
               conflictId={pair.modelA.modelId}
               availability={availability}
               requireWebSearch={requireWebSearch}
+              allowedModelIds={allowedModelIds}
               onSelect={(entry) => onSelect(i, "B", entry)}
             />
           </div>
         </div>
       ))}
 
-      {pairs.length < MAX_BATTLES ? (
+      {allowAddBattle && pairs.length < MAX_BATTLES ? (
         <ArcadeButton variant="neutral-white" size="sm" fullWidth onClick={onAdd}>
           {d.setup.battles.addBattle}
         </ArcadeButton>
       ) : null}
-      <p className="text-center text-[11px] text-ink/50">{d.setup.battles.maxNote}</p>
+      {allowAddBattle ? (
+        <p className="text-center text-[11px] text-ink/50">{d.setup.battles.maxNote}</p>
+      ) : null}
     </div>
   );
 }

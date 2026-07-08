@@ -62,6 +62,8 @@ interface ModelSelectorProps {
   availability?: ProviderAvailability | null;
   /** Deep Debate: disable models that can't web-search. */
   requireWebSearch?: boolean;
+  /** When set, restrict the picker to these model ids (Blitz roster). */
+  allowedModelIds?: string[];
 }
 
 function backendReady(
@@ -80,11 +82,15 @@ export function ModelSelector({
   conflictId,
   availability,
   requireWebSearch = false,
+  allowedModelIds,
 }: ModelSelectorProps) {
   const { locale } = useLocale();
   const d = useT();
   const reduce = useReduceMotion();
   const selected = getModelById(selectedId);
+  // Blitz roster restriction: when set, only these model ids are pickable.
+  const allowSet =
+    allowedModelIds && allowedModelIds.length > 0 ? new Set(allowedModelIds) : null;
   const [activeBrand, setActiveBrand] = useState<string>(
     selected?.brand ?? BRANDS[0]?.brand ?? "OpenAI",
   );
@@ -122,9 +128,9 @@ export function ModelSelector({
   // Flatten the active brand into a recommended-first list. A short curated set
   // shows by default; the rest live behind a "Show all" expander so the picker
   // isn't an overwhelming wall of models.
-  const brandModels = [...modelsForBrand(activeBrand, locale)].sort(
-    (a, b) => b.debateRating - a.debateRating,
-  );
+  const brandModels = [...modelsForBrand(activeBrand, locale)]
+    .filter((m) => !allowSet || allowSet.has(m.id))
+    .sort((a, b) => b.debateRating - a.debateRating);
   let recommendedModels = brandModels.filter((m) => RECOMMENDED_MODEL_IDS.has(m.id));
   let restModels = brandModels.filter((m) => !RECOMMENDED_MODEL_IDS.has(m.id));
   // Defensive: a brand with no curated pick still shows its best as recommended.
@@ -144,11 +150,13 @@ export function ModelSelector({
     });
   };
 
-  const localeBrands = brandsForLocale(locale);
+  const localeBrands = brandsForLocale(locale).filter(
+    (b) => !allowSet || modelsForBrand(b.brand, locale).some((m) => allowSet.has(m.id)),
+  );
   const primaryBrands = localeBrands.filter((b) => b.backend !== "openrouter");
   const freeBrands = localeBrands.filter((b) => b.backend === "openrouter");
   const freeModelCount = freeBrands.reduce(
-    (n, b) => n + modelsForBrand(b.brand, locale).length,
+    (n, b) => n + modelsForBrand(b.brand, locale).filter((m) => !allowSet || allowSet.has(m.id)).length,
     0,
   );
 

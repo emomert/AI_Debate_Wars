@@ -27,10 +27,12 @@ import { useArena, toSelectedModel, defaultFighters } from "@/lib/state/ArenaCon
 import { playSound } from "@/lib/audio/soundManager";
 import { validateSetup } from "@/lib/debate/validators";
 import { getBattlePairs } from "@/lib/debate/orchestrator";
+import { blitzRosterModelIds, isBlitzModel } from "@/lib/debate/blitzRoster";
 import { createId } from "@/lib/utils/ids";
 import { TOPIC_MAX_LENGTH } from "@/lib/constants";
 import { VOICE_ENABLED } from "@/lib/tts/config";
 import {
+  getModelById,
   modelIdSupportsLanguage,
   modelSupportsWebSearch,
   type ModelCatalogEntry,
@@ -119,12 +121,40 @@ export default function SetupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.deepDebate, config.roundCount, config.tone]);
 
-  // Discussion mode is removed for now — keep every new match in debate mode
-  // (a persisted/stale config could still carry "discussion").
+  const isBlitz = config.mode === "blitz";
+
+  // Discussion mode is removed for now — allow only debate or blitz (a persisted/
+  // stale config could still carry "discussion").
   useEffect(() => {
-    if (config.mode !== "debate") setConfig({ mode: "debate" });
+    if (config.mode !== "debate" && config.mode !== "blitz") setConfig({ mode: "debate" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.mode]);
+
+  // Blitz is a fixed-shape mode: auto pace, punchy length, no deep/multi-battle,
+  // standard tone, and both fighters must come from the curated roster. Normalize
+  // the config so entering Blitz can never leave a conflicting setting behind.
+  useEffect(() => {
+    if (!isBlitz) return;
+    const patch: Partial<DebateConfig> = {};
+    if (config.pace !== "auto") patch.pace = "auto";
+    if (config.responseLength !== "punchy") patch.responseLength = "punchy";
+    if (config.deepDebate) patch.deepDebate = false;
+    if (config.tone !== "serious") patch.tone = "serious";
+    if ((config.battles ?? []).length > 0) patch.battles = [];
+    const roster = blitzRosterModelIds();
+    if (!isBlitzModel(config.modelA.modelId)) {
+      const pick = getModelById(roster[0]);
+      if (pick) patch.modelA = toSelectedModel(pick, "blue");
+    }
+    if (!isBlitzModel(config.modelB.modelId)) {
+      // Prefer a different roster model than A so the two fighters don't collide.
+      const otherId = roster.find((id) => id !== (patch.modelA?.modelId ?? config.modelA.modelId)) ?? roster[0];
+      const pick = getModelById(otherId);
+      if (pick) patch.modelB = toSelectedModel(pick, "red");
+    }
+    if (Object.keys(patch).length > 0) setConfig(patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBlitz, config.pace, config.responseLength, config.deepDebate, config.tone, config.battles, config.modelA.modelId, config.modelB.modelId]);
 
   // "Model A / Model B judges" was removed (only neutral judges now). Coerce a
   // stale persisted choice to Auto so the judge picker never shows nothing
@@ -214,6 +244,38 @@ export default function SetupPage() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Config sections */}
         <div className="space-y-5">
+          <GamePanel title="Mode">
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { id: "debate" as const, emoji: "⚔️", title: "Debate", blurb: "Full match, 3–7 rounds, 56 fighters." },
+                { id: "blitz" as const, emoji: "⚡", title: "Blitz", blurb: "Fast 8-turn stage battle. Curated roster." },
+              ]).map((m) => {
+                const active = config.mode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => {
+                      if (config.mode === m.id) return;
+                      playSound("modeSelect");
+                      setConfig({ mode: m.id });
+                    }}
+                    className={
+                      "flex flex-col items-start gap-1 rounded-card border-4 border-ink p-3 text-left shadow-hard transition-transform " +
+                      (active ? "bg-arcade-yellow" : "bg-card hover:-translate-y-0.5")
+                    }
+                  >
+                    <span className="font-display text-lg text-ink">
+                      <span aria-hidden>{m.emoji}</span> {m.title}
+                    </span>
+                    <span className="text-xs text-ink/70">{m.blurb}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </GamePanel>
+
           <GamePanel title={d.setup.sections.topic}>
             <TopicInput
               value={config.topic}
@@ -223,19 +285,21 @@ export default function SetupPage() {
             />
           </GamePanel>
 
-          <GamePanel title={d.setup.sections.deepDebate}>
-            <DeepDebateToggle
-              value={config.deepDebate}
-              fightersEligible={fightersEligibleForDeep}
-              onChange={(deepDebate) =>
-                setConfig(
-                  deepDebate
-                    ? { deepDebate, roundCount: 3, tone: "serious" }
-                    : { deepDebate },
-                )
-              }
-            />
-          </GamePanel>
+          {isBlitz ? null : (
+            <GamePanel title={d.setup.sections.deepDebate}>
+              <DeepDebateToggle
+                value={config.deepDebate}
+                fightersEligible={fightersEligibleForDeep}
+                onChange={(deepDebate) =>
+                  setConfig(
+                    deepDebate
+                      ? { deepDebate, roundCount: 3, tone: "serious" }
+                      : { deepDebate },
+                  )
+                }
+              />
+            </GamePanel>
+          )}
 
           <GamePanel title={d.setup.sections.fighters}>
             {config.deepDebate ? (
@@ -251,9 +315,20 @@ export default function SetupPage() {
               onSwap={swapBattle}
               onAdd={addBattle}
               onRemove={removeBattle}
+              allowedModelIds={isBlitz ? blitzRosterModelIds() : undefined}
+              allowAddBattle={!isBlitz}
             />
           </GamePanel>
 
+          {isBlitz ? (
+            <GamePanel title={d.setup.sections.rules}>
+              <p className="text-sm text-ink/70">
+                <span aria-hidden>⚡</span> Blitz is fixed: 4 fast rounds (8 turns),
+                punchy one-liners, auto pace, with an in-scene verdict. Just pick your
+                topic and two fighters.
+              </p>
+            </GamePanel>
+          ) : (
           <GamePanel title={d.setup.sections.rules}>
             <div className="space-y-5">
               <div>
@@ -334,6 +409,7 @@ export default function SetupPage() {
               ) : null}
             </div>
           </GamePanel>
+          )}
 
           <GamePanel title={d.setup.sections.judge}>
             <JudgeSelector
