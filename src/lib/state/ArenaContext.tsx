@@ -84,7 +84,6 @@ export function toSelectedModel(
     providerId: entry.providerId,
     modelId: entry.id,
     displayName: entry.displayName,
-    nickname: entry.nickname,
     color,
   };
 }
@@ -101,8 +100,7 @@ export function defaultFighters(): { a: ModelCatalogEntry; b: ModelCatalogEntry 
 }
 
 function defaultConfig(): DebateConfig {
-  // Sensible cheap defaults; users switch fighters/brands in setup. (For a
-  // key-free option, pick a free OpenRouter model with OPENROUTER_API_KEY set.)
+  // Sensible cheap defaults; users switch fighters/brands in setup.
   const { a, b } = defaultFighters();
   return {
     topic: "",
@@ -113,7 +111,7 @@ function defaultConfig(): DebateConfig {
     tone: "serious",
     customTone: "",
     deepDebate: false,
-    responseLength: "medium",
+    responseLength: "short",
     pace: "manual",
     judge: { enabled: true, mode: "auto" },
   };

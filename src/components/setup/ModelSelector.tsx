@@ -45,12 +45,6 @@ const ACCENT_SELECTED: Record<Accent, string> = {
   purple: "border-ink bg-arcade-purple/10 shadow-hard",
 };
 
-const ACCENT_BAR: Record<Accent, string> = {
-  blue: "bg-arcade-blue",
-  red: "bg-arcade-red",
-  purple: "bg-arcade-purple",
-};
-
 interface ModelSelectorProps {
   label: string;
   accent: Accent;
@@ -241,7 +235,7 @@ export function ModelSelector({
               {d.setup.models.freeVia}
               {backendReady("openrouter", availability) === false
                 ? d.setup.models.needsOpenRouterKey
-                : d.setup.models.zeroCost}
+                : null}
             </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label={d.setup.models.freeBrands}>
               {freeBrands.map((b) => renderTab(b))}
@@ -351,26 +345,6 @@ export function ModelSelector({
             </span>
             {isSelected ? <Badge color="green" size="sm">{d.setup.models.picked}</Badge> : null}
             {notReady ? <Badge color="ink" size="sm">{d.setup.models.unavailable}</Badge> : null}
-          </span>
-          <span className="block text-xs font-semibold text-ink/55">
-            {m.nickname}
-          </span>
-
-          {/* Debate-skill rating bar (title explains the 0–100 score) */}
-          <span
-            className="mt-1.5 flex items-center gap-2"
-            title={d.setup.models.debateFitHelp}
-          >
-            <span className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-              {d.setup.models.debateFit}
-            </span>
-            <span className="h-2 w-24 overflow-hidden rounded-full border-2 border-ink bg-paper">
-              <span
-                className={cn("block h-full", ACCENT_BAR[accent])}
-                style={{ width: `${m.debateRating}%` }}
-              />
-            </span>
-            <span className="font-mono text-xs font-bold">{m.debateRating}/100</span>
           </span>
 
           {noWeb ? (

@@ -5,10 +5,9 @@ export const setup = {
   subheading: "Yarışmacılarınızı seçin ve kuralları belirleyin. Gerisini arena halleder.",
   sections: {
     topic: "1 · Konu",
-    deepDebate: "2 · Derin Münazara",
-    fighters: "3 · Yarışmacılarınızı Seçin",
-    rules: "4 · Maç Kuralları",
-    judge: "5 · Hakem",
+    fighters: "2 · Yarışmacılarınızı Seçin",
+    rules: "3 · Maç Kuralları",
+    judge: "4 · Hakem",
   },
   swapFighters: "A ve B yarışmacılarını yer değiştir",
   fighterA: "Yarışmacı A",
@@ -120,13 +119,11 @@ export const setup = {
     needsKey: "⚠️ Sunucunun bu yarışmacılar için bir web arama anahtarına ihtiyacı var",
   },
 
-  // JudgeSelector
+  // JudgeSelector — hakem zorunludur; kullanıcı yalnızca NASIL seçileceğini belirler.
   judge: {
-    enableTitle: "⚖️ Hakem dahil edilsin mi?",
-    enableSubtitle: "Tüm turlar bittiğinde hakem nihai kararı verir.",
-    enable: "Hakem modunu etkinleştir",
+    mandatoryNote:
+      "Her maç bir kararla biter — hakemin nasıl seçileceğini belirleyin.",
     typeLabel: "Hakem türü",
-    disabledNote: "Hakem seçilmedi. Münazara son turdan sonra sona erecek.",
     lessNeutral: "Daha az tarafsız",
     warnParticipated:
       "⚠️ Bu hakem münazaraya katıldı, bu yüzden karar daha az tarafsız olabilir.",
@@ -153,16 +150,12 @@ export const setup = {
     freeModels: "🌐 Diğer markalar",
     freeBrands: "Diğer markalar",
     ready: "hazır",
-    freeVia: "OpenRouter üzerinden sunulur · ",
-    needsOpenRouterKey: "OPENROUTER_API_KEY gerektirir",
-    zeroCost: "çalıştırması $0",
+    freeVia: "OpenRouter üzerinden sunulur",
+    needsOpenRouterKey: " · OPENROUTER_API_KEY gerektirir",
     picked: "Seçildi",
     unavailable: "Kullanılamıyor",
     pickedWith: (name: string) => `Seçildi: ${name}`,
     modelsCount: (n: number) => `${n} model`,
-    debateFit: "Münazara becerisi",
-    debateFitHelp:
-      "Bu modelin yapılandırılmış bir münazarada ne kadar iyi olduğuna dair 0–100 puanımız — akıl yürütme, karşı argüman ve konuya sadık kalma. Yüksek = daha zorlu bir rakip.",
     showAll: (n: number) => `${n} modelin tümünü göster ▾`,
     showFewer: "Daha az göster ▴",
     needsWebSearchKey: "Derin Münazara için sunucunun web arama anahtarı gerekir",
@@ -188,6 +181,5 @@ export const setup = {
     judgeOn: "⚖️ Hakem açık",
     judgeOff: "Hakem yok",
     start: "▶ Maçı Başlatın",
-    footnote: "Canlı modeller · OpenRouter markaları tek bir ortak anahtarla çalışır",
   },
 };

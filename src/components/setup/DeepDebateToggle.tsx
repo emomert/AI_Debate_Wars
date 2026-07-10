@@ -17,27 +17,39 @@ interface DeepDebateToggleProps {
   onChange: (value: boolean) => void;
   /** True when both fighters can deep-search (natively or via the app's search engine). */
   fightersEligible: boolean;
+  /**
+   * Slim in-panel variant: lives INSIDE the Topic section instead of owning a
+   * whole setup panel — smaller card, smaller switch, same behavior.
+   */
+  compact?: boolean;
 }
 
 export function DeepDebateToggle({
   value,
   onChange,
   fightersEligible,
+  compact = false,
 }: DeepDebateToggleProps) {
   const d = useT();
   return (
     <div>
       <div
         className={cn(
-          "relative flex items-center justify-between gap-3 rounded-card border-4 border-ink p-3 shadow-hard-sm transition-colors",
+          "relative flex items-center justify-between gap-3 rounded-card border-ink shadow-hard-sm transition-colors",
+          compact ? "border-3 p-2.5" : "border-4 p-3",
           value ? "bg-arcade-purple text-white" : "bg-surface",
         )}
       >
         <div className="min-w-0">
-          <p className="font-heading text-base font-extrabold">
+          <p className={cn("font-heading font-extrabold", compact ? "text-sm" : "text-base")}>
             {d.setup.deep.title}
           </p>
-          <p className={cn("text-sm", value ? "text-white/80" : "text-ink/60")}>
+          <p
+            className={cn(
+              compact ? "text-xs" : "text-sm",
+              value ? "text-white/80" : "text-ink/60",
+            )}
+          >
             {d.setup.deep.subtitle}
           </p>
         </div>
@@ -51,14 +63,16 @@ export function DeepDebateToggle({
             onChange(!value);
           }}
           className={cn(
-            "relative h-9 w-16 shrink-0 rounded-full border-3 border-night transition",
+            "relative shrink-0 rounded-full border-3 border-night transition",
+            compact ? "h-7 w-[52px]" : "h-9 w-16",
             value ? "bg-arcade-green" : "bg-paper",
           )}
         >
           <span
             className={cn(
-              "absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 border-night bg-white transition-all",
-              value ? "left-[34px]" : "left-1",
+              "absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-night bg-white transition-all",
+              compact ? "h-4 w-4" : "h-6 w-6",
+              value ? (compact ? "left-[26px]" : "left-[34px]") : "left-1",
             )}
           />
         </button>

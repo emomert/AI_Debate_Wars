@@ -25,6 +25,7 @@ import { stopDrumRoll } from "@/lib/audio/soundManager";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
 import { formatCost } from "@/lib/utils/format";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
@@ -333,10 +334,12 @@ function BattleTabs({
       </div>
       <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] font-bold text-ink/55">
         <span>{d.debate.battles.finishedCount(doneCount, sessions.length)}</span>
-        <span className="inline-flex items-center gap-1 rounded-btn border-2 border-ink bg-night px-1.5 py-0.5 font-mono text-arcade-green">
-          <span aria-hidden>💰</span>
-          {formatCost(allBattlesCost)} · {d.debate.battles.allBattles}
-        </span>
+        {COST_UI_ENABLED ? (
+          <span className="inline-flex items-center gap-1 rounded-btn border-2 border-ink bg-night px-1.5 py-0.5 font-mono text-arcade-green">
+            <span aria-hidden>💰</span>
+            {formatCost(allBattlesCost)} · {d.debate.battles.allBattles}
+          </span>
+        ) : null}
       </div>
     </div>
   );

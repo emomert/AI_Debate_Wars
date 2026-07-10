@@ -4,7 +4,7 @@ export const home = {
   meta: {
     title: "Debator — Fikirleriniz İçin Yapay Zekâları Dövüştürün",
     description:
-      "İki yapay zekâ modelinin konunuzu yapılandırılmış turlar, görünür maliyetler ve isteğe bağlı bir hakem eşliğinde münazara ettiği oyunlaştırılmış bir arena.",
+      "İki yapay zekâ modelinin konunuzu yapılandırılmış turlar hâlinde münazara ettiği, kararı bir yapay zekâ hakemin verdiği oyunlaştırılmış bir arena.",
   },
 
   hero: {
@@ -15,13 +15,7 @@ export const home = {
     introBefore: "Debator, ",
     introStrong: "iki yapay zekâ modelinin konunuzu tartıştığı",
     introAfter:
-      " bir tarayıcı arenasıdır; üstelik yapılandırılmış turlar hâlinde. İsteğe bağlı bir yapay zekâ hakem maçı puanlar ve harcanan her token anlık olarak sayılır.",
-    badges: {
-      fighters: "⚔️ İki yapay zekâ yarışmacısı",
-      rounds: "3 / 5 / 7 tur",
-      judge: "⚖️ İsteğe bağlı hakem",
-      cost: "💰 Canlı maliyet takibi",
-    },
+      " bir tarayıcı arenasıdır; üstelik yapılandırılmış turlar hâlinde. Bir yapay zekâ hakem maçı puanlar ve kazananı ilan eder.",
   },
 
   cta: {
@@ -44,11 +38,11 @@ export const home = {
       },
       {
         title: "Kuralları belirleyin",
-        body: "3 / 5 / 7 tur, bir üslup, isteğe bağlı Derin Münazara ve isteğe bağlı bir yapay zekâ hakem.",
+        body: "3 / 5 / 7 tur, bir üslup, isteğe bağlı Derin Münazara ve bir yapay zekâ hakem.",
       },
       {
         title: "Maçı izleyin",
-        body: "Arena her turu canlı oynatır — maliyetler ekranda, karar ise sonunda.",
+        body: "Arena her turu canlı oynatır — kararı ise sonunda hakem verir.",
       },
     ],
   },

@@ -11,11 +11,16 @@
 5. User configures the judge: none, auto (preview of the pick shown), or a chosen third model.
 6. Start Match → live arena.
 7. The app generates one turn at a time (auto-advances or waits for clicks per pace); typewriter reveal, playful thinking messages, SFX.
-8. Costs update after each turn; citations appear as chips in Deep Debate.
+8. Citations appear as chips in Deep Debate. (Cost displays are hidden as of July 2026 — `COST_UI_ENABLED` in `src/lib/cost/uiConfig.ts`; tracking still runs for the spend caps.)
 9. After the final round, the judge deliberates (drum roll) and the verdict reveals.
-10. Result screen: verdict, scores, summary, total cost — with **share** (auto-unfurling link + image), **save to profile** (signed-in), **change judge & re-judge**, and rematch options.
+10. Result screen: verdict, scores, summary — with **share** (auto-unfurling link + image), **save to profile** (signed-in), **change judge & re-judge**, and rematch options.
 
 ## Blitz Mode
+
+> **Currently HIDDEN** behind `BLITZ_ENABLED = false` in
+> `src/lib/debate/blitzConfig.ts`: the setup mode toggle is not rendered and a
+> persisted blitz config is coerced back to Debate. The implementation below
+> stays intact — flip the flag to bring it back.
 
 Setup has a **mode toggle** (Debate / Blitz). Blitz is a fast, spectacle-first
 variant designed for share clips:
@@ -51,7 +56,7 @@ A match can pit **1–3 battles** against the same topic at once — each battle
 ## Page Notes
 
 - **Home:** hero, sample topics, "Use Debator" / "Try Sample" CTAs, About/Report/Profile links, sound toggle.
-- **Setup:** game-match configuration feel ("Choose your fighters", "Set the rules", "Bring in a judge?"); validation gates the start button; localized error copy.
+- **Setup:** game-match configuration feel ("Choose your fighters", "Set the rules"); the judge is mandatory — users pick only Auto Judge vs a hand-picked third model; validation gates the start button; localized error copy.
 - **Arena:** top HUD (topic, round counter, total cost, sound, stop); fighter cards with idle/thinking/speaking states; full-width message timeline; sticky controls on mobile.
 - **Result:** dramatic verdict reveal; share panel generates the link/image client-side.
 - **Share page (`/s`):** public, stateless; renders the verdict from the URL payload with OG tags for unfurl.

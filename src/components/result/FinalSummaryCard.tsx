@@ -11,6 +11,7 @@ import type { DebateSession } from "@/lib/debate/debateTypes";
 import { GamePanel } from "@/components/game/GamePanel";
 import { Badge } from "@/components/game/Badge";
 import { ROUND_OPTIONS } from "@/lib/constants";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { formatCost, formatTokens } from "@/lib/utils/format";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
@@ -65,7 +66,9 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
         </Badge>
       </div>
 
-      {/* Cost summary */}
+      {/* Cost summary — hidden while the cost UI is off (COST_UI_ENABLED). */}
+      {COST_UI_ENABLED ? (
+      <>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label={d.result.summary.totalCost} value={formatCost(cost.totalCost)} accent />
         <Stat label={d.result.summary.totalTokens} value={formatTokens(cost.totalTokens)} />
@@ -122,6 +125,8 @@ export function FinalSummaryCard({ session }: FinalSummaryCardProps) {
         {anyEstimated ? d.result.summary.estimatedPrefix : ""}{d.result.summary.pricingNote}{" "}
         <code className="font-mono">lib/cost/pricing.ts</code>
       </p>
+      </>
+      ) : null}
     </GamePanel>
   );
 }

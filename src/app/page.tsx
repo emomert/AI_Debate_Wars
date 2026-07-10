@@ -15,7 +15,6 @@ import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
-import { Badge } from "@/components/game/Badge";
 import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { getSampleTopics, pickSampleTopics, TONE_OPTIONS } from "@/lib/constants";
 import {
@@ -39,14 +38,14 @@ function randomItem<T>(items: readonly T[]): T {
 }
 
 /**
- * Candidate fighters for the demo: free/low-cost models only (a sample must
- * never burn real credits), filtered to backends that actually have keys.
+ * Candidate fighters for the demo: low-cost models only (a sample should burn
+ * as little as possible), filtered to backends that actually have keys.
  * Until /api/health resolves, OpenRouter models are excluded to stay safe.
  */
 function samplePool(availability: ProviderAvailability | null): ModelCatalogEntry[] {
   return MODEL_CATALOG.filter(
     (m) =>
-      (m.costTier === "free" || m.costTier === "low") &&
+      m.costTier === "low" &&
       (availability ? availability[m.providerId] : m.providerId !== "openrouter"),
   );
 }
@@ -105,7 +104,10 @@ export default function HomePage() {
     transition: { duration: 0.4, delay, ease: "easeOut" as const },
   });
 
-  const useDebator = () => router.push("/setup");
+  const useDebator = () => {
+    playSound("buttonClick");
+    router.push("/setup");
+  };
 
   const trySample = () => {
     const sample = sampleConfig(availability, locale);
@@ -142,17 +144,10 @@ export default function HomePage() {
           <strong>{d.home.hero.introStrong}</strong>
           {d.home.hero.introAfter}
         </motion.p>
-
-        <motion.div {...fade(0.18)} className="mt-3 flex flex-wrap justify-center gap-1.5">
-          <Badge color="yellow" size="sm">{d.home.hero.badges.fighters}</Badge>
-          <Badge color="green" size="sm">{d.home.hero.badges.rounds}</Badge>
-          <Badge color="purple" size="sm">{d.home.hero.badges.judge}</Badge>
-          <Badge color="white" size="sm">{d.home.hero.badges.cost}</Badge>
-        </motion.div>
       </section>
 
       {/* Primary CTAs */}
-      <motion.div {...fade(0.24)} className="mx-auto mt-8 max-w-2xl">
+      <motion.div {...fade(0.18)} className="mx-auto mt-8 max-w-2xl">
         <GamePanel padding="lg">
           <div className="flex flex-col gap-2 sm:flex-row">
             <ArcadeButton

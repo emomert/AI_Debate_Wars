@@ -68,7 +68,8 @@ export interface SelectedModel {
   providerId: string;
   modelId: string;
   displayName: string;
-  nickname: string;
+  /** Legacy flavor text — persisted sessions may carry it; no longer displayed. */
+  nickname?: string;
   color: ModelColor;
 }
 

@@ -1,9 +1,11 @@
 "use client";
 
 /**
- * JudgeSelector — optional Judge Mode (docs/04, docs/01 Feature 6).
- * Enable/disable, choose how the judge is picked, warn when a participant
- * judges itself, and pick a neutral third model when relevant.
+ * JudgeSelector — the judge is MANDATORY (July 2026): every match ends with a
+ * verdict. The user only chooses HOW the judge is picked — Auto (neutral model
+ * resolved by the server) or a hand-picked third model — with warnings when
+ * the pick isn't neutral. (`judge.enabled` stays in the config schema for
+ * backward-compat; setup coerces it to true.)
  */
 
 import { JUDGE_MODE_OPTIONS } from "@/lib/constants";
@@ -31,15 +33,6 @@ export function JudgeSelector({
   availability,
 }: JudgeSelectorProps) {
   const d = useT();
-  const setEnabled = (enabled: boolean) => {
-    playSound("buttonClick");
-    onChange(
-      enabled
-        ? { enabled: true, mode: value.mode === "none" ? "auto" : value.mode, model: value.model }
-        : { enabled: false, mode: "none" },
-    );
-  };
-
   const setMode = (mode: JudgeMode) => {
     playSound("buttonClick");
     onChange({ ...value, enabled: true, mode });
@@ -51,11 +44,9 @@ export function JudgeSelector({
     onChange({ ...value, enabled: true, mode: "thirdModel", model });
   };
 
-  const warns =
-    value.enabled && (value.mode === "modelA" || value.mode === "modelB");
+  const warns = value.mode === "modelA" || value.mode === "modelB";
 
   const thirdMatchesFighter =
-    value.enabled &&
     value.mode === "thirdModel" &&
     !!value.model &&
     fighterModelIds.includes(value.model.modelId);
@@ -63,7 +54,7 @@ export function JudgeSelector({
   // Which neutral model the "auto" judge will be — mirrors the server's pick so
   // the user sees it up front (#10). Null until /api/health resolves availability.
   const autoJudge =
-    value.enabled && value.mode === "auto"
+    value.mode === "auto"
       ? previewAutoJudge(
           availability
             ? {
@@ -81,40 +72,8 @@ export function JudgeSelector({
 
   return (
     <div>
-      {/* Enable / disable toggle */}
-      <div className="flex items-center justify-between gap-3 rounded-card border-4 border-ink bg-surface p-3 shadow-hard-sm">
-        <div>
-          <p className="font-heading text-base font-extrabold">{d.setup.judge.enableTitle}</p>
-          <p className="text-sm text-ink/60">
-            {d.setup.judge.enableSubtitle}
-          </p>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={value.enabled}
-          aria-label={d.setup.judge.enable}
-          onClick={() => setEnabled(!value.enabled)}
-          className={cn(
-            "relative h-9 w-16 shrink-0 rounded-full border-3 border-ink transition",
-            value.enabled ? "bg-arcade-green" : "bg-paper",
-          )}
-        >
-          <span
-            className={cn(
-              "absolute top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 border-night bg-white transition-all",
-              value.enabled ? "left-[34px]" : "left-1",
-            )}
-          />
-        </button>
-      </div>
-
-      {!value.enabled ? (
-        <p className="mt-3 rounded-card border-3 border-dashed border-ink/40 bg-paper p-3 text-sm text-ink/65">
-          {d.setup.judge.disabledNote}
-        </p>
-      ) : (
-        <div className="mt-3 space-y-3">
+      <p className="mb-3 text-sm text-ink/60">{d.setup.judge.mandatoryNote}</p>
+      <div className="space-y-3">
           <div
             role="radiogroup"
             aria-label={d.setup.judge.typeLabel}
@@ -220,8 +179,7 @@ export function JudgeSelector({
             <p className="font-heading text-sm font-extrabold">{d.setup.judge.blindTitle}</p>
             <p className="mt-0.5 text-xs text-ink/70">{d.setup.judge.blindNote}</p>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

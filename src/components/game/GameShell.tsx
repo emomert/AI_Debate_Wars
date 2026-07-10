@@ -91,8 +91,10 @@ export function GameShell({
         <div
           className={cn(
             // Compact: the header is sticky and shouldn't eat reading space.
-            "mx-auto flex w-full items-center justify-between gap-3 px-4 py-1.5 sm:px-6",
-            wide ? "max-w-7xl" : "max-w-5xl",
+            // Fixed width on EVERY page (matching the footer) — only the main
+            // content honors `wide`, so the logo/controls never shift between
+            // e.g. home and setup.
+            "mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-1.5 sm:px-6",
           )}
         >
           <nav className="flex min-w-0 items-center gap-2 sm:gap-3" aria-label={d.shell.primaryNav}>
@@ -124,8 +126,7 @@ export function GameShell({
         {hud ? (
           <div
             className={cn(
-              "mx-auto w-full border-t-3 border-ink/10 px-4 py-2 sm:px-6",
-              wide ? "max-w-7xl" : "max-w-5xl",
+              "mx-auto w-full max-w-7xl border-t-3 border-ink/10 px-4 py-2 sm:px-6",
             )}
           >
             {hud}

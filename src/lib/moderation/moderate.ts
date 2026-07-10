@@ -38,9 +38,15 @@ export interface ModerationResult {
   checked: boolean;
 }
 
-/** True when moderation is wired (OpenAI key present and not explicitly off). */
+/**
+ * True when moderation is wired. OPT-IN as of July 2026 (owner decision): the
+ * built-in safety filter is OFF by default — the providers' own safety layers
+ * are the gate, and the filter was blocking legitimate topics. Set
+ * MODERATION_ENABLED=true (alongside OPENAI_API_KEY) to re-enable the
+ * topic + publish moderation with no other changes.
+ */
 export function isModerationConfigured(): boolean {
-  if ((process.env.MODERATION_ENABLED ?? "").trim().toLowerCase() === "false") {
+  if ((process.env.MODERATION_ENABLED ?? "").trim().toLowerCase() !== "true") {
     return false;
   }
   return Boolean(process.env.OPENAI_API_KEY);

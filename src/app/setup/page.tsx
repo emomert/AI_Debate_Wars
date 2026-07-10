@@ -28,6 +28,7 @@ import { playSound } from "@/lib/audio/soundManager";
 import { validateSetup } from "@/lib/debate/validators";
 import { getBattlePairs } from "@/lib/debate/orchestrator";
 import { blitzRosterModelIds, isBlitzModel } from "@/lib/debate/blitzRoster";
+import { BLITZ_ENABLED } from "@/lib/debate/blitzConfig";
 import { createId } from "@/lib/utils/ids";
 import { TOPIC_MAX_LENGTH } from "@/lib/constants";
 import { VOICE_ENABLED } from "@/lib/tts/config";
@@ -123,10 +124,12 @@ export default function SetupPage() {
 
   const isBlitz = config.mode === "blitz";
 
-  // Discussion mode is removed for now — allow only debate or blitz (a persisted/
-  // stale config could still carry "discussion").
+  // Discussion mode is removed and Blitz is hidden behind BLITZ_ENABLED — allow
+  // only debate (plus blitz when enabled); a persisted/stale config could still
+  // carry "discussion" or "blitz".
   useEffect(() => {
-    if (config.mode !== "debate" && config.mode !== "blitz") setConfig({ mode: "debate" });
+    const allowed = config.mode === "debate" || (BLITZ_ENABLED && config.mode === "blitz");
+    if (!allowed) setConfig({ mode: "debate" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.mode]);
 
@@ -156,15 +159,18 @@ export default function SetupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBlitz, config.pace, config.responseLength, config.deepDebate, config.tone, config.battles, config.modelA.modelId, config.modelB.modelId]);
 
-  // "Model A / Model B judges" was removed (only neutral judges now). Coerce a
-  // stale persisted choice to Auto so the judge picker never shows nothing
-  // selected.
+  // The judge is MANDATORY (July 2026) and only neutral judges exist. Coerce
+  // any persisted judge-off / "none" / "Model A/B judges" config to an enabled
+  // Auto judge so every match ends with a verdict.
   useEffect(() => {
-    if (
-      config.judge.enabled &&
-      (config.judge.mode === "modelA" || config.judge.mode === "modelB")
-    ) {
-      setConfig({ judge: { ...config.judge, mode: "auto", model: undefined } });
+    const j = config.judge;
+    const staleMode = j.mode === "none" || j.mode === "modelA" || j.mode === "modelB";
+    if (!j.enabled || staleMode) {
+      setConfig({
+        judge: staleMode
+          ? { enabled: true, mode: "auto", model: undefined }
+          : { ...j, enabled: true },
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.judge.mode, config.judge.enabled]);
@@ -244,6 +250,9 @@ export default function SetupPage() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Config sections */}
         <div className="space-y-5">
+          {/* With Blitz hidden, Debate is the only mode — a one-option picker
+              would be noise, so the whole panel goes away. */}
+          {BLITZ_ENABLED ? (
           <GamePanel title="Mode">
             <div className="grid grid-cols-2 gap-3">
               {([
@@ -275,6 +284,7 @@ export default function SetupPage() {
               })}
             </div>
           </GamePanel>
+          ) : null}
 
           <GamePanel title={d.setup.sections.topic}>
             <TopicInput
@@ -283,23 +293,25 @@ export default function SetupPage() {
               error={topicError}
               availability={availability}
             />
+            {/* Deep Debate rides along inside the Topic section as a compact
+                toggle — it's a per-match capability, not a full setup step. */}
+            {isBlitz ? null : (
+              <div className="mt-3">
+                <DeepDebateToggle
+                  compact
+                  value={config.deepDebate}
+                  fightersEligible={fightersEligibleForDeep}
+                  onChange={(deepDebate) =>
+                    setConfig(
+                      deepDebate
+                        ? { deepDebate, roundCount: 3, tone: "serious" }
+                        : { deepDebate },
+                    )
+                  }
+                />
+              </div>
+            )}
           </GamePanel>
-
-          {isBlitz ? null : (
-            <GamePanel title={d.setup.sections.deepDebate}>
-              <DeepDebateToggle
-                value={config.deepDebate}
-                fightersEligible={fightersEligibleForDeep}
-                onChange={(deepDebate) =>
-                  setConfig(
-                    deepDebate
-                      ? { deepDebate, roundCount: 3, tone: "serious" }
-                      : { deepDebate },
-                  )
-                }
-              />
-            </GamePanel>
-          )}
 
           <GamePanel title={d.setup.sections.fighters}>
             {config.deepDebate ? (

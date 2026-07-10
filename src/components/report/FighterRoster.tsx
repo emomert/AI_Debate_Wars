@@ -52,7 +52,7 @@ function FighterCard({ model }: { model: ModelCatalogEntry }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold">{model.displayName}</p>
-          <p className="truncate text-[11px] text-ink/60">{model.nickname}</p>
+          <p className="truncate text-[11px] text-ink/60">{model.family}</p>
         </div>
         <BrandLogo brand={model.brand} size={12} />
       </div>

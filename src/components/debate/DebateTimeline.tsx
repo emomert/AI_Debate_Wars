@@ -30,7 +30,6 @@ function identityFor(speaker: Speaker, session: DebateSession, d: Dictionary): I
   if (speaker === "modelA") {
     return {
       title: session.modelA.displayName,
-      subtitle: session.modelA.nickname,
       avatar: getModelById(session.modelA.modelId)?.avatar ?? "🤖",
       color: session.modelA.color,
     };
@@ -38,7 +37,6 @@ function identityFor(speaker: Speaker, session: DebateSession, d: Dictionary): I
   if (speaker === "modelB") {
     return {
       title: session.modelB.displayName,
-      subtitle: session.modelB.nickname,
       avatar: getModelById(session.modelB.modelId)?.avatar ?? "🐉",
       color: session.modelB.color,
     };

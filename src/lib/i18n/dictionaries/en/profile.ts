@@ -24,8 +24,8 @@ export const profile = {
     empty: "No matches yet. Run a debate and it'll show up here.",
     setUpMatch: "⚙️ Set up a match",
     deepBadge: "🌐 Deep",
-    subLine: (vsLine: string, verdict: string, rounds: number, cost: string) =>
-      `${vsLine} · ${verdict} · ${rounds} rounds · ${cost}`,
+    subLine: (vsLine: string, verdict: string, rounds: number, cost?: string) =>
+      [`${vsLine}`, verdict, `${rounds} rounds`, ...(cost ? [cost] : [])].join(" · "),
     vs: (a: string, b: string) => `${a} vs ${b}`,
   },
   winner: {

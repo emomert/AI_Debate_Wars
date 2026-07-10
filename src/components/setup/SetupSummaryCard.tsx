@@ -187,9 +187,6 @@ export function SetupSummaryCard({
         >
           {d.setup.summary.start}
         </ArcadeButton>
-        <p className="mt-2 text-center text-[11px] text-night/55">
-          {d.setup.summary.footnote}
-        </p>
       </div>
     </div>
   );

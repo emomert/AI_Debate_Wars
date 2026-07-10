@@ -5,10 +5,9 @@ export const setup = {
   subheading: "Choose your fighters and set the rules. The arena handles the rest.",
   sections: {
     topic: "1 · Topic",
-    deepDebate: "2 · Deep Debate",
-    fighters: "3 · Choose Your Fighters",
-    rules: "4 · Match Rules",
-    judge: "5 · Judge",
+    fighters: "2 · Choose Your Fighters",
+    rules: "3 · Match Rules",
+    judge: "4 · Judge",
   },
   swapFighters: "Swap fighters A and B",
   fighterA: "Fighter A",
@@ -120,13 +119,11 @@ export const setup = {
     needsKey: "⚠️ Server needs a web-search key for these fighters",
   },
 
-  // JudgeSelector
+  // JudgeSelector — the judge is mandatory; users only choose HOW it's picked.
   judge: {
-    enableTitle: "⚖️ Bring in a judge?",
-    enableSubtitle: "A judge delivers a final verdict once all rounds finish.",
-    enable: "Enable judge mode",
+    mandatoryNote:
+      "Every match ends with a verdict — choose how the judge is picked.",
     typeLabel: "Judge type",
-    disabledNote: "No judge selected. The debate will end after the final round.",
     lessNeutral: "Less neutral",
     warnParticipated:
       "⚠️ This judge participated in the debate, so the verdict may be less neutral.",
@@ -155,16 +152,12 @@ export const setup = {
     freeModels: "🌐 More brands",
     freeBrands: "More brands",
     ready: "ready",
-    freeVia: "Served via OpenRouter · ",
-    needsOpenRouterKey: "needs OPENROUTER_API_KEY",
-    zeroCost: "$0 to run",
+    freeVia: "Served via OpenRouter",
+    needsOpenRouterKey: " · needs OPENROUTER_API_KEY",
     picked: "Picked",
     unavailable: "Unavailable",
     pickedWith: (name: string) => `Picked: ${name}`,
     modelsCount: (n: number) => `${n} models`,
-    debateFit: "Debate skill",
-    debateFitHelp:
-      "Our 0–100 rating of how well this model holds up in a structured debate — reasoning, rebuttals and staying on point. Higher = a tougher opponent.",
     showAll: (n: number) => `Show all ${n} models ▾`,
     showFewer: "Show fewer ▴",
     needsWebSearchKey: "Needs the server's web-search key for Deep Debate",
@@ -190,6 +183,5 @@ export const setup = {
     judgeOn: "⚖️ Judge on",
     judgeOff: "No judge",
     start: "▶ Start the Match",
-    footnote: "Live models · OpenRouter brands run on one shared key",
   },
 };

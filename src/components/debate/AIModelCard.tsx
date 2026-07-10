@@ -129,9 +129,6 @@ function AIModelCardComponent({
           >
             {model.displayName}
           </p>
-          <p className="truncate text-xs font-semibold text-ink/55">
-            {model.nickname}
-          </p>
         </div>
       </div>
 

@@ -29,7 +29,9 @@ const MASKED_B: SharedFighter = { name: null, nickname: null, avatar: "🛡️",
 function fighterFrom(model: SelectedModel): SharedFighter {
   return {
     name: model.displayName,
-    nickname: model.nickname,
+    // Nicknames were retired from the catalog (July 2026); old sessions may
+    // still carry one, new snapshots store null.
+    nickname: model.nickname ?? null,
     avatar: getModelById(model.modelId)?.avatar ?? "🤖",
     color: model.color,
   };

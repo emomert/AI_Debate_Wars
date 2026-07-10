@@ -1,12 +1,19 @@
 # 08 — Cost Tracking
 
-> Updated 2026-06-10. Source of truth: `src/lib/cost/pricing.ts` and
+> Updated 2026-07-11. Source of truth: `src/lib/cost/pricing.ts` and
 > `src/lib/cost/calculateCost.ts`. The `/report` page renders the live pricing
 > table.
+>
+> **Cost UI currently HIDDEN** behind `COST_UI_ENABLED = false` in
+> `src/lib/cost/uiConfig.ts` (owner decision, July 2026): the HUD money pill,
+> per-message cost badge, result cost summary, multi-battle total and profile
+> spend stats are not rendered. The cost ENGINE below still runs in full —
+> spend caps, persisted summaries and `/report` pricing depend on it. Flip the
+> flag to bring every display back.
 
 ## Goal
 
-AI usage cost is visible, understandable, and transparent: every message shows its estimated cost, and the HUD shows the running session total.
+AI usage cost is tracked and understood internally: every message computes its estimated cost, and session totals feed the spend caps (displays are currently hidden — see the banner above).
 
 ## Cost Badge
 

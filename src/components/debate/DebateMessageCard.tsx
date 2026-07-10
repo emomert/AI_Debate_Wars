@@ -26,6 +26,7 @@ import { useRotatingLine } from "@/components/debate/waitingMessages";
 import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { VOICE_ENABLED } from "@/lib/tts/config";
 
 /**
@@ -162,7 +163,9 @@ function DebateMessageCardComponent({
 
         {!streaming ? (
           <footer className="mt-3 flex flex-wrap items-start gap-2">
-            <CostBadge cost={cost} usage={usage} latencyMs={latencyMs} />
+            {COST_UI_ENABLED ? (
+              <CostBadge cost={cost} usage={usage} latencyMs={latencyMs} />
+            ) : null}
             {citations && citations.length > 0 ? (
               <SourcesList citations={citations} />
             ) : null}

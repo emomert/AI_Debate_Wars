@@ -35,7 +35,6 @@ import { voicePlayer } from "@/lib/tts/voicePlayer";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 import { ArcadeButton } from "@/components/game/ArcadeButton";
-import { Badge } from "@/components/game/Badge";
 import { AIModelCard, type ModelCardStatus } from "@/components/debate/AIModelCard";
 import { DebateHUD } from "@/components/debate/DebateHUD";
 import { DebateTimeline } from "@/components/debate/DebateTimeline";
@@ -393,14 +392,17 @@ export function BattleController({
       </AnimatePresence>
 
       <DebateHUD
-        mode={session.mode}
         currentRound={runner.currentRound}
         totalRounds={runner.totalRounds}
-        roundLabel={runner.activeTurn?.roundLabel ?? runner.messages.at(-1)?.roundLabel}
         costSummary={doneCostSummary}
         phase={runner.phase}
         messageCount={runner.messages.length}
-        activeModelName={activeModelName}
+        toneText={d.debate.topic.tone(
+          session.tone === "custom"
+            ? (session.customTone || d.debate.topic.customTone)
+            : session.tone,
+        )}
+        formatText={session.deepDebate ? d.debate.topic.deepDebate : session.responseLength}
         pace={runner.pace}
         onTogglePace={togglePace}
         voiceEnabled={voiceEnabled}
@@ -410,26 +412,12 @@ export function BattleController({
         onSkip={skip}
       />
 
-      {/* Topic bar */}
+      {/* Topic bar — just the topic; the fighters are on the side cards and the
+          tone/length chips moved up into the HUD (July 2026 declutter). */}
       <div className="mt-4 rounded-card border-4 border-ink bg-card p-3 shadow-hard-sm sm:p-4">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-          {d.debate.topic.nowDebating}
-        </p>
         <h1 className="font-heading text-lg font-extrabold sm:text-2xl">
           {session.topic}
         </h1>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Badge color="blue" size="sm">A · {session.modelA.displayName}</Badge>
-          <Badge color="red" size="sm">B · {session.modelB.displayName}</Badge>
-          <Badge color="white" size="sm" className="max-w-[12rem] truncate">
-            {d.debate.topic.tone(session.tone === "custom" ? (session.customTone || d.debate.topic.customTone) : session.tone)}
-          </Badge>
-          {session.deepDebate ? (
-            <Badge color="purple" size="sm">{d.debate.topic.deepDebate}</Badge>
-          ) : (
-            <Badge color="white" size="sm">{session.responseLength}</Badge>
-          )}
-        </div>
       </div>
 
       {/* Mobile fighter row */}

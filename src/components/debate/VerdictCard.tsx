@@ -11,6 +11,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { DebateVerdict, SelectedModel } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
 import { CostBadge } from "@/components/debate/CostBadge";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { MarkdownText } from "@/components/debate/MarkdownText";
 import { ScoreBreakdown } from "@/components/result/ScoreBreakdown";
 import { getModelById } from "@/lib/models/modelRegistry";
@@ -124,9 +125,11 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
           <Insight label={d.result.verdict.weakest(modelB.displayName)} value={verdict.weakestModelB} tone="risk" />
         </ul>
 
-        <div className="mt-4">
-          <CostBadge cost={verdict.cost} usage={verdict.usage} latencyMs={verdict.latencyMs} />
-        </div>
+        {COST_UI_ENABLED ? (
+          <div className="mt-4">
+            <CostBadge cost={verdict.cost} usage={verdict.usage} latencyMs={verdict.latencyMs} />
+          </div>
+        ) : null}
       </div>
     </motion.section>
   );

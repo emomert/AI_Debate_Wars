@@ -14,11 +14,13 @@ export interface BlitzFighter {
 }
 
 export const BLITZ_ROSTER: BlitzFighter[] = [
+  // Updated July 2026 for the paid catalog (the old free-tier entries left the
+  // registry when the OpenRouter free models were removed).
   { modelId: "deepseek-v4-pro", characterKey: "deepseek-pro", available: true },
   { modelId: "deepseek-v4-flash", characterKey: "deepseek-flash", available: true },
-  { modelId: "qwen/qwen3-next-80b-a3b-instruct:free", characterKey: "qwen-next", available: true },
-  { modelId: "qwen/qwen3-coder:free", characterKey: "qwen-coder", available: true },
-  { modelId: "meta-llama/llama-3.3-70b-instruct:free", characterKey: "llama", available: true },
+  { modelId: "qwen/qwen3.7-plus", characterKey: "qwen", available: true },
+  { modelId: "z-ai/glm-5.2", characterKey: "glm", available: true },
+  { modelId: "moonshotai/kimi-k2.6", characterKey: "kimi", available: true },
 ];
 
 const AVAILABLE = new Set(

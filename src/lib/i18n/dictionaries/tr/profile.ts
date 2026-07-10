@@ -24,8 +24,8 @@ export const profile = {
     empty: "Henüz maç yok. Bir münazara başlatın, burada görünsün.",
     setUpMatch: "⚙️ Maç kurun",
     deepBadge: "🌐 Derin",
-    subLine: (vsLine: string, verdict: string, rounds: number, cost: string) =>
-      `${vsLine} · ${verdict} · ${rounds} tur · ${cost}`,
+    subLine: (vsLine: string, verdict: string, rounds: number, cost?: string) =>
+      [`${vsLine}`, verdict, `${rounds} tur`, ...(cost ? [cost] : [])].join(" · "),
     vs: (a: string, b: string) => `${a} vs ${b}`,
   },
   winner: {

@@ -238,11 +238,11 @@ export const report = {
       sortHint: "Sıralamak için bir fiyat sütununa tıklayın; katalog sırası için model sütununa tıklayın.",
     },
     note1: (input: string, output: string) =>
-      `· OpenRouter üzerinden sunulan açık ağırlıklı modeller $0 faturalandırır; listede olmayan modeller 1M başına $${input}/$${output} değerine düşer.`,
+      `· Katalogdaki her model gerçek kullanımı faturalandırır; listede olmayan modeller 1M başına $${input}/$${output} değerine düşer.`,
     note2: (search: string) =>
-      `· Derin Münazara aramaları varsayılan motorda ücretsizdir; hibrit modda OpenRouter yerel araması tur başına ~$${search} ekler ve maliyet dökümünde 🔎 satırı olarak gösterilir.`,
+      `· Derin Münazara aramaları uygulamanın arama motorunda çalışır (sorgu ücreti arena tarafından karşılanır); hibrit modda OpenRouter yerel araması tur başına ~$${search} ekler.`,
     note3:
-      "· Standart, önbellekli ve çıktı oranları sağlayıcıların resmi sayfalarına karşı doğrulanmıştır (Haziran 2026). gpt-5.3-chat-latest'in yayınlanmış bir oranı yoktur ve en yakın doğrulanmış komşusunun fiyatıyla fiyatlandırılır (önbellek indirimi varsayılmaz).",
+      "· Standart, önbellekli ve çıktı oranları sağlayıcıların resmi sayfaları ve OpenRouter'ın canlı model listesine karşı doğrulanmıştır (Temmuz 2026). OpenRouter modelleri önbellek oranı listelemez (üst sağlayıcı önbellek faturalandırması değişkendir), bu yüzden maliyetleri hafifçe yüksek tahmin edilir. gpt-5.3-chat-latest'in yayınlanmış bir oranı yoktur ve en yakın doğrulanmış komşusunun fiyatıyla fiyatlandırılır (önbellek indirimi varsayılmaz).",
     note4:
       "· Önbellek farkında: sağlayıcı önbellek isabetli girdi tokenları bildirdiğinde (maliyet rozetinde bir ♻️), bunlar yukarıdaki önbellekli oranla faturalandırılır — yani maliyet, abartılı bir tahmin değil, gerçek faturadır.",
     note5: (price: string) =>

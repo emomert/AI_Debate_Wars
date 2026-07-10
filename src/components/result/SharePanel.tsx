@@ -22,6 +22,7 @@ import {
 } from "@/components/result/ShareIcons";
 import { renderVerdictBlob } from "@/lib/share/verdictImage";
 import { encodeSharePayload, sharePayloadFromSession } from "@/lib/share/shareLink";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { formatCost } from "@/lib/utils/format";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
@@ -54,7 +55,9 @@ function buildRecap(session: DebateSession, t: ShareDict): string {
     // Strip the **bold** markers the reasoning carries (plain-text clipboard).
     v ? t.recap.verdict(v.summary.replace(/\*\*/g, "")) : t.recap.noJudge,
     ...(v?.winnerArgument ? [t.recap.winningArgument(v.winnerArgument)] : []),
-    t.recap.totalCost(formatCost(session.costSummary.totalCost)),
+    ...(COST_UI_ENABLED
+      ? [t.recap.totalCost(formatCost(session.costSummary.totalCost))]
+      : []),
   ].join("\n");
 }
 

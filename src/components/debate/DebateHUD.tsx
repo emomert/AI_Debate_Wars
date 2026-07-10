@@ -1,8 +1,10 @@
 "use client";
 
 /**
- * DebateHUD — the sticky top status bar for the arena: round counter, live
- * status and the running total cost (docs/01 Feature 8, docs/08).
+ * DebateHUD — the sticky top status bar for the arena. Decluttered (July 2026):
+ * round pill, the match's tone + length chips, and the pace / skip controls.
+ * The old mode/phase/speaker chips are gone, and the running-cost pill only
+ * renders when the cost UI is enabled (COST_UI_ENABLED).
  */
 
 import { memo, useEffect, useState } from "react";
@@ -10,41 +12,25 @@ import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils/cn";
 
-import type {
-  DebateMode,
-  DebatePace,
-  SessionCostSummary,
-} from "@/lib/debate/debateTypes";
+import type { DebatePace, SessionCostSummary } from "@/lib/debate/debateTypes";
 import type { RunnerPhase } from "@/lib/debate/useDebateRunner";
 import { RoundCounter } from "@/components/debate/RoundCounter";
 import { Badge } from "@/components/game/Badge";
 import { formatCost, formatTokens } from "@/lib/utils/format";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { VOICE_ENABLED } from "@/lib/tts/config";
 
-const PHASE_COLOR: Record<
-  RunnerPhase,
-  "yellow" | "green" | "purple" | "white" | "red" | "blue"
-> = {
-  thinking: "yellow",
-  streaming: "green",
-  judging: "purple",
-  awaiting: "blue",
-  done: "white",
-  stopped: "red",
-  error: "red",
-};
-
 interface DebateHUDProps {
-  mode: DebateMode;
   currentRound: number;
   totalRounds: number;
-  roundLabel?: string;
   costSummary: SessionCostSummary;
   phase: RunnerPhase;
   messageCount: number;
-  /** Name of the model currently generating, for the live top bar. */
-  activeModelName?: string;
+  /** Pre-formatted "Tone: …" chip text (session tone, custom-aware). */
+  toneText: string;
+  /** Pre-formatted length chip text ("short" / "🌐 Deep Debate" / …). */
+  formatText: string;
   pace: DebatePace;
   onTogglePace: () => void;
   voiceEnabled: boolean;
@@ -57,14 +43,13 @@ interface DebateHUDProps {
 }
 
 function DebateHUDComponent({
-  mode,
   currentRound,
   totalRounds,
-  roundLabel,
   costSummary,
   phase,
   messageCount,
-  activeModelName,
+  toneText,
+  formatText,
   pace,
   onTogglePace,
   voiceEnabled,
@@ -74,8 +59,6 @@ function DebateHUDComponent({
   onSkip,
 }: DebateHUDProps) {
   const d = useT();
-  const status = { text: d.debate.hud.phase[phase], color: PHASE_COLOR[phase] };
-  const showActive = activeModelName && (phase === "thinking" || phase === "streaming");
   const live = phase !== "done" && phase !== "stopped" && phase !== "error";
 
   // Scroll-aware fill: at the top of the page the bar is TRANSPARENT so the
@@ -101,20 +84,13 @@ function DebateHUDComponent({
     >
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <RoundCounter
-            mode={mode}
-            roundNumber={currentRound}
-            totalRounds={totalRounds}
-            roundLabel={roundLabel}
-          />
-          <Badge color={status.color} size="sm">
-            {status.text}
+          <RoundCounter roundNumber={currentRound} totalRounds={totalRounds} />
+          <Badge color="white" size="sm" className="max-w-[12rem] truncate">
+            {toneText}
           </Badge>
-          {showActive ? (
-            <Badge color="white" size="sm">
-              🎤 {activeModelName}
-            </Badge>
-          ) : null}
+          <Badge color="white" size="sm">
+            {formatText}
+          </Badge>
           {live ? (
             <button
               type="button"
@@ -153,29 +129,31 @@ function DebateHUDComponent({
           ) : null}
         </div>
 
-        <motion.div
-          key={costSummary.totalCost.toFixed(4)}
-          initial={{ scale: 1.08 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.2 }}
-          className="inline-flex items-center gap-1.5 rounded-btn border-3 border-ink bg-night px-2 py-0.5 font-mono text-[11px] font-bold text-arcade-green"
-          aria-label={d.debate.hud.totalCost}
-        >
-          <span aria-hidden>💰</span>
-          <span>{formatCost(costSummary.totalCost)}</span>
-          <span className="text-white/50">·</span>
-          <span className="text-white/70">{formatTokens(costSummary.totalTokens)}</span>
-          <span className="text-white/50">·</span>
-          <span className="text-white/70">{messageCount} {d.debate.hud.msgSuffix}</span>
-          {VOICE_ENABLED && voiceCostUsd > 0 ? (
-            <>
-              <span className="text-white/50">·</span>
-              <span aria-label={d.debate.voice.costLabel} className="text-white/70">
-                🔊 {formatCost(voiceCostUsd)}
-              </span>
-            </>
-          ) : null}
-        </motion.div>
+        {COST_UI_ENABLED ? (
+          <motion.div
+            key={costSummary.totalCost.toFixed(4)}
+            initial={{ scale: 1.08 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="inline-flex items-center gap-1.5 rounded-btn border-3 border-ink bg-night px-2 py-0.5 font-mono text-[11px] font-bold text-arcade-green"
+            aria-label={d.debate.hud.totalCost}
+          >
+            <span aria-hidden>💰</span>
+            <span>{formatCost(costSummary.totalCost)}</span>
+            <span className="text-white/50">·</span>
+            <span className="text-white/70">{formatTokens(costSummary.totalTokens)}</span>
+            <span className="text-white/50">·</span>
+            <span className="text-white/70">{messageCount} {d.debate.hud.msgSuffix}</span>
+            {VOICE_ENABLED && voiceCostUsd > 0 ? (
+              <>
+                <span className="text-white/50">·</span>
+                <span aria-label={d.debate.voice.costLabel} className="text-white/70">
+                  🔊 {formatCost(voiceCostUsd)}
+                </span>
+              </>
+            ) : null}
+          </motion.div>
+        ) : null}
       </div>
     </div>
   );

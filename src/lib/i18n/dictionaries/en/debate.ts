@@ -30,9 +30,8 @@ export const debate = {
   // The big "ROUND N" transition flash
   roundFlash: (n: number) => `ROUND ${n}`,
 
-  // Topic bar
+  // Topic bar / HUD chips
   topic: {
-    nowDebating: "Now debating",
     tone: (value: string) => `Tone: ${value}`,
     customTone: "custom",
     deepDebate: "🌐 Deep Debate",
@@ -137,17 +136,8 @@ export const debate = {
     },
   },
 
-  // DebateHUD phase labels + bits
+  // DebateHUD bits (the phase chip was removed in the July 2026 declutter)
   hud: {
-    phase: {
-      thinking: "Thinking…",
-      streaming: "Speaking",
-      judging: "Judge entering",
-      awaiting: "Your move",
-      done: "Complete",
-      stopped: "Stopped",
-      error: "Error",
-    },
     paceLabel: (pace: "auto" | "manual"): string =>
       pace === "auto"
         ? "Pacing is Fast. Switch to Normal."
@@ -211,8 +201,6 @@ export const debate = {
   // RoundCounter
   round: {
     counter: (current: number, total: number) => `ROUND ${current} / ${total}`,
-    debate: "⚔️ Debate",
-    discussion: "🧠 Discussion",
   },
 
   // AIModelCard status labels + displayed roles

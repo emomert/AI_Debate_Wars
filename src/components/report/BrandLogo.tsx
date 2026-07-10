@@ -15,10 +15,13 @@ const LOGO_FILE: Record<string, string> = {
   OpenAI: "openai",
   DeepSeek: "deepseek",
   Qwen: "qwen",
-  Llama: "meta",
   Kimi: "moonshotai",
-  Gemma: "google",
-  "GPT-OSS": "openai",
+  Claude: "anthropic",
+  // Simple Icons has no dedicated xAI mark; the X logomark is xAI's own X.
+  Grok: "x",
+  Gemini: "googlegemini",
+  Xiaomi: "xiaomi",
+  MiniMax: "minimax",
   Nemotron: "nvidia",
   OpenRouter: "openrouter",
   openai: "openai",
@@ -27,12 +30,9 @@ const LOGO_FILE: Record<string, string> = {
   "Brave Search": "brave",
 };
 
+/** Brands without a Simple Icons mark keep their roster emoji as a face. */
 const FALLBACK_EMOJI: Record<string, string> = {
   GLM: "🌀",
-  Hermes: "🪽",
-  Dolphin: "🐬",
-  Poolside: "🏊",
-  Liquid: "💧",
 };
 
 interface BrandLogoProps {

@@ -46,7 +46,7 @@ export const maxDuration = 30;
 
 /**
  * Pick the checker model: prefer DeepSeek V4 Flash (fast + cheap), then a cheap
- * OpenAI model, then a free OpenRouter model — whatever has a key configured.
+ * OpenAI model, then a cheap OpenRouter model — whatever has a key configured.
  */
 function resolveTopicCheckModel(): { providerId: Backend; modelId: string } {
   if (process.env.DEEPSEEK_API_KEY) {
@@ -56,10 +56,8 @@ function resolveTopicCheckModel(): { providerId: Backend; modelId: string } {
     return { providerId: "openai", modelId: "gpt-4.1-mini" };
   }
   if (process.env.OPENROUTER_API_KEY) {
-    return {
-      providerId: "openrouter",
-      modelId: "qwen/qwen3-next-80b-a3b-instruct:free",
-    };
+    // Cheapest capable model in the paid catalog (~$0.10/$0.28 per 1M).
+    return { providerId: "openrouter", modelId: "xiaomi/mimo-v2.5" };
   }
   throw new ProviderError(
     "MISSING_API_KEY",

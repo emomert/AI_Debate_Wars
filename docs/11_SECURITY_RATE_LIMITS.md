@@ -1,9 +1,16 @@
 # 11 — Security and Rate Limits
 
-> Updated 2026-07-08. Source of truth: `src/lib/security/rateLimit.ts`, the
+> Updated 2026-07-11. Source of truth: `src/lib/security/rateLimit.ts`, the
 > validators in `src/lib/debate/validators.ts`, and the moderation gate in
 > `src/lib/moderation/moderate.ts`. Remaining gaps are tracked in
 > `docs/18_RELEASE_REQUIREMENTS.md`.
+>
+> **Moderation is OPT-IN as of July 2026** (owner decision — the filter was
+> blocking legitimate topics; the providers' own safety layers are the gate).
+> The `omni-moderation` topic/publish gate only runs when
+> `MODERATION_ENABLED=true` is set alongside `OPENAI_API_KEY`; it stays
+> fail-open when enabled. Everything else in this doc (rate limits, spend
+> caps, trusted IP, validators) is unchanged and still enforced.
 
 ## Main Risk
 

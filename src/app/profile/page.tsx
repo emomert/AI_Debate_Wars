@@ -27,6 +27,7 @@ import {
   SHARED_MATCH_SUMMARY_COLUMNS,
   type SharedMatchSummary,
 } from "@/lib/community/types";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { formatCost, formatRelativeDate } from "@/lib/utils/format";
 import { getServerDictionary } from "@/lib/i18n/server";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -121,9 +122,11 @@ export default async function ProfilePage() {
 
       {/* Stats — only completed matches are ever saved, so `total` is the
           completed count. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className={COST_UI_ENABLED ? "grid grid-cols-2 gap-2 sm:grid-cols-4" : "grid grid-cols-3 gap-2"}>
         <Stat label={d.profile.stats.completed} value={String(stats.total)} accent />
-        <Stat label={d.profile.stats.totalSpent} value={formatCost(stats.totalCost)} />
+        {COST_UI_ENABLED ? (
+          <Stat label={d.profile.stats.totalSpent} value={formatCost(stats.totalCost)} />
+        ) : null}
         <Stat label={d.profile.stats.roundsFought} value={String(stats.totalRounds)} />
         <Stat label={d.profile.stats.fightersTried} value={String(stats.uniqueFighters)} />
       </div>
@@ -221,7 +224,7 @@ export default async function ProfilePage() {
                       d.profile.history.vs(m.model_a, m.model_b),
                       winnerLabel(m, d),
                       m.round_count,
-                      formatCost(Number(m.total_cost)),
+                      COST_UI_ENABLED ? formatCost(Number(m.total_cost)) : undefined,
                     )}
                   </p>
                 </div>

@@ -7,6 +7,7 @@
 
 import type { DebateSession } from "@/lib/debate/debateTypes";
 import { getModelById } from "@/lib/models/modelRegistry";
+import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { formatCost } from "@/lib/utils/format";
 
 // Arcade palette (mirrors tailwind.config.ts / globals.css).
@@ -371,7 +372,9 @@ export async function renderVerdictImage(
     ctx.fillText("No judge", padX, footerBaseline);
   }
   ctx.textAlign = "right";
-  const meta = `${session.roundCount} rounds · ${session.mode} · ${formatCost(session.costSummary.totalCost)}`;
+  const meta =
+    `${session.roundCount} rounds · ${session.mode}` +
+    (COST_UI_ENABLED ? ` · ${formatCost(session.costSummary.totalCost)}` : "");
   ctx.fillText(meta, padX + innerW, footerBaseline);
 
   return canvas;

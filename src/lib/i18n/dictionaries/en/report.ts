@@ -238,11 +238,11 @@ export const report = {
       sortHint: "Click a price column to sort by it; click the model column for catalogue order.",
     },
     note1: (input: string, output: string) =>
-      `· Open-weight models served via OpenRouter bill $0; unlisted models fall back to $${input}/$${output} per 1M.`,
+      `· Every catalog model bills real usage; unlisted models fall back to $${input}/$${output} per 1M.`,
     note2: (search: string) =>
-      `· Deep Debate searches are free on the default engine; in hybrid mode OpenRouter native search adds ~$${search}/turn, shown as a 🔎 line in the cost breakdown.`,
+      `· Deep Debate searches run on the app's search engine (per-query fee absorbed by the arena); in hybrid mode OpenRouter native search adds ~$${search}/turn.`,
     note3:
-      "· Standard, cached and output rates verified against the providers' official pages (June 2026). gpt-5.3-chat-latest has no published rate and is priced at its nearest confirmed neighbor (no cache discount assumed).",
+      "· Standard, cached and output rates verified against the providers' official pages and OpenRouter's live model list (July 2026). OpenRouter models list no cached rate (upstream cache billing varies), so their costs err slightly high. gpt-5.3-chat-latest has no published rate and is priced at its nearest confirmed neighbor (no cache discount assumed).",
     note4:
       "· Cache-aware: when the provider reports cache-hit input tokens (a ♻️ on the cost badge), they bill at the cached rate above — so the cost is the real bill, not an over-estimate.",
     note5: (price: string) =>

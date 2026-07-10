@@ -16,10 +16,11 @@ The desired product feeling is:
 
 The product is feature-complete and polished, in pre-public-launch state.
 
-- **Debate + Blitz Modes** in the UI (setup has a mode toggle). Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface Discussion without an explicit request.
+- **Debate Mode only in the UI for now.** Blitz Mode is fully built but hidden behind `BLITZ_ENABLED = false` in `src/lib/debate/blitzConfig.ts`: the setup mode toggle is not rendered (Debate is the sole mode) and a persisted `mode: "blitz"` config is coerced back to Debate, so no Blitz session can start. The whole implementation (stage, runner, roster, prompts, pipeline handling) stays intact — flip the flag to bring it back. Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface Discussion or Blitz without an explicit request.
 - **English-only UI for launch.** Turkish localization is fully built but hidden behind `MULTILOCALE_ENABLED = false` in `src/lib/i18n/config.ts`.
 - **Fighter Voices hidden for now.** The opt-in 🔊 voice-over (TTS) is fully built but hidden behind `VOICE_ENABLED = false` in `src/lib/tts/config.ts`: the setup voice card, arena HUD voice toggle + cost badge, and per-message play buttons don't render, the `voicePlayer` engine no-ops, and server TTS reports unconfigured so `/api/tts` never fires. This is separate from the arcade SFX/music toggles, which stay available (background music now defaults **off**, matching SFX). Flip the flag to bring voices back with no other changes.
 - **Launch hardening + UX/accessibility audit (in progress).** Two remediation passes are underway and shipping incrementally to `main`: (1) pre-launch security/trust/cost blockers, and (2) a 109-finding honest UX/a11y audit. Done so far: topic + publish moderation, a spoof-proof rate-limit IP, a Brave metered-billing guard, signed share verdicts (verified/unverified), a reduce-motion/instant-text escape hatch + screen-reader live regions, contrast + tab-semantics + responsive fixes, a `/contact` page + data-controller identity, a report/flag + admin-takedown system, and a signup consent/13+ age gate. **The single tracker for what's done and what remains is `Debator-Launch-Checklist.md`** (the full audit findings live in `Debator-UX-Inspection-Report.html`).
+- **July 2026 declutter + paid-catalog pass.** Owner-directed simplification: consistent header width, route fade transitions (`src/app/template.tsx`), Deep Debate folded into the Topic section, minimal fighter picker (nicknames + debate-skill bar removed from UI; `nickname` is now optional/legacy), debate HUD reduced to round/tone/length/pace/skip, default response length `short`. **Cost displays are hidden** behind `COST_UI_ENABLED = false` in `src/lib/cost/uiConfig.ts` (internal cost tracking + spend caps still run). **Moderation is now OPT-IN** — off unless `MODERATION_ENABLED=true` (owner decision; the providers' own safety layers are the gate). The model catalog moved to a **paid OpenRouter account**: all `:free` models removed; Claude/Grok/Gemini/Xiaomi/GLM/Kimi/Nemotron/Qwen/MiniMax added with live-verified ids + pricing; OpenAI updated to the GPT-5.6 family. Only `gpt-5.1-chat-latest` was dropped (OpenAI shutdown 2026-07-23); later-sunset GPT models stay listed until their dates — remove `gpt-5.2/5.3-chat-latest` by Aug 10, `gpt-4.1-nano` by Oct 23, `gpt-5-mini/nano` by Dec 11, 2026. **The judge is mandatory** (setup toggle removed; Auto or Pick-a-Judge only).
 - Remaining pre-launch work is tracked in `Debator-Launch-Checklist.md` (plus `docs/18_RELEASE_REQUIREMENTS.md` and `docs/13_ROADMAP.md`).
 
 ## Core Product Principle
@@ -30,7 +31,7 @@ The application controls:
 
 - who speaks next, which round is active, and the task of each round
 - when the debate ends (3/5/7 rounds, deterministic plan, no loops)
-- whether a judge appears and which model judges
+- which model judges (a judge always appears — mandatory since July 2026)
 - how costs are calculated
 - when the session is complete
 
@@ -39,16 +40,16 @@ The AI models only generate individual turn responses based on strict prompts. T
 ## Current Feature Set
 
 - Topic input with AI topic check/improve (`/api/topic/check`, cheap model)
-- Two fighters from 56+ models across OpenAI, DeepSeek, and OpenRouter (free models)
-- Blitz Mode: a fast 4-round / 8-turn variant on an animated arena stage — per-turn move-tag splashes (OBJECTION/COUNTER/…), buffer-then-stream generation (`useBlitzRunner`), an in-scene verdict, and a curated ~12-model roster (`blitzRoster.ts`). Reuses the debate pipeline; `punchy` length is blitz-internal. Phase 1 ships on the reusable fighter *panel* (bespoke per-model character art is Phase 2). Design spec: `docs/superpowers/specs/2026-07-08-blitz-mode-design.md`.
+- Two fighters from ~39 paid models across OpenAI (direct), DeepSeek (direct), and OpenRouter (Claude, Grok, Gemini, Xiaomi MiMo, GLM, Kimi, Nemotron, Qwen, MiniMax). No free tier; "fast" twin variants are deliberately not added.
+- Blitz Mode (currently hidden behind `BLITZ_ENABLED` — see Current Status): a fast 4-round / 8-turn variant on an animated arena stage — per-turn move-tag splashes (OBJECTION/COUNTER/…), buffer-then-stream generation (`useBlitzRunner`), an in-scene verdict, and a curated ~12-model roster (`blitzRoster.ts`). Reuses the debate pipeline; `punchy` length is blitz-internal. Phase 1 ships on the reusable fighter *panel* (bespoke per-model character art is Phase 2). Design spec: `docs/superpowers/specs/2026-07-08-blitz-mode-design.md`.
 - Multi-battle: run up to 3 battles on the same topic at once (different or same fighter pairs), all running concurrently — a tab switcher in the arena and results; only the watched battle speaks/sounds; manual pace gates only the watched battle (see `docs/09_UX_FLOWS.md`). Only the fighters differ per battle; all other settings are shared.
 - 3 / 5 / 7 rounds (Quick Match / Ranked Match / Championship)
 - Tone per fighter: serious, aggressive, casual, or custom free text — plus a hidden "unhinged" easter-egg tone (5 rapid clicks on Aggressive in setup; profanity-allowed roast battle, hard ban on slurs/hate speech baked into the prompt)
 - Response length: short / medium / long; pace: manual or auto
 - Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode). Brave's free tier ended (Feb 2026): `SEARCH_COST_USD` defaults to ~$0.005/query and a hard daily search-count cap (`SEARCH_DAILY_MAX`) backstops the dollar caps.
-- Optional judge: auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores
-- Topic + published-transcript moderation: every user topic runs through OpenAI's free `omni-moderation` before any paid provider call and again at community publish; the profanity-allowed "unhinged" tone is barred from publishing (`src/lib/moderation/`).
-- Per-message and total cost tracking, cache-aware pricing
+- Mandatory judge (July 2026 — the setup on/off toggle was removed): auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores. `judge.enabled` remains in the schema for legacy sessions and is coerced to true in setup.
+- Topic + published-transcript moderation (`src/lib/moderation/`) — **disabled by default since July 2026**; opt back in with `MODERATION_ENABLED=true`. The profanity-allowed "unhinged" tone is still barred from publishing.
+- Per-message and total cost tracking, cache-aware pricing — internal only for now: all cost displays are hidden behind `COST_UI_ENABLED = false` (`src/lib/cost/uiConfig.ts`); spend caps still enforce.
 - Optional fighter voices (opt-in 🔊, currently hidden behind `VOICE_ENABLED` — see Current Status): free Web Speech tier always; premium OpenAI speech via `/api/tts` (~$15/1M chars ≈ 13¢/voiced match, reuses `OPENAI_API_KEY`) with automatic fallback (see `docs/21_VOICE.md`)
 - Stateless share links (`/s?d=...`) with generated OG images (`/api/og`). The verdict is HMAC-signed at generation (`src/lib/share/signing.ts`); `/s` + OG render verified vs ⚠ unverified to defeat forged share links. Dormant + safe until `SHARE_SECRET` is set.
 - Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars, and a **report/flag** path on matches + comments with an operator admin-takedown script (see `docs/20_COMMUNITY.md`)
@@ -88,7 +89,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Debate orchestration is separated from UI; prompt construction is separated from provider calls.
 - Round logic is deterministic; infinite debates are impossible by design.
 - Rate limits and spend caps run BEFORE any paid provider work.
-- User topics are moderated (free `omni-moderation`) before any paid provider call; published transcripts are moderated before they go public. Both fail open.
+- Moderation is OPT-IN (July 2026): the `omni-moderation` gate on topics + published transcripts only runs when `MODERATION_ENABLED=true`; when enabled it still fails open. Do not re-enable by default without an explicit request.
 - Shareable verdicts are HMAC-signed server-side; `/s` and the OG image must never present an unsigned/forged verdict as verified.
 - Honor reduced motion (OS flag or the in-app toggle): no infinite/continuous animation, and reveal turns instantly when it's set — see `src/lib/motion/`.
 - Supabase is optional: the app must keep working signed-out and without Supabase configured (limits fail open).
@@ -98,7 +99,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 
 Providers: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
 Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD` (default ~`0.005`/query), `SEARCH_DAILY_MAX` (hard daily search-count cap, default 2000), `DEEP_SEARCH_MODE` (`unified` | `hybrid`).
-Moderation: on whenever `OPENAI_API_KEY` is set; `MODERATION_ENABLED=false` disables, `MODERATION_MODEL` (default `omni-moderation-latest`).
+Moderation: OFF by default; `MODERATION_ENABLED=true` (plus `OPENAI_API_KEY`) enables, `MODERATION_MODEL` (default `omni-moderation-latest`).
 Sharing: `SHARE_SECRET` — HMAC key for signing share verdicts. Unset = signing dormant (shares render normally, never falsely "verified"). **Set a strong random value in prod to activate verification.**
 Voice: `TTS_PROVIDER` (`none` disables; otherwise on whenever `OPENAI_API_KEY` is set), `TTS_OPENAI_MODEL` (default `gpt-4o-mini-tts`), `TTS_SPEED` (0.25–4.0, default 1.3), `TTS_COST_USD_PER_1M` (price override), `RL_TTS_PER_MIN`.
 Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Admin/migrations (server-only, never client): `SUPABASE_DB_URL`.

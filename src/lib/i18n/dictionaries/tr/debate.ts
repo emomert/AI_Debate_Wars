@@ -30,9 +30,8 @@ export const debate = {
   // The big "ROUND N" transition flash
   roundFlash: (n: number) => `TUR ${n}`,
 
-  // Topic bar
+  // Topic bar / HUD chips
   topic: {
-    nowDebating: "Şimdi münazara ediliyor",
     tone: (value: string) => `Üslup: ${value}`,
     customTone: "özel",
     deepDebate: "🌐 Derin Münazara",
@@ -139,15 +138,6 @@ export const debate = {
 
   // DebateHUD phase labels + bits
   hud: {
-    phase: {
-      thinking: "Düşünüyor…",
-      streaming: "Konuşuyor",
-      judging: "Hakem geliyor",
-      awaiting: "Sıra sizde",
-      done: "Tamamlandı",
-      stopped: "Durduruldu",
-      error: "Hata",
-    },
     paceLabel: (pace: "auto" | "manual"): string =>
       pace === "auto"
         ? "Tempo Hızlı. Normal'e geçin."
@@ -211,8 +201,6 @@ export const debate = {
   // RoundCounter
   round: {
     counter: (current: number, total: number) => `TUR ${current} / ${total}`,
-    debate: "⚔️ Münazara",
-    discussion: "🧠 Tartışma",
   },
 
   // AIModelCard status labels + displayed roles

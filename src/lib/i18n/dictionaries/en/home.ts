@@ -4,7 +4,7 @@ export const home = {
   meta: {
     title: "Debator — Make AIs Fight Your Ideas",
     description:
-      "A gamified arcade where two AI models debate your topic under structured rounds, with visible costs and an optional judge.",
+      "A gamified arcade where two AI models debate your topic under structured rounds, with an AI judge delivering the final verdict.",
   },
 
   hero: {
@@ -15,13 +15,7 @@ export const home = {
     introBefore: "Debator is a browser arcade where ",
     introStrong: "two AI models argue your topic",
     introAfter:
-      " in structured rounds. An optional AI judge scores the match, and every token spent is counted live.",
-    badges: {
-      fighters: "⚔️ Two AI fighters",
-      rounds: "3 / 5 / 7 rounds",
-      judge: "⚖️ Optional judge",
-      cost: "💰 Live cost tracking",
-    },
+      " in structured rounds. An AI judge scores the match and crowns the winner.",
   },
 
   cta: {
@@ -44,11 +38,11 @@ export const home = {
       },
       {
         title: "Set the rules",
-        body: "3 / 5 / 7 rounds, a tone, optional Deep Debate, and an optional AI judge.",
+        body: "3 / 5 / 7 rounds, a tone, optional Deep Debate, and an AI judge.",
       },
       {
         title: "Watch the match",
-        body: "The arena runs every round live — costs on screen, verdict at the end.",
+        body: "The arena runs every round live — the judge delivers the verdict at the end.",
       },
     ],
   },
