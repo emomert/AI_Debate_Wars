@@ -25,11 +25,14 @@ export function DeleteMatchButton({ matchId }: { matchId: string }) {
     if (!supabase) return;
     setBusy(true);
     const { error } = await supabase.from("matches").delete().eq("id", matchId);
-    setBusy(false);
     if (error) {
       console.error("[delete-match] failed:", error.message);
+      setBusy(false); // re-enable so the user can retry
       return;
     }
+    // Success: keep the button disabled in its "Deleting…" state — router.refresh()
+    // removes this row a moment later, unmounting the button. Resetting busy here
+    // would flash it back to a pressable state before the row disappears.
     router.refresh();
   };
 

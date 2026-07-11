@@ -24,12 +24,14 @@ export function DeleteAllButton({ userId, total }: { userId: string; total: numb
     if (!supabase) return;
     setBusy(true);
     const { error } = await supabase.from("matches").delete().eq("user_id", userId);
-    setBusy(false);
     if (error) {
       console.error("[delete-all] failed:", error.message);
+      setBusy(false); // re-enable so the user can retry
       return;
     }
-    setConfirming(false);
+    // Success: keep the button disabled in its "Deleting…" state — router.refresh()
+    // re-renders the profile with an empty history, unmounting this control.
+    // Resetting busy here would flash it back to a pressable state first.
     router.refresh();
   };
 

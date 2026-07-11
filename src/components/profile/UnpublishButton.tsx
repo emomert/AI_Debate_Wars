@@ -25,11 +25,14 @@ export function UnpublishButton({ postId }: { postId: string }) {
     if (!supabase) return;
     setBusy(true);
     const { error } = await supabase.from("shared_matches").delete().eq("id", postId);
-    setBusy(false);
     if (error) {
       console.error("[unpublish] failed:", error.message);
+      setBusy(false); // re-enable so the user can retry
       return;
     }
+    // Success: keep the button disabled in its "Removing…" state — router.refresh()
+    // removes this row a moment later, unmounting the button. Resetting busy here
+    // would flash it back to a pressable state before the row disappears.
     router.refresh();
   };
 
