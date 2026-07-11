@@ -86,7 +86,8 @@ function EmptyArena({
 }) {
   const d = useT();
   return (
-    <GamePanel className="text-center">
+    // mt: the debate page mounts flush under the header (GameShell flushTop).
+    <GamePanel className="mt-6 text-center sm:mt-10">
       <p className="font-heading text-2xl font-extrabold">
         {hydrated ? d.debate.empty.titleReady : d.debate.empty.titleLoading}
       </p>
@@ -263,7 +264,9 @@ function BattleTabs({
 }) {
   const d = useT();
   return (
-    <div className="mb-3">
+    // pt: the debate page mounts flush under the header (GameShell flushTop),
+    // and in multi-battle these tabs are the first in-flow element.
+    <div className="mb-3 pt-4">
       <div className="flex items-stretch gap-2 overflow-x-auto pb-1" role="group" aria-label="Battles">
         {sessions.map((s, i) => {
           const snap = snapshots[i];

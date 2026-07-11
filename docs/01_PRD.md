@@ -56,7 +56,7 @@ Users want to evaluate ideas, compare AI models, or explore both sides of an arg
 
 ### Result, Sharing, History
 
-- Result page with verdict reveal (drum roll), match summary, and total cost.
+- Result page with verdict reveal (drum roll) as one merged card: question, sides, verdict + scores, judge with inline re-judge, and the share row (social logos, copy link/image, full-text "Share match").
 - **Stateless share links:** the verdict is base64url-encoded into the URL (`/s?d=...`) — no database needed. Links auto-unfurl with a generated 1200×630 OG image (`/api/og`).
 - **Optional accounts** (Supabase: magic link + Google). Signed-in users can save matches and see history + headline stats on `/profile`. The app is fully usable signed out.
 

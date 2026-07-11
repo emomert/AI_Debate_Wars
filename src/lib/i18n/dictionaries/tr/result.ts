@@ -7,7 +7,7 @@ export const result = {
       title: "Henüz tamamlanmış maç yok",
       body: "Önce bir münazara çalıştırın; kararınız ve maliyet özetiniz burada görünecek.",
       setup: "⚙️ Maç kurun",
-      home: "⌂ Ana sayfa",
+      home: "🏠 Ana sayfa",
     },
     matchComplete: "✅ Maç Tamamlandı",
     heading: "Toz Duman Dağılıyor",
@@ -26,7 +26,7 @@ export const result = {
       backToArena: "↩ Arenaya dön",
       newSetup: "⚙️ Yeni Kurulum",
       rematch: "🔁 Rövanş",
-      home: "⌂ Ana sayfa",
+      home: "🏠 Ana sayfa",
     },
   },
 
@@ -43,7 +43,7 @@ export const result = {
     inProgress: "Devam ediyor",
   },
 
-  // VerdictCard
+  // VerdictCard (birleşik karar + paylaşım kartı)
   verdict: {
     badge: "🏆 KARAR",
     judge: (name: string) => `⚖️ Hakem: ${name}`,
@@ -52,37 +52,20 @@ export const result = {
     discussionComplete: "Tartışma tamamlandı",
     winningArgument: "💥 Kazanan argüman: ",
     whyThis: "⚖️ Neden bu karar",
+    topicLabel: "Konu",
+    sideFor: "Savunan · A",
+    sideAgainst: "Karşı · B",
+    sideA: "A Tarafı",
+    sideB: "B Tarafı",
+    changeJudge: "🔁 Hakemi değiştir",
   },
 
-  // FinalSummaryCard
-  summary: {
-    title: "📊 Maç Özeti",
-    topic: "Konu",
-    debate: "⚔️ Münazara",
-    discussion: "🧠 Tartışma",
-    tone: (tone: string) => `Üslup: ${tone}`,
-    messages: (count: number) => `${count} mesaj`,
-    judged: "⚖️ Değerlendirildi",
-    noJudge: "Hakem yok",
-    totalCost: "Toplam maliyet",
-    totalTokens: "Toplam token",
-    inputTokens: "Girdi tokenları",
-    outputTokens: "Çıktı tokenları",
-    judge: "⚖️ Hakem",
-    cheaperLessPre: (cheaper: string) => `${cheaper}, `,
-    cheaperLessPost: (pricier: string) => ` ${pricier} yarışmacısından daha ucuza geldi.`,
-    estimatedPrefix: "Tahmini · ",
-    pricingNote: "Fiyatlandırma şuradan yapılandırılabilir:",
-  },
-
-  // RejudgePanel
+  // RejudgeSection (VerdictCard içinde) + bağımsız hakem-ekle paneli
   rejudge: {
-    secondOpinionTitle: "⚖️ İkinci bir görüş ister misiniz?",
     addJudgeTitle: "⚖️ Sonradan hakem ekleyin",
     secondOpinionBody: "Aynı dökümü farklı bir hakeme verip yepyeni bir karar alın.",
     addJudgeBody: "Maç hakemsiz oynandı — tamamlanmış münazarayı puanlamak için şimdi bir hakem seçin.",
     close: "▴ Kapat",
-    changeJudge: "🔁 Hakemi değiştir",
     pickJudge: "⚖️ Hakem seçin",
     newJudge: "Yeni hakem",
     fighterWarning: "⚠️ Bu hakem maçta yarıştığı için karar daha az tarafsız olabilir.",
@@ -91,40 +74,39 @@ export const result = {
     billingNote: "Yeni bir hakem turu çalıştırır — her karar gibi ücretlendirilir. Önceki karar maç maliyetine dahil kalır.",
   },
 
-  // SharePanel
+  // VerdictCard içindeki paylaşım satırı
   share: {
-    title: "📣 Maçı Paylaşın",
-    blurb: "Kararı bir görsel olarak paylaşın — indirin, kopyalayın veya paylaşın. Bağlantılar arenaya kısa bir özet taşır.",
-    previewAlt: "Karar kartı önizlemesi",
-    renderError: "Görsel burada oluşturulamadı — yine de aşağıdan özeti kopyalayabilir veya bir bağlantı paylaşabilirsiniz.",
-    drawing: "🎨 Karar kartınız çiziliyor…",
-    shareImage: "📤 Görseli paylaşın",
-    download: "📥 İndir",
+    label: "📣 Paylaş",
     copied: "✅ Kopyalandı!",
     copyImage: "🖼️ Görseli kopyala",
-    post: "Paylaş",
-    whatsapp: "WhatsApp",
-    reddit: "Reddit",
-    linkedin: "LinkedIn",
+    post: "X'te paylaş",
+    whatsapp: "WhatsApp'ta paylaş",
+    reddit: "Reddit'te paylaş",
     linkCopied: "✅ Bağlantı kopyalandı",
     copyLink: "🔗 Bağlantıyı kopyala",
-    copyRecap: "📋 Özeti kopyala",
-    tip: "İpucu: Telefonlarda “Görseli paylaşın” resmi doğrudan herhangi bir uygulamaya gönderir. Masaüstünde indirin veya kopyalayın, ardından paylaşımınıza ekleyin.",
-    // text/recap builders (SharePanel)
+    shareMatch: "📄 Maçı paylaş",
+    matchCopied: "✅ Maç kopyalandı!",
+    hint: "Maçı paylaş, münazara metninin tamamını + kararı kopyalar; Bağlantıyı kopyala bir karar önizleme kartı taşır.",
+    // metin oluşturucular
     beat: (winner: string, loser: string) => `${winner}, ${loser} rakibini yendi`,
     drawHeadline: (a: string, b: string) => `${a} ile ${b} berabere kaldı`,
     versus: (a: string, b: string) => `${a} vs ${b}`,
     shareText: (headline: string, topic: string) => `${headline} — Debator'da “${topic}” münazarası 🏟️`,
-    nativeTitle: "Debator kararı",
-    recap: {
+    // Tam maç düz-metin paylaşımı (lib/share/matchText.ts)
+    matchText: {
       header: (headline: string) => `🏟️ Debator — ${headline}`,
       topic: (topic: string) => `Konu: ${topic}`,
-      mode: (mode: string, rounds: number) => `Mod: ${mode} · ${rounds} tur`,
+      sides: (a: string, b: string) => `Savunan: ${a} (A)  vs  Karşı: ${b} (B)`,
       fighters: (a: string, b: string) => `Yarışmacılar: ${a} (A) vs ${b} (B)`,
-      verdict: (summary: string) => `Karar: ${summary}`,
-      noJudge: "Hakem yok — son turdan sonra sona erdi.",
-      winningArgument: (arg: string) => `Kazanan argüman: ${arg}`,
-      totalCost: (cost: string) => `Toplam maliyet: ${cost}`,
+      turnHeading: (name: string, roundLabel?: string) =>
+        `— ${roundLabel ? `${roundLabel} · ` : ""}${name} —`,
+      verdictHeading: (judgeName: string) =>
+        judgeName ? `⚖️ KARAR — Hakem: ${judgeName}` : "⚖️ KARAR",
+      noJudge: "Hakem yok — maç son turdan sonra sona erdi.",
+      winnerLine: (name: string) => `Kazanan: ${name}`,
+      drawLine: "Kazanan: Berabere",
+      scoreLine: (a: number, b: number) => `Skor: ${a}–${b}`,
+      linkLine: (url: string) => `Kararı görün: ${url}`,
     },
   },
 
@@ -155,6 +137,6 @@ export const result = {
     missingTitle: "Debator",
     missingBody: "Bu paylaşım bağlantısı eksik veya geçersiz — ama kendi maçınızı başlatabilirsiniz.",
     runOwn: "⚙️ Kendi münazaranızı çalıştırın",
-    home: "⌂ Ana sayfa",
+    home: "🏠 Ana sayfa",
   },
 };

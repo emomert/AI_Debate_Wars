@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * Result — the final closure screen (docs/02, docs/09). Verdict reveal (if a
- * judge ran), match summary with total cost, and a share/recap panel. Falls
- * back to a friendly empty state if there's no session (e.g. after a refresh).
+ * Result — the final closure screen (docs/02, docs/09). ONE merged verdict card
+ * (question, sides, verdict, judge + change-the-judge, share row), then the
+ * community publish panel and Deep Debate sources. Falls back to a friendly
+ * empty state if there's no session (e.g. after a refresh).
  */
 
 import { useRouter } from "next/navigation";
@@ -15,9 +16,7 @@ import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { Badge } from "@/components/game/Badge";
 import { VerdictCard } from "@/components/debate/VerdictCard";
-import { FinalSummaryCard } from "@/components/result/FinalSummaryCard";
 import { RejudgePanel } from "@/components/result/RejudgePanel";
-import { SharePanel } from "@/components/result/SharePanel";
 import { SourcesList, mergeCitations } from "@/components/debate/SourcesList";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
 import { validateSetup } from "@/lib/debate/validators";
@@ -182,40 +181,38 @@ export default function ResultPage() {
       ) : null}
 
       <div className="space-y-5">
+        {/* The merged closing card: verdict + judge (change in place) + share. */}
         {session.verdict ? (
           <VerdictCard
-            verdict={session.verdict}
-            modelA={session.modelA}
-            modelB={session.modelB}
-          />
-        ) : (
-          <GamePanel className="text-center">
-            <p className="font-heading text-lg font-extrabold">{d.result.page.noJudge.title}</p>
-            <p className="mt-1 text-sm text-ink/60">
-              {isDebateComplete(session)
-                ? d.result.page.noJudge.ended
-                : d.result.page.noJudge.stopped}
-            </p>
-          </GamePanel>
-        )}
-
-        {/* Order (feedback #8): Verdict → Change the judge → Share → Summary. */}
-        {/* Re-judge: only a COMPLETE transcript can be (re-)scored — the server
-            rejects partial matches, so a stopped session hides the panel. */}
-        {isDebateComplete(session) ? (
-          <RejudgePanel
             session={session}
+            verdict={session.verdict}
             availability={availability}
             onSession={(s) => updateSession(activeBattleIndex, s)}
           />
-        ) : null}
-
-        <SharePanel session={session} />
+        ) : (
+          <>
+            <GamePanel className="text-center">
+              <p className="font-heading text-lg font-extrabold">{d.result.page.noJudge.title}</p>
+              <p className="mt-1 text-sm text-ink/60">
+                {isDebateComplete(session)
+                  ? d.result.page.noJudge.ended
+                  : d.result.page.noJudge.stopped}
+              </p>
+            </GamePanel>
+            {/* Add a judge after the fact: only a COMPLETE transcript can be
+                scored — the server rejects partial matches. */}
+            {isDebateComplete(session) ? (
+              <RejudgePanel
+                session={session}
+                availability={availability}
+                onSession={(s) => updateSession(activeBattleIndex, s)}
+              />
+            ) : null}
+          </>
+        )}
 
         {/* Community publish: full-match sharing with visibility controls. */}
         {authEnabled ? <PublishPanel session={session} /> : null}
-
-        <FinalSummaryCard session={session} />
 
         {allSources.length > 0 ? (
           <GamePanel title={d.result.page.sources.title(allSources.length)}>

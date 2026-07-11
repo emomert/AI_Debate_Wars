@@ -46,6 +46,12 @@ interface GameShellProps {
    * user scrolls to the end of the page.
    */
   hideFooter?: boolean;
+  /**
+   * Drop the main content's top padding so the page's own sticky bar (e.g. the
+   * debate HUD) sits flush under the header with no dotted-background gap.
+   * Pages that opt in own their first element's spacing.
+   */
+  flushTop?: boolean;
   wide?: boolean;
   className?: string;
 }
@@ -73,6 +79,7 @@ export function GameShell({
   headerExtras,
   hud,
   hideFooter = false,
+  flushTop = false,
   wide = false,
   className,
 }: GameShellProps) {
@@ -138,7 +145,8 @@ export function GameShell({
         id="main"
         tabIndex={-1}
         className={cn(
-          "mx-auto w-full flex-1 px-4 pt-6 sm:px-6 sm:pt-10 focus-visible:outline-none",
+          "mx-auto w-full flex-1 px-4 sm:px-6 focus-visible:outline-none",
+          flushTop ? null : "pt-6 sm:pt-10",
           // With the footer hidden (debate page) the sticky bottom controls
           // dock flush with the page end — no bottom padding gap beneath them.
           hideFooter ? "pb-0" : "pb-6 sm:pb-10",

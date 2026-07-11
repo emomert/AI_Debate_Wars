@@ -7,7 +7,7 @@ export const result = {
       title: "No finished match yet",
       body: "Run a debate first and your verdict and cost summary will show up here.",
       setup: "⚙️ Set up a match",
-      home: "⌂ Home",
+      home: "🏠 Home",
     },
     matchComplete: "✅ Match Complete",
     heading: "The Dust Settles",
@@ -26,7 +26,7 @@ export const result = {
       backToArena: "↩ Back to arena",
       newSetup: "⚙️ New Setup",
       rematch: "🔁 Rematch",
-      home: "⌂ Home",
+      home: "🏠 Home",
     },
   },
 
@@ -43,7 +43,7 @@ export const result = {
     inProgress: "In progress",
   },
 
-  // VerdictCard
+  // VerdictCard (the merged verdict + share card)
   verdict: {
     badge: "🏆 VERDICT",
     judge: (name: string) => `⚖️ Judge: ${name}`,
@@ -52,37 +52,20 @@ export const result = {
     discussionComplete: "Discussion complete",
     winningArgument: "💥 Winning argument: ",
     whyThis: "⚖️ Why this verdict",
+    topicLabel: "Topic",
+    sideFor: "For · A",
+    sideAgainst: "Against · B",
+    sideA: "Side A",
+    sideB: "Side B",
+    changeJudge: "🔁 Change the judge",
   },
 
-  // FinalSummaryCard
-  summary: {
-    title: "📊 Match Summary",
-    topic: "Topic",
-    debate: "⚔️ Debate",
-    discussion: "🧠 Discussion",
-    tone: (tone: string) => `Tone: ${tone}`,
-    messages: (count: number) => `${count} messages`,
-    judged: "⚖️ Judged",
-    noJudge: "No judge",
-    totalCost: "Total cost",
-    totalTokens: "Total tokens",
-    inputTokens: "Input tokens",
-    outputTokens: "Output tokens",
-    judge: "⚖️ Judge",
-    cheaperLessPre: (cheaper: string) => `${cheaper} cost `,
-    cheaperLessPost: (pricier: string) => ` less than ${pricier}.`,
-    estimatedPrefix: "Estimated · ",
-    pricingNote: "Pricing is configurable in",
-  },
-
-  // RejudgePanel
+  // RejudgeSection (inside VerdictCard) + the standalone add-a-judge panel
   rejudge: {
-    secondOpinionTitle: "⚖️ Want a second opinion?",
     addJudgeTitle: "⚖️ Add a judge after the fact",
     secondOpinionBody: "Hand the same transcript to a different judge for a fresh verdict.",
     addJudgeBody: "The match ran without a judge — pick one now to score the finished debate.",
     close: "▴ Close",
-    changeJudge: "🔁 Change the judge",
     pickJudge: "⚖️ Pick a judge",
     newJudge: "New judge",
     fighterWarning: "⚠️ This judge fought in the match, so the verdict may be less neutral.",
@@ -91,40 +74,39 @@ export const result = {
     billingNote: "Runs one fresh judge turn — billed like any verdict. The previous verdict stays counted in the match cost.",
   },
 
-  // SharePanel
+  // Share row inside the VerdictCard
   share: {
-    title: "📣 Share the Match",
-    blurb: "Share the verdict as an image — download it, copy it, or post it. Links carry a short recap to the arena.",
-    previewAlt: "Verdict card preview",
-    renderError: "Couldn't render the image here — you can still copy the recap or share a link below.",
-    drawing: "🎨 Drawing your verdict card…",
-    shareImage: "📤 Share image",
-    download: "📥 Download",
+    label: "📣 Share",
     copied: "✅ Copied!",
     copyImage: "🖼️ Copy image",
-    post: "Post",
-    whatsapp: "WhatsApp",
-    reddit: "Reddit",
-    linkedin: "LinkedIn",
+    post: "Share on X",
+    whatsapp: "Share on WhatsApp",
+    reddit: "Share on Reddit",
     linkCopied: "✅ Link copied",
     copyLink: "🔗 Copy link",
-    copyRecap: "📋 Copy recap",
-    tip: "Tip: on phones, “Share image” posts the picture straight to any app. On desktop, download or copy it, then attach it to your post.",
-    // text/recap builders (SharePanel)
+    shareMatch: "📄 Share match",
+    matchCopied: "✅ Match copied!",
+    hint: "Share match copies the full debate text + verdict; Copy link carries a verdict preview card.",
+    // text builders
     beat: (winner: string, loser: string) => `${winner} beat ${loser}`,
     drawHeadline: (a: string, b: string) => `${a} vs ${b} ended in a draw`,
     versus: (a: string, b: string) => `${a} vs ${b}`,
     shareText: (headline: string, topic: string) => `${headline} debating “${topic}” on Debator 🏟️`,
-    nativeTitle: "Debator verdict",
-    recap: {
+    // Full-match plain-text share (lib/share/matchText.ts)
+    matchText: {
       header: (headline: string) => `🏟️ Debator — ${headline}`,
       topic: (topic: string) => `Topic: ${topic}`,
-      mode: (mode: string, rounds: number) => `Mode: ${mode} · ${rounds} rounds`,
+      sides: (a: string, b: string) => `For: ${a} (A)  vs  Against: ${b} (B)`,
       fighters: (a: string, b: string) => `Fighters: ${a} (A) vs ${b} (B)`,
-      verdict: (summary: string) => `Verdict: ${summary}`,
-      noJudge: "No judge — ended after the final round.",
-      winningArgument: (arg: string) => `Winning argument: ${arg}`,
-      totalCost: (cost: string) => `Total cost: ${cost}`,
+      turnHeading: (name: string, roundLabel?: string) =>
+        `— ${roundLabel ? `${roundLabel} · ` : ""}${name} —`,
+      verdictHeading: (judgeName: string) =>
+        judgeName ? `⚖️ VERDICT — Judge: ${judgeName}` : "⚖️ VERDICT",
+      noJudge: "No judge — the match ended after the final round.",
+      winnerLine: (name: string) => `Winner: ${name}`,
+      drawLine: "Winner: Draw",
+      scoreLine: (a: number, b: number) => `Score: ${a}–${b}`,
+      linkLine: (url: string) => `See the verdict: ${url}`,
     },
   },
 
@@ -155,6 +137,6 @@ export const result = {
     missingTitle: "Debator",
     missingBody: "This share link is missing or invalid — but you can start your own match.",
     runOwn: "⚙️ Run your own debate",
-    home: "⌂ Home",
+    home: "🏠 Home",
   },
 };

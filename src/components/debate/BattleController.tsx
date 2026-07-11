@@ -41,7 +41,6 @@ import { DebateTimeline } from "@/components/debate/DebateTimeline";
 import { DebateControls } from "@/components/debate/DebateControls";
 import { VerdictCard } from "@/components/debate/VerdictCard";
 import { RejudgePanel } from "@/components/result/RejudgePanel";
-import { SharePanel } from "@/components/result/SharePanel";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 const MatchSaver = dynamic(
@@ -434,30 +433,29 @@ export function BattleController({
             voiceFor={voiceFor}
           />
 
+          {/* The merged closing card: verdict + judge (change in place) + share. */}
           {runner.phase === "done" && doneVerdict ? (
             <VerdictCard
-              verdict={doneVerdict}
-              modelA={session.modelA}
-              modelB={session.modelB}
-            />
-          ) : null}
-
-          {runner.phase === "done" && isDebateComplete(session) && !session.judge.enabled ? (
-            <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-4 text-center text-sm text-ink/65">
-              {d.debate.noJudge}
-            </div>
-          ) : null}
-
-          {runner.phase === "done" && isDebateComplete(session) ? (
-            <RejudgePanel
               session={session}
+              verdict={doneVerdict}
               availability={availability}
               onSession={onPersist}
             />
           ) : null}
 
-          {runner.phase === "done" && (isDebateComplete(session) || session.verdict) ? (
-            <SharePanel session={session} />
+          {/* No verdict (judge failed / legacy judge-less session): offer to
+              add one — only a COMPLETE transcript can be scored. */}
+          {runner.phase === "done" && isDebateComplete(session) && !doneVerdict ? (
+            <>
+              <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-4 text-center text-sm text-ink/65">
+                {d.debate.noJudge}
+              </div>
+              <RejudgePanel
+                session={session}
+                availability={availability}
+                onSession={onPersist}
+              />
+            </>
           ) : null}
 
           {runner.phase === "done" && isDebateComplete(session) && arenaAuthEnabled ? (

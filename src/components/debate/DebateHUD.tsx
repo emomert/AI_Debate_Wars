@@ -7,7 +7,7 @@
  * renders when the cost UI is enabled (COST_UI_ENABLED).
  */
 
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils/cn";
@@ -68,31 +68,17 @@ function DebateHUDComponent({
   const d = useT();
   const live = phase !== "done" && phase !== "stopped" && phase !== "error";
 
-  // Scroll-aware fill: at the top of the page the bar is TRANSPARENT so the
-  // dotted background shows through; once the debate content starts sliding
-  // underneath it (any scroll), it regains a solid blurred fill so text never
-  // shows through the gaps between the chips.
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
-    onScroll(); // resume mid-page (e.g. after navigation) starts solid
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   // top offset = compact header height (52px). Kept tight: this bar plus the
   // header are sticky and were eating too much reading space. FULL-BLEED: the
   // margin pulls the bar's background + border out to the viewport edges (so it
   // aligns with the full-width sticky header above it instead of stopping at
   // the content box), and the padding pushes the chips back to the content
   // edge. body{overflow-x:clip} absorbs the scrollbar-width overshoot of 50vw.
+  // ALWAYS solid (owner feedback): the bar reads as one piece with the header
+  // whether the page is at the top or scrolled — no transparent state, no gap
+  // (the debate page mounts it flush under the header via GameShell flushTop).
   return (
-    <div
-      className={cn(
-        "sticky top-[52px] z-20 mx-[calc(50%-50vw)] border-b-4 border-ink px-[calc(50vw-50%)] py-1.5 transition-colors duration-200",
-        scrolled ? "bg-paper/90 backdrop-blur" : "bg-transparent",
-      )}
-    >
+    <div className="sticky top-[52px] z-20 mx-[calc(50%-50vw)] border-b-4 border-ink bg-paper/90 px-[calc(50vw-50%)] py-1.5 backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <RoundCounter roundNumber={currentRound} totalRounds={totalRounds} />

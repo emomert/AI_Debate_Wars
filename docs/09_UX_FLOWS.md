@@ -58,7 +58,7 @@ A match can pit **1–3 battles** against the same topic at once — each battle
 - **Home:** hero, sample topics, "Use Debator" / "Try Sample" CTAs, About/Report/Profile links, sound toggle.
 - **Setup:** game-match configuration feel ("Choose your fighters", "Set the rules"); the judge is mandatory — users pick only Auto Judge vs a hand-picked third model; validation gates the start button; localized error copy.
 - **Arena:** top HUD (topic, round counter, total cost, sound, stop); fighter cards with idle/thinking/speaking states; full-width message timeline; sticky controls on mobile.
-- **Result:** dramatic verdict reveal; share panel generates the link/image client-side.
+- **Result:** ONE merged verdict card (July 2026) — the question on top, who argued For (A, blue) vs Against (B, red), winner + reasoning + tug-of-war score, then a footer with the judge + an inline "Change the judge" expander and the share row: X / WhatsApp / Reddit (logo-only), Copy link (verdict preview URL), Copy image, and "Share match" (copies the FULL transcript + verdict as text — works signed-out and unsaved). Everything is generated client-side. The old separate Share/Match-Summary panels are gone.
 - **Share page (`/s`):** public, stateless; renders the verdict from the URL payload with OG tags for unfurl.
 - **Profile:** match history (topic, fighters, winner, cost, date — click to reopen) + headline stats; delete one match or all.
 - **Login:** magic link + Google; framed as a perk ("save your matches"), never a gate.
