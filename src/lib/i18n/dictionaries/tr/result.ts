@@ -52,11 +52,10 @@ export const result = {
     discussionComplete: "Tartışma tamamlandı",
     winningArgument: "💥 Kazanan argüman: ",
     whyThis: "⚖️ Neden bu karar",
-    topicLabel: "Konu",
-    sideFor: "Savunan · A",
-    sideAgainst: "Karşı · B",
-    sideA: "A Tarafı",
-    sideB: "B Tarafı",
+    sideFor: "Savunan",
+    sideAgainst: "Karşı",
+    sideA: "A",
+    sideB: "B",
     changeJudge: "🔁 Hakemi değiştir",
   },
 
@@ -80,13 +79,12 @@ export const result = {
     copied: "✅ Kopyalandı!",
     copyImage: "🖼️ Görseli kopyala",
     post: "X'te paylaş",
-    whatsapp: "WhatsApp'ta paylaş",
+    instagram: "Instagram'da paylaş (önce başlık kopyalanır)",
     reddit: "Reddit'te paylaş",
     linkCopied: "✅ Bağlantı kopyalandı",
     copyLink: "🔗 Bağlantıyı kopyala",
     shareMatch: "📄 Maçı paylaş",
     matchCopied: "✅ Maç kopyalandı!",
-    hint: "Maçı paylaş, münazara metninin tamamını + kararı kopyalar; Bağlantıyı kopyala bir karar önizleme kartı taşır.",
     // metin oluşturucular
     beat: (winner: string, loser: string) => `${winner}, ${loser} rakibini yendi`,
     drawHeadline: (a: string, b: string) => `${a} ile ${b} berabere kaldı`,
@@ -96,8 +94,8 @@ export const result = {
     matchText: {
       header: (headline: string) => `🏟️ Debator — ${headline}`,
       topic: (topic: string) => `Konu: ${topic}`,
-      sides: (a: string, b: string) => `Savunan: ${a} (A)  vs  Karşı: ${b} (B)`,
-      fighters: (a: string, b: string) => `Yarışmacılar: ${a} (A) vs ${b} (B)`,
+      sides: (a: string, b: string) => `Savunan: ${a}  vs  Karşı: ${b}`,
+      fighters: (a: string, b: string) => `Yarışmacılar: ${a} vs ${b}`,
       turnHeading: (name: string, roundLabel?: string) =>
         `— ${roundLabel ? `${roundLabel} · ` : ""}${name} —`,
       verdictHeading: (judgeName: string) =>
@@ -106,7 +104,6 @@ export const result = {
       winnerLine: (name: string) => `Kazanan: ${name}`,
       drawLine: "Kazanan: Berabere",
       scoreLine: (a: number, b: number) => `Skor: ${a}–${b}`,
-      linkLine: (url: string) => `Kararı görün: ${url}`,
     },
   },
 

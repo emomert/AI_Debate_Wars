@@ -52,11 +52,10 @@ export const result = {
     discussionComplete: "Discussion complete",
     winningArgument: "💥 Winning argument: ",
     whyThis: "⚖️ Why this verdict",
-    topicLabel: "Topic",
-    sideFor: "For · A",
-    sideAgainst: "Against · B",
-    sideA: "Side A",
-    sideB: "Side B",
+    sideFor: "Pro",
+    sideAgainst: "Against",
+    sideA: "A",
+    sideB: "B",
     changeJudge: "🔁 Change the judge",
   },
 
@@ -80,13 +79,12 @@ export const result = {
     copied: "✅ Copied!",
     copyImage: "🖼️ Copy image",
     post: "Share on X",
-    whatsapp: "Share on WhatsApp",
+    instagram: "Share on Instagram (caption is copied first)",
     reddit: "Share on Reddit",
     linkCopied: "✅ Link copied",
     copyLink: "🔗 Copy link",
     shareMatch: "📄 Share match",
     matchCopied: "✅ Match copied!",
-    hint: "Share match copies the full debate text + verdict; Copy link carries a verdict preview card.",
     // text builders
     beat: (winner: string, loser: string) => `${winner} beat ${loser}`,
     drawHeadline: (a: string, b: string) => `${a} vs ${b} ended in a draw`,
@@ -96,8 +94,8 @@ export const result = {
     matchText: {
       header: (headline: string) => `🏟️ Debator — ${headline}`,
       topic: (topic: string) => `Topic: ${topic}`,
-      sides: (a: string, b: string) => `For: ${a} (A)  vs  Against: ${b} (B)`,
-      fighters: (a: string, b: string) => `Fighters: ${a} (A) vs ${b} (B)`,
+      sides: (a: string, b: string) => `Pro: ${a}  vs  Against: ${b}`,
+      fighters: (a: string, b: string) => `Fighters: ${a} vs ${b}`,
       turnHeading: (name: string, roundLabel?: string) =>
         `— ${roundLabel ? `${roundLabel} · ` : ""}${name} —`,
       verdictHeading: (judgeName: string) =>
@@ -106,7 +104,6 @@ export const result = {
       winnerLine: (name: string) => `Winner: ${name}`,
       drawLine: "Winner: Draw",
       scoreLine: (a: number, b: number) => `Score: ${a}–${b}`,
-      linkLine: (url: string) => `See the verdict: ${url}`,
     },
   },
 

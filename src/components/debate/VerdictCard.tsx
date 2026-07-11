@@ -22,13 +22,15 @@ import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { MarkdownText } from "@/components/debate/MarkdownText";
 import { ScoreBreakdown } from "@/components/result/ScoreBreakdown";
 import { RejudgeSection } from "@/components/result/RejudgePanel";
-import { XIcon, WhatsAppIcon, RedditIcon } from "@/components/result/ShareIcons";
+import { XIcon, InstagramIcon, RedditIcon } from "@/components/result/ShareIcons";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
 import { getModelById } from "@/lib/models/modelRegistry";
 import { encodeSharePayload, sharePayloadFromSession } from "@/lib/share/shareLink";
 import { buildMatchShareText } from "@/lib/share/matchText";
 import { renderVerdictBlob } from "@/lib/share/verdictImage";
+import { playSound } from "@/lib/audio/soundManager";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { cn } from "@/lib/utils/cn";
 
 interface VerdictCardProps {
   session: DebateSession;
@@ -45,6 +47,27 @@ function modelDisplayName(id: string): string {
 }
 
 type Flash = "link" | "image" | "match" | null;
+
+/**
+ * Both labels share one grid cell, so the button is always as wide as the
+ * WIDER label — flipping to the "copied" state never reflows the row (owner
+ * feedback: the button used to jump to the next line).
+ */
+function SwapLabel({ on, idle, done }: { on: boolean; idle: string; done: string }) {
+  return (
+    <span className="grid text-center">
+      <span className={cn("col-start-1 row-start-1", on && "invisible")}>{idle}</span>
+      <span className={cn("col-start-1 row-start-1", !on && "invisible")}>{done}</span>
+    </span>
+  );
+}
+
+/** App-icon-style share tile: brand-colored background, white glyph. */
+const BRAND_TILE =
+  "grid h-10 w-10 place-items-center rounded-btn border-3 border-ink text-white shadow-hard-sm transition hover:-translate-y-0.5 focus-visible:outline-3 focus-visible:outline-offset-2";
+
+const INSTAGRAM_GRADIENT =
+  "radial-gradient(115% 115% at 20% 105%, #FEDA75 0%, #FA7E1E 30%, #D62976 55%, #962FBF 78%, #4F5BD5 100%)";
 
 export function VerdictCard({ session, verdict, availability, onSession }: VerdictCardProps) {
   const reduce = useReducedMotion();
@@ -107,15 +130,11 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
   };
 
   // Full transcript + verdict as plain text — works signed-out and unsaved.
+  // No URL appended: the stateless share URL is huge (base64 payload) and made
+  // the copied text look broken; "Copy link" is the link-shaped share.
   const shareMatch = async () => {
     try {
-      const text = buildMatchShareText(
-        shareSession,
-        headline,
-        judgeName,
-        t.matchText,
-        shareUrl(),
-      );
+      const text = buildMatchShareText(shareSession, headline, judgeName, t.matchText);
       await navigator.clipboard.writeText(text);
       ping("match");
     } catch {
@@ -153,18 +172,33 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
     }
   };
 
-  const openShare = (kind: "x" | "whatsapp" | "reddit") => {
-    const url = shareUrl();
+  const shareCaption = () => {
     const topic =
       session.topic.length > 90 ? `${session.topic.slice(0, 87)}…` : session.topic;
-    const text = t.shareText(headline, topic);
+    return t.shareText(headline, topic);
+  };
+
+  const openShare = (kind: "x" | "reddit") => {
+    playSound("buttonClick");
+    const url = shareUrl();
+    const text = shareCaption();
     const e = encodeURIComponent;
     const targets: Record<typeof kind, string> = {
       x: `https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}`,
-      whatsapp: `https://wa.me/?text=${e(`${text} ${url}`)}`,
       reddit: `https://www.reddit.com/submit?url=${e(url)}&title=${e(text)}`,
     };
     window.open(targets[kind], "_blank", "noopener,noreferrer");
+  };
+
+  // Instagram has no web share intent — copy a ready caption, then open it.
+  const openInstagram = async () => {
+    playSound("buttonClick");
+    try {
+      await navigator.clipboard.writeText(shareCaption());
+    } catch {
+      /* caption copy is best-effort */
+    }
+    window.open("https://www.instagram.com/", "_blank", "noopener,noreferrer");
   };
 
   const supportsCopyImage =
@@ -193,35 +227,25 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
           {d.result.verdict.badge}
         </motion.h2>
 
-        {/* The question first — it's what the whole match was about. */}
+        {/* The question + who argued which side — one compact strip. */}
         <div className="mt-4 rounded-card border-3 border-ink bg-paper p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-            {d.result.verdict.topicLabel}
-          </p>
-          <p className="mt-0.5 font-heading text-base font-extrabold sm:text-lg">
-            {session.topic}
-          </p>
-        </div>
-
-        {/* Who argued which side — colors match the score bar below. */}
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <div className="rounded-card border-3 border-ink bg-arcade-blue/10 p-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-arcade-blue">
-              {debate ? d.result.verdict.sideFor : d.result.verdict.sideA}
-            </p>
-            <p className="mt-1 flex min-w-0 items-center gap-1.5 font-heading text-sm font-extrabold">
-              <BrandLogo brand={brandA} size={18} />
-              <span className="truncate">{nameA}</span>
-            </p>
-          </div>
-          <div className="rounded-card border-3 border-ink bg-arcade-red/10 p-2.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-arcade-red">
-              {debate ? d.result.verdict.sideAgainst : d.result.verdict.sideB}
-            </p>
-            <p className="mt-1 flex min-w-0 items-center gap-1.5 font-heading text-sm font-extrabold">
-              <BrandLogo brand={brandB} size={18} />
-              <span className="truncate">{nameB}</span>
-            </p>
+          <p className="font-heading text-base font-extrabold">{session.topic}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span className="rounded-badge border-2 border-ink bg-arcade-blue px-1.5 py-0.5 text-[10px] font-heading font-extrabold uppercase tracking-wide text-white">
+                {debate ? d.result.verdict.sideFor : d.result.verdict.sideA}
+              </span>
+              <BrandLogo brand={brandA} size={16} />
+              <span className="truncate text-sm font-bold">{nameA}</span>
+            </span>
+            <span className="text-xs font-bold text-ink/40">vs</span>
+            <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span className="rounded-badge border-2 border-ink bg-arcade-red px-1.5 py-0.5 text-[10px] font-heading font-extrabold uppercase tracking-wide text-white">
+                {debate ? d.result.verdict.sideAgainst : d.result.verdict.sideB}
+              </span>
+              <BrandLogo brand={brandB} size={16} />
+              <span className="truncate text-sm font-bold">{nameB}</span>
+            </span>
           </div>
         </div>
 
@@ -295,46 +319,47 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
             <span className="font-heading text-xs font-extrabold uppercase tracking-wide text-ink/45">
               {t.label}
             </span>
-            <ArcadeButton
-              variant="neutral-white"
-              size="sm"
+            <button
+              type="button"
               onClick={() => openShare("x")}
               aria-label={t.post}
               title={t.post}
+              className={cn(BRAND_TILE, "bg-night")}
             >
-              <XIcon />
-            </ArcadeButton>
-            <ArcadeButton
-              variant="neutral-white"
-              size="sm"
-              onClick={() => openShare("whatsapp")}
-              aria-label={t.whatsapp}
-              title={t.whatsapp}
+              <XIcon className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => void openInstagram()}
+              aria-label={t.instagram}
+              title={t.instagram}
+              className={BRAND_TILE}
+              style={{ background: INSTAGRAM_GRADIENT }}
             >
-              <WhatsAppIcon />
-            </ArcadeButton>
-            <ArcadeButton
-              variant="neutral-white"
-              size="sm"
+              <InstagramIcon className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
               onClick={() => openShare("reddit")}
               aria-label={t.reddit}
               title={t.reddit}
+              className={BRAND_TILE}
+              style={{ background: "#FF4500" }}
             >
-              <RedditIcon />
-            </ArcadeButton>
+              <RedditIcon className="h-5 w-5" />
+            </button>
             <ArcadeButton variant="neutral-white" size="sm" onClick={copyLink}>
-              {flash === "link" ? t.linkCopied : t.copyLink}
+              <SwapLabel on={flash === "link"} idle={t.copyLink} done={t.linkCopied} />
             </ArcadeButton>
             {supportsCopyImage ? (
               <ArcadeButton variant="neutral-white" size="sm" onClick={copyImage}>
-                {flash === "image" ? t.copied : t.copyImage}
+                <SwapLabel on={flash === "image"} idle={t.copyImage} done={t.copied} />
               </ArcadeButton>
             ) : null}
             <ArcadeButton variant="neutral-white" size="sm" onClick={shareMatch}>
-              {flash === "match" ? t.matchCopied : t.shareMatch}
+              <SwapLabel on={flash === "match"} idle={t.shareMatch} done={t.matchCopied} />
             </ArcadeButton>
           </div>
-          <p className="mt-2 text-[11px] text-ink/45">{t.hint}</p>
         </div>
       </div>
     </motion.section>

@@ -22,7 +22,6 @@ export interface MatchTextStrings {
   winnerLine: (name: string) => string;
   drawLine: string;
   scoreLine: (a: number, b: number) => string;
-  linkLine: (url: string) => string;
 }
 
 /** Strip the markdown **bold** markers the models emit (plain-text clipboard). */
@@ -35,7 +34,6 @@ export function buildMatchShareText(
   headline: string,
   judgeName: string,
   t: MatchTextStrings,
-  url?: string,
 ): string {
   const a = session.modelA.displayName;
   const b = session.modelB.displayName;
@@ -76,6 +74,7 @@ export function buildMatchShareText(
     lines.push(t.noJudge);
   }
 
-  if (url) lines.push("", t.linkLine(url));
-  return lines.join("\n");
+  // CRLF: the text is built FOR the clipboard, and classic Windows paste
+  // targets only break lines on \r\n (web targets normalize it away).
+  return lines.join("\r\n");
 }
