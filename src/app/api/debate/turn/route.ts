@@ -53,6 +53,7 @@ import {
 } from "@/lib/security/rateLimit";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import { parseMove } from "@/lib/debate/parseMove";
+import { stripEchoedHeading } from "@/lib/debate/turnText";
 import {
   DEEP_SEARCH_COST_USD,
   narrowCitationsToCited,
@@ -236,6 +237,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       const parsed = parseMove(content);
       content = parsed.content;
       move = parsed.move ?? undefined;
+    } else {
+      // Some models open with a title echoing the round/side ("Opening
+      // Arguments — Pro Side") despite the prompt forbidding it — strip it.
+      content = stripEchoedHeading(content, turn.roundLabel);
     }
 
     const message: DebateMessage = {

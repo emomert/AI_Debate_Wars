@@ -43,6 +43,11 @@ usage, latency and provider/model ids are ALWAYS stripped.
 
 ### Votes
 
+> **Hidden since July 2026** (owner decision): `VOTING_ENABLED = false` in
+> `src/lib/community/config.ts` removes the "Who won this one?" widget from
+> `/m/[id]`, the vote counts from the feed/profile, and the "Top" sort. The
+> API route, RPC and DB columns stay intact — flip the flag to restore.
+
 A vote is a **side vote** — Fighter A / Tie / Fighter B — not an upvote.
 One vote per signed-in user per post (PK `(post_id, user_id)`); changing your
 vote is allowed. Tallies are denormalized counters on `shared_matches`,

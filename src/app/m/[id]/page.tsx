@@ -18,6 +18,7 @@ import { SharedTranscript } from "@/components/community/SharedTranscript";
 import { SharedVerdictCard } from "@/components/community/SharedVerdictCard";
 import { VoteWidget } from "@/components/community/VoteWidget";
 import { CommentsSection } from "@/components/community/CommentsSection";
+import { VOTING_ENABLED } from "@/lib/community/config";
 import { ReportButton } from "@/components/community/ReportButton";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { formatRelativeDate } from "@/lib/utils/format";
@@ -204,14 +205,16 @@ export default async function SharedMatchPage({ params }: { params: Params }) {
           </GamePanel>
         )}
 
-        {/* Crowd vote */}
-        <VoteWidget
-          postId={post.id}
-          initialTally={{ a: post.vote_a, b: post.vote_b, tie: post.vote_tie, total: post.vote_count }}
-          nameA={names.a}
-          nameB={names.b}
-          aiWinner={post.include_verdict ? (snapshot.verdict?.winner ?? null) : null}
-        />
+        {/* Crowd vote — hidden while VOTING_ENABLED is off (owner decision). */}
+        {VOTING_ENABLED ? (
+          <VoteWidget
+            postId={post.id}
+            initialTally={{ a: post.vote_a, b: post.vote_b, tie: post.vote_tie, total: post.vote_count }}
+            nameA={names.a}
+            nameB={names.b}
+            aiWinner={post.include_verdict ? (snapshot.verdict?.winner ?? null) : null}
+          />
+        ) : null}
 
         {/* Comments */}
         <CommentsSection

@@ -17,6 +17,7 @@ import {
   SHARED_MATCH_SUMMARY_COLUMNS,
   type SharedMatchFeedRow,
 } from "@/lib/community/types";
+import { VOTING_ENABLED } from "@/lib/community/config";
 import { getServerDictionary } from "@/lib/i18n/server";
 import { formatRelativeDate } from "@/lib/utils/format";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
@@ -69,7 +70,9 @@ function FeedCard({ post, d }: { post: SharedMatchFeedRow; d: Dictionary }) {
         <p className="mt-1 line-clamp-1 text-sm font-semibold text-ink/65">{vsLine}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/55">
-          <span className="font-mono font-bold">{t.votes(post.vote_count)}</span>
+          {VOTING_ENABLED ? (
+            <span className="font-mono font-bold">{t.votes(post.vote_count)}</span>
+          ) : null}
           <span className="font-mono font-bold">{t.comments(post.comment_count)}</span>
           <span className="ml-auto inline-flex items-center gap-1">
             <span aria-hidden>{avatar}</span>
@@ -96,7 +99,9 @@ export default async function CommunityPage({
   }
 
   const params = await searchParams;
-  const sort: "recent" | "top" = params.sort === "top" ? "top" : "recent";
+  // With voting hidden, "top" (most-voted) is meaningless — force recent.
+  const sort: "recent" | "top" =
+    VOTING_ENABLED && params.sort === "top" ? "top" : "recent";
   const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
@@ -139,24 +144,26 @@ export default async function CommunityPage({
         <p className="mx-auto mt-2 max-w-xl text-sm text-ink/60">{t.blurb}</p>
       </div>
 
-      {/* Sort tabs */}
-      <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
-        {(["recent", "top"] as const).map((s) => (
-          <Link
-            key={s}
-            href={tabHref(s)}
-            aria-current={sort === s ? "page" : undefined}
-            className={
-              "rounded-btn border-3 border-ink px-3 py-1.5 font-heading text-sm font-extrabold transition " +
-              (sort === s
-                ? "bg-arcade-yellow text-night shadow-hard-sm"
-                : "bg-card text-ink hover:bg-surface")
-            }
-          >
-            {s === "recent" ? t.tabs.recent : t.tabs.top}
-          </Link>
-        ))}
-      </div>
+      {/* Sort tabs — only meaningful while voting is on ("Top" = most voted). */}
+      {VOTING_ENABLED ? (
+        <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+          {(["recent", "top"] as const).map((s) => (
+            <Link
+              key={s}
+              href={tabHref(s)}
+              aria-current={sort === s ? "page" : undefined}
+              className={
+                "rounded-btn border-3 border-ink px-3 py-1.5 font-heading text-sm font-extrabold transition " +
+                (sort === s
+                  ? "bg-arcade-yellow text-night shadow-hard-sm"
+                  : "bg-card text-ink hover:bg-surface")
+              }
+            >
+              {s === "recent" ? t.tabs.recent : t.tabs.top}
+            </Link>
+          ))}
+        </div>
+      ) : null}
 
       {posts.length === 0 ? (
         <GamePanel className="text-center">

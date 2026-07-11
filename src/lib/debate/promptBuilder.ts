@@ -347,6 +347,7 @@ export function buildTurnPrompt(
     `- Do not ask to continue.`,
     `- Do not repeat your earlier points.`,
     `- Directly address the most relevant previous point when available.`,
+    `- Do NOT begin with a title or heading, and never restate the round name or your side — open directly with your first sentence.`,
     `- Write in flowing prose: 2-4 short, persuasive paragraphs that build an argument.`,
     `- Do NOT default to bullet-point lists. Use a short list at most once, and only when it genuinely helps (e.g. naming a few concrete examples). Otherwise argue in sentences.`,
     `- You may use **bold** sparingly to emphasize a single key term or claim.`,

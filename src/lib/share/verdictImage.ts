@@ -150,13 +150,18 @@ export async function renderVerdictImage(
   // ---- MEASURE PASS ---------------------------------------------------------
   // Wrap every text block up-front (at scale 1) so the canvas can be sized to
   // fit the FULL winning argument + reasoning — the substance the big verdict
-  // card shows. Only the strongest/weakest grid is intentionally left out.
+  // card shows. Block ORDER mirrors the on-screen card (owner feedback):
+  // topic first, then the Pro/Against fighters, then winner + reasoning.
+  ctx.font = `700 26px ${FONT_BODY}`;
+  const topicLines = wrapLines(ctx, session.topic, innerW, 2);
+
   ctx.font = `800 52px ${FONT_HEADING}`;
   const winLines = wrapLines(ctx, winnerLine(session), innerW, 2);
 
+  // ** bold markers stripped everywhere — canvas draws single-style runs.
   ctx.font = `700 22px ${FONT_BODY}`;
   const argLines = v?.winnerArgument
-    ? wrapLines(ctx, v.winnerArgument, innerW, 5)
+    ? wrapLines(ctx, v.winnerArgument.replace(/\*\*/g, ""), innerW, 5)
     : [];
 
   // Smaller body size + a higher line cap so a longer reasoning (Turkish runs
@@ -166,15 +171,12 @@ export async function renderVerdictImage(
     ? wrapLines(ctx, v.summary.replace(/\*\*/g, ""), panelTextW, 11)
     : [];
 
-  ctx.font = `500 24px ${FONT_BODY}`;
-  const topicLines = wrapLines(ctx, session.topic, innerW, 2);
-
   // ---- VERTICAL LAYOUT: walk top-down, recording each block's top edge so the
   //      draw pass paints at the same coordinates and the card grows to fit. ----
   const winLH = 54;
   const argLH = 30;
   const reasonLH = 26;
-  const topicLH = 32;
+  const topicLH = 34;
   const scoreBoxH = 96;
 
   let y = cy + 36;
@@ -182,6 +184,17 @@ export async function renderVerdictImage(
   const headerTop = y;
   y += 56 + 30; // VERDICT pill row + gap
 
+  let topicTop = 0;
+  if (topicLines.length) {
+    topicTop = y;
+    y += topicLines.length * topicLH + 8;
+  }
+
+  y += 10;
+  const scoreTop = y;
+  y += scoreBoxH;
+
+  y += 28;
   const winTop = y;
   y += winLines.length * winLH + 6;
 
@@ -199,17 +212,6 @@ export async function renderVerdictImage(
     panelTop = y;
     panelH = 18 + 20 /* label */ + 12 + reasonLines.length * reasonLH + 18;
     y += panelH;
-  }
-
-  y += 26;
-  const scoreTop = y;
-  y += scoreBoxH;
-
-  let topicTop = 0;
-  if (topicLines.length) {
-    y += 26;
-    topicTop = y;
-    y += 22 /* label */ + topicLines.length * topicLH;
   }
 
   y += 32;
@@ -273,6 +275,14 @@ export async function renderVerdictImage(
   ctx.font = `500 16px ${FONT_BODY}`;
   ctx.fillStyle = "rgba(5,5,5,0.55)";
   ctx.fillText("AI vs AI", padX + innerW, headerTop + 50);
+
+  // Topic — right under the header, exactly like the on-screen card.
+  if (topicLines.length) {
+    ctx.textAlign = "left";
+    ctx.font = `700 26px ${FONT_BODY}`;
+    ctx.fillStyle = C.ink;
+    topicLines.forEach((line, i) => ctx.fillText(line, padX, topicTop + 24 + i * topicLH));
+  }
 
   // Winner headline (up to 2 lines).
   ctx.textAlign = "left";
@@ -347,21 +357,26 @@ export async function renderVerdictImage(
       ctx.fillText(String(score), x + boxW - 24, scoreTop + 64);
     }
   };
-  drawFighter(padX, C.blue, "A", session.modelA.displayName, v?.scoreModelA);
-  drawFighter(padX + boxW + gap, C.red, "B", session.modelB.displayName, v?.scoreModelB);
+  // Side tags mirror the on-screen chips: Pro/Against in debate mode, A/B
+  // otherwise (legacy discussion sessions).
+  const debate = session.mode === "debate";
+  drawFighter(
+    padX,
+    C.blue,
+    debate ? "PRO" : "A",
+    session.modelA.displayName,
+    v?.scoreModelA,
+  );
+  drawFighter(
+    padX + boxW + gap,
+    C.red,
+    debate ? "AGAINST" : "B",
+    session.modelB.displayName,
+    v?.scoreModelB,
+  );
 
-  // Topic line.
-  if (topicLines.length) {
-    ctx.textAlign = "left";
-    ctx.font = `700 14px ${FONT_BODY}`;
-    ctx.fillStyle = "rgba(5,5,5,0.45)";
-    ctx.fillText("TOPIC", padX, topicTop + 12);
-    ctx.font = `500 24px ${FONT_BODY}`;
-    ctx.fillStyle = C.ink;
-    topicLines.forEach((line, i) => ctx.fillText(line, padX, topicTop + 42 + i * topicLH));
-  }
-
-  // Footer strip: judge (left) + meta/cost (right).
+  // Footer strip: judge (left) + optional cost (right). The "N rounds · mode"
+  // meta was dropped from the card (owner feedback) — the image matches.
   ctx.font = `500 20px ${FONT_BODY}`;
   ctx.fillStyle = "rgba(5,5,5,0.6)";
   ctx.textAlign = "left";
@@ -371,11 +386,10 @@ export async function renderVerdictImage(
   } else {
     ctx.fillText("No judge", padX, footerBaseline);
   }
-  ctx.textAlign = "right";
-  const meta =
-    `${session.roundCount} rounds · ${session.mode}` +
-    (COST_UI_ENABLED ? ` · ${formatCost(session.costSummary.totalCost)}` : "");
-  ctx.fillText(meta, padX + innerW, footerBaseline);
+  if (COST_UI_ENABLED) {
+    ctx.textAlign = "right";
+    ctx.fillText(formatCost(session.costSummary.totalCost), padX + innerW, footerBaseline);
+  }
 
   return canvas;
 }

@@ -27,6 +27,7 @@ import {
   SHARED_MATCH_SUMMARY_COLUMNS,
   type SharedMatchSummary,
 } from "@/lib/community/types";
+import { VOTING_ENABLED } from "@/lib/community/config";
 import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { formatCost, formatRelativeDate } from "@/lib/utils/format";
 import { getServerDictionary } from "@/lib/i18n/server";
@@ -154,8 +155,7 @@ export default async function ProfilePage() {
                     {p.show_models && p.model_a && p.model_b
                       ? d.community.feed.vs(p.model_a, p.model_b)
                       : d.community.feed.mysteryVs}
-                    {" · "}
-                    {d.community.myShared.votes(p.vote_count)}
+                    {VOTING_ENABLED ? ` · ${d.community.myShared.votes(p.vote_count)}` : ""}
                     {" · "}
                     {d.community.myShared.comments(p.comment_count)}
                   </p>
