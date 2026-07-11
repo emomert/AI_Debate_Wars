@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import type { ModelColor, SelectedModel, Stance } from "@/lib/debate/debateTypes";
 import { getModelById } from "@/lib/models/modelRegistry";
 import { Badge } from "@/components/game/Badge";
+import { BrandLogo } from "@/components/report/BrandLogo";
 import { cn } from "@/lib/utils/cn";
 import { useReduceMotion } from "@/lib/motion/useReduceMotion";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -24,8 +25,6 @@ export type ModelCardStatus =
 
 interface AIModelCardProps {
   model: SelectedModel;
-  side: "A" | "B" | "Judge";
-  role: string;
   stance?: Stance;
   status: ModelCardStatus;
   className?: string;
@@ -58,8 +57,6 @@ const STATUS_COLOR: Record<
 
 function AIModelCardComponent({
   model,
-  side,
-  role,
   stance,
   status,
   className,
@@ -67,7 +64,6 @@ function AIModelCardComponent({
   const d = useT();
   const reduce = useReduceMotion();
   const entry = getModelById(model.modelId);
-  const avatar = entry?.avatar ?? "🤖";
   const color = model.color;
   const speaking = status === "speaking";
   const thinking = status === "thinking";
@@ -92,30 +88,9 @@ function AIModelCardComponent({
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="relative">
-          <span
-            className={cn(
-              "grid h-12 w-12 place-items-center rounded-btn border-3 border-ink bg-paper text-2xl",
-              thinking && "animate-pulse",
-            )}
-          >
-            {avatar}
-          </span>
-          <span
-            className={cn(
-              "absolute -bottom-1.5 -right-1.5 grid h-6 w-6 place-items-center rounded-full border-2 border-ink text-[11px] font-extrabold",
-              // Text pairs per fill: white only reads on the dark fills; the
-              // orange fill takes constant night in BOTH themes (white-on-orange
-              // was illegible and the dark guard would flip it anyway).
-              color === "blue" && "bg-arcade-blue text-white",
-              color === "red" && "bg-arcade-red text-white",
-              color === "purple" && "bg-arcade-purple text-white",
-              color === "yellow" && "bg-arcade-orange text-night",
-            )}
-          >
-            {side === "Judge" ? "J" : side}
-          </span>
-        </div>
+        <span className={cn("shrink-0", thinking && "animate-pulse")}>
+          <BrandLogo brand={entry?.brand ?? ""} size={32} />
+        </span>
 
         <div className="min-w-0 flex-1">
           {/* Mobile: the fighter cards sit two-up in a narrow grid, so long
@@ -142,9 +117,6 @@ function AIModelCardComponent({
           </Badge>
         ) : null}
       </div>
-      {/* Role sentence is hidden on the cramped mobile two-up cards (it only
-          shows in the roomy lg+ side cards) so A/B cards don't balloon unevenly. */}
-      <p className="mt-2 hidden text-xs text-ink/60 lg:block">{role}</p>
     </motion.div>
   );
 }

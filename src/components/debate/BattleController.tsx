@@ -249,11 +249,6 @@ export function BattleController({
   const doneCostSummary =
     runner.phase === "done" ? session.costSummary : runner.costSummary;
 
-  const roles = useMemo(() => {
-    const r = session.mode === "debate" ? d.debate.roles.debate : d.debate.roles.discussion;
-    return { a: r.a, b: r.b };
-  }, [session.mode, d]);
-
   const statusFor = (speaker: "modelA" | "modelB"): ModelCardStatus => {
     if (runner.phase === "stopped") return "idle";
     if (runner.activeTurn?.speaker === speaker) {
@@ -347,8 +342,6 @@ export function BattleController({
   const cardA = (
     <AIModelCard
       model={session.modelA}
-      side="A"
-      role={roles.a}
       stance={session.mode === "debate" ? "pro" : undefined}
       status={statusFor("modelA")}
     />
@@ -356,8 +349,6 @@ export function BattleController({
   const cardB = (
     <AIModelCard
       model={session.modelB}
-      side="B"
-      role={roles.b}
       stance={session.mode === "debate" ? "against" : undefined}
       status={statusFor("modelB")}
     />

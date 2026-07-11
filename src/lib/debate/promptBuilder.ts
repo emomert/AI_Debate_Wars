@@ -207,20 +207,26 @@ export function lengthPreset(length: ResponseLength): LengthPreset {
   return LENGTH_PRESETS[length];
 }
 
-function speakerName(session: DebateSession, speaker: DebateMessage["speaker"]): string {
-  if (speaker === "modelA") return session.modelA.displayName;
-  if (speaker === "modelB") return session.modelB.displayName;
-  return "Judge";
-}
-
-/** Compact transcript of prior messages for context (full history; MVP). */
-function formatTranscript(session: DebateSession): string {
+/**
+ * Compact transcript of prior messages, written from the CURRENT speaker's point
+ * of view: their own past turns are "You", the other fighter is "Opponent". The
+ * fighter is NEVER told which model the opponent is — a fighter must argue the
+ * debate, not tailor itself to a known rival (and models were referencing each
+ * other by name when the real display names were shown here). Labels stay stable
+ * within one fighter's own turn sequence, so the cacheable prefix is unaffected
+ * (each model only shares a prompt cache with its OWN earlier turns).
+ */
+function formatTranscript(
+  session: DebateSession,
+  currentSpeaker: DebateMessage["speaker"],
+): string {
   if (session.messages.length === 0) {
     return "(No previous messages yet — this is the first turn.)";
   }
   return session.messages
     .map((m) => {
-      const who = speakerName(session, m.speaker);
+      const who =
+        m.speaker === "judge" ? "Judge" : m.speaker === currentSpeaker ? "You" : "Opponent";
       const stance = m.stance ? ` · ${m.stance}` : "";
       return `[Round ${m.roundNumber ?? "?"} · ${who} (${m.role}${stance})]\n${m.content}`;
     })
@@ -282,7 +288,6 @@ export function buildTurnPrompt(
   turn: DebateTurn,
   webSources?: Citation[],
 ): string {
-  const model = turn.speaker === "modelA" ? session.modelA : session.modelB;
   const emptySearch = webSources !== undefined && webSources.length === 0;
   // Deep Debate uses a fixed structured template; otherwise the chosen preset.
   const preset = session.deepDebate
@@ -303,11 +308,13 @@ export function buildTurnPrompt(
     ``,
     `Mode:\n${modeLabel}`,
     ``,
-    `Previous messages:\n${formatTranscript(session)}`,
+    `Previous messages:\n${formatTranscript(session, turn.speaker)}`,
     ``,
     // --- Per-turn instructions LAST (vary each turn; kept here so the prefix
     //     above stays identical across turns and the cache can reuse it). ---
-    `Your identity:\n${model.displayName} — ${turn.role}`,
+    // Identity-blind: the fighter is given its ROLE, never its own or the
+    // opponent's model name (see formatTranscript).
+    `Your role:\n${turn.role}`,
     ``,
     identityLine,
     ``,

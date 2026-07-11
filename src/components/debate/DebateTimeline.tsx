@@ -23,6 +23,8 @@ interface Identity {
   title: string;
   subtitle?: string;
   avatar: string;
+  /** Provider brand for the logo sticker (fighters only; the judge keeps ⚖️). */
+  brand?: string;
   color: ModelColor;
 }
 
@@ -31,6 +33,7 @@ function identityFor(speaker: Speaker, session: DebateSession, d: Dictionary): I
     return {
       title: session.modelA.displayName,
       avatar: getModelById(session.modelA.modelId)?.avatar ?? "🤖",
+      brand: getModelById(session.modelA.modelId)?.brand,
       color: session.modelA.color,
     };
   }
@@ -38,6 +41,7 @@ function identityFor(speaker: Speaker, session: DebateSession, d: Dictionary): I
     return {
       title: session.modelB.displayName,
       avatar: getModelById(session.modelB.modelId)?.avatar ?? "🐉",
+      brand: getModelById(session.modelB.modelId)?.brand,
       color: session.modelB.color,
     };
   }
@@ -93,6 +97,7 @@ export function DebateTimeline({
             title={id.title}
             subtitle={id.subtitle}
             avatar={id.avatar}
+            brand={id.brand}
             color={id.color}
             roundLabel={m.roundLabel}
             stance={m.stance}
@@ -129,6 +134,7 @@ export function DebateTimeline({
               title={id.title}
               subtitle={id.subtitle}
               avatar={id.avatar}
+              brand={id.brand}
               color={id.color}
               roundLabel={activeTurn.roundLabel}
               stance={activeTurn.stance}

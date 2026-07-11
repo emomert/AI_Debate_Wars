@@ -19,6 +19,7 @@ import type {
   TokenUsage,
 } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
+import { BrandLogo } from "@/components/report/BrandLogo";
 import { CostBadge } from "@/components/debate/CostBadge";
 import { MarkdownText } from "@/components/debate/MarkdownText";
 import { SourcesList } from "@/components/debate/SourcesList";
@@ -47,6 +48,8 @@ interface DebateMessageCardProps {
   title: string;
   subtitle?: string;
   avatar: string;
+  /** Provider brand for the logo sticker; when absent (the judge) the emoji shows. */
+  brand?: string;
   color: ModelColor;
   roundLabel?: string;
   stance?: Stance;
@@ -72,6 +75,7 @@ function DebateMessageCardComponent({
   title,
   subtitle,
   avatar,
+  brand,
   color,
   roundLabel,
   stance,
@@ -116,9 +120,13 @@ function DebateMessageCardComponent({
 
       <div className={cn("p-3 sm:p-4", isModelB ? "pr-4 sm:pr-5" : "pl-4 sm:pl-5")}>
         <header className="mb-2 flex flex-wrap items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-paper text-lg">
-            {avatar}
-          </span>
+          {brand ? (
+            <BrandLogo brand={brand} size={18} />
+          ) : (
+            <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-paper text-lg">
+              {avatar}
+            </span>
+          )}
           <div className="min-w-0">
             {/* Wraps on phones so long model names stay fully readable;
                 truncates from sm+ where the header row has room. */}
