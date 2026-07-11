@@ -80,9 +80,11 @@ export const result = {
     post: "X'te paylaş",
     instagram: "Instagram'da paylaş (önce başlık kopyalanır)",
     reddit: "Reddit'te paylaş",
-    linkCopied: "✅ Bağlantı kopyalandı",
-    copyLink: "🔗 Bağlantıyı kopyala",
+    linkCopied: "✅ Bağlantı kopyalandı!",
     shareMatch: "📄 Maçı paylaş",
+    sharing: "⏳ Bağlantı oluşturuluyor…",
+    shareMatchTitle:
+      "Münazaranın tamamı + kararla birlikte liste dışı bir sayfa oluşturur ve bağlantısını kopyalar",
     matchCopied: "✅ Maç kopyalandı!",
     // metin oluşturucular
     beat: (winner: string, loser: string) => `${winner}, ${loser} rakibini yendi`,

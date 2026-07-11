@@ -27,6 +27,7 @@ import { isDebateComplete } from "@/lib/debate/orchestrator";
 import { getModelById } from "@/lib/models/modelRegistry";
 import { encodeSharePayload, sharePayloadFromSession } from "@/lib/share/shareLink";
 import { buildMatchShareText } from "@/lib/share/matchText";
+import { publishMatch } from "@/lib/community/client";
 import { renderVerdictBlob } from "@/lib/share/verdictImage";
 import { playSound } from "@/lib/audio/soundManager";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -46,18 +47,21 @@ function modelDisplayName(id: string): string {
   return getModelById(id)?.displayName ?? id;
 }
 
-type Flash = "link" | "image" | "match" | null;
+type Flash = "image" | "matchLink" | "matchText" | null;
 
 /**
- * Both labels share one grid cell, so the button is always as wide as the
- * WIDER label — flipping to the "copied" state never reflows the row (owner
- * feedback: the button used to jump to the next line).
+ * Every label shares one grid cell, so the button is always as wide as the
+ * WIDEST label — flipping to a "copied"/"busy" state never reflows the row
+ * (owner feedback: the button used to jump to the next line).
  */
-function SwapLabel({ on, idle, done }: { on: boolean; idle: string; done: string }) {
+function ReservedLabel({ active, labels }: { active: string; labels: string[] }) {
   return (
     <span className="grid text-center">
-      <span className={cn("col-start-1 row-start-1", on && "invisible")}>{idle}</span>
-      <span className={cn("col-start-1 row-start-1", !on && "invisible")}>{done}</span>
+      {labels.map((l) => (
+        <span key={l} className={cn("col-start-1 row-start-1", l !== active && "invisible")}>
+          {l}
+        </span>
+      ))}
     </span>
   );
 }
@@ -75,6 +79,7 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
   const t = d.result.share;
   const [rejudgeOpen, setRejudgeOpen] = useState(false);
   const [flash, setFlash] = useState<Flash>(null);
+  const [sharingMatch, setSharingMatch] = useState(false);
 
   const nameA = session.modelA.displayName;
   const nameB = session.modelB.displayName;
@@ -116,29 +121,37 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
     window.setTimeout(() => setFlash((f) => (f === which ? null : f)), 2000);
   };
 
-  // Per-match share URL whose OG preview IS the verdict (auto-unfurls on social).
+  // Stateless verdict-preview URL — used by the X/Reddit intents, whose OG
+  // unfurl IS the verdict card.
   const shareUrl = () =>
     `${window.location.origin}/s?d=${encodeSharePayload(sharePayloadFromSession(shareSession))}`;
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl());
-      ping("link");
-    } catch {
-      /* ignore */
-    }
-  };
-
-  // Full transcript + verdict as plain text — works signed-out and unsaved.
-  // No URL appended: the stateless share URL is huge (base64 payload) and made
-  // the copied text look broken; "Copy link" is the link-shaped share.
+  // "Share match": publish an UNLISTED community copy (full transcript +
+  // verdict at /m/<id> — link-only, never listed publicly; republishing the
+  // same session updates the same post) and copy that short link. Signed-out /
+  // publish-rejected sessions fall back to copying the whole match as text so
+  // sharing still works.
   const shareMatch = async () => {
+    if (sharingMatch) return;
+    setSharingMatch(true);
     try {
-      const text = buildMatchShareText(shareSession, headline, judgeName, t.matchText);
-      await navigator.clipboard.writeText(text);
-      ping("match");
+      const res = await publishMatch(shareSession, {
+        visibility: "unlisted",
+        showModels: true,
+        includeVerdict: true,
+      });
+      await navigator.clipboard.writeText(`${window.location.origin}/m/${res.id}`);
+      ping("matchLink");
     } catch {
-      /* ignore */
+      try {
+        const text = buildMatchShareText(shareSession, headline, judgeName, t.matchText);
+        await navigator.clipboard.writeText(text);
+        ping("matchText");
+      } catch {
+        /* ignore */
+      }
+    } finally {
+      setSharingMatch(false);
     }
   };
 
@@ -345,16 +358,33 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
             >
               <RedditIcon className="h-5 w-5" />
             </button>
-            <ArcadeButton variant="neutral-white" size="sm" onClick={copyLink}>
-              <SwapLabel on={flash === "link"} idle={t.copyLink} done={t.linkCopied} />
-            </ArcadeButton>
             {supportsCopyImage ? (
               <ArcadeButton variant="neutral-white" size="sm" onClick={copyImage}>
-                <SwapLabel on={flash === "image"} idle={t.copyImage} done={t.copied} />
+                <ReservedLabel
+                  active={flash === "image" ? t.copied : t.copyImage}
+                  labels={[t.copyImage, t.copied]}
+                />
               </ArcadeButton>
             ) : null}
-            <ArcadeButton variant="neutral-white" size="sm" onClick={shareMatch}>
-              <SwapLabel on={flash === "match"} idle={t.shareMatch} done={t.matchCopied} />
+            <ArcadeButton
+              variant="neutral-white"
+              size="sm"
+              onClick={shareMatch}
+              disabled={sharingMatch}
+              title={t.shareMatchTitle}
+            >
+              <ReservedLabel
+                active={
+                  flash === "matchLink"
+                    ? t.linkCopied
+                    : flash === "matchText"
+                      ? t.matchCopied
+                      : sharingMatch
+                        ? t.sharing
+                        : t.shareMatch
+                }
+                labels={[t.shareMatch, t.sharing, t.linkCopied, t.matchCopied]}
+              />
             </ArcadeButton>
           </div>
         </div>

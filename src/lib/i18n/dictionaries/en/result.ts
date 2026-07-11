@@ -80,9 +80,11 @@ export const result = {
     post: "Share on X",
     instagram: "Share on Instagram (caption is copied first)",
     reddit: "Share on Reddit",
-    linkCopied: "✅ Link copied",
-    copyLink: "🔗 Copy link",
+    linkCopied: "✅ Link copied!",
     shareMatch: "📄 Share match",
+    sharing: "⏳ Creating link…",
+    shareMatchTitle:
+      "Creates an unlisted page with the full debate + verdict and copies its link",
     matchCopied: "✅ Match copied!",
     // text builders
     beat: (winner: string, loser: string) => `${winner} beat ${loser}`,
