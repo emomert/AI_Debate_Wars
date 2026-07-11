@@ -11,6 +11,7 @@ import { useState } from "react";
 import type { Citation } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
 import { cn } from "@/lib/utils/cn";
+import { isSafeHttpUrl } from "@/lib/utils/url";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 function domainOf(url: string): string {
@@ -61,20 +62,30 @@ export function SourcesList({
         <ol className="mt-2 space-y-2 rounded-card border-3 border-ink bg-surface p-3">
           {citations.map((c) => {
             const domain = domainOf(c.url);
+            // Only link when the URL is plain http(s). A citation can carry a
+            // hostile scheme (javascript:/data:) from a fighter's native web
+            // search or a forged published snapshot; React won't sanitize the
+            // href, so an unchecked link is stored script injection. Fall back
+            // to the title as plain text.
+            const safe = isSafeHttpUrl(c.url);
             return (
               <li key={`${c.index}-${c.url}`} className="flex gap-2 text-xs">
                 <span className="mt-0.5 shrink-0 rounded-[4px] border-2 border-ink bg-night px-1 font-mono text-[10px] font-bold text-arcade-yellow">
                   {c.index}
                 </span>
                 <div className="min-w-0">
-                  <a
-                    href={c.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-arcade-blue underline decoration-2 underline-offset-2 hover:text-arcade-purple"
-                  >
-                    {c.title}
-                  </a>
+                  {safe ? (
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-arcade-blue underline decoration-2 underline-offset-2 hover:text-arcade-purple"
+                    >
+                      {c.title}
+                    </a>
+                  ) : (
+                    <span className="font-semibold text-ink">{c.title}</span>
+                  )}
                   {domain ? (
                     <span className="ml-1.5 align-middle">
                       <Badge color="white" size="sm">

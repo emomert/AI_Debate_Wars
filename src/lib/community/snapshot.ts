@@ -12,8 +12,9 @@
  *    fighter that judged its own match.
  */
 
-import type { DebateSession, SelectedModel } from "@/lib/debate/debateTypes";
+import type { Citation, DebateSession, SelectedModel } from "@/lib/debate/debateTypes";
 import { getModelById } from "@/lib/models/modelRegistry";
+import { isSafeHttpUrl } from "@/lib/utils/url";
 import type {
   PublishOptions,
   SharedFighter,
@@ -83,13 +84,20 @@ export function buildSharedSnapshot(
 ): SharedSnapshot {
   const messages: SharedMessage[] = session.messages
     .filter((m) => m.status === "complete" && m.speaker !== "judge")
-    .map((m) => ({
-      speaker: m.speaker as "modelA" | "modelB",
-      roundLabel: m.roundLabel,
-      stance: m.stance,
-      content: m.content,
-      ...(m.citations && m.citations.length > 0 ? { citations: m.citations } : {}),
-    }));
+    .map((m) => {
+      // The session is client-submitted, so citation URLs are untrusted — drop
+      // any with a non-http(s) scheme before they're stored + rendered on the
+      // public /m/[id] page (a javascript:/data: href would be stored script
+      // injection otherwise).
+      const citations = (m.citations ?? []).filter((c: Citation) => isSafeHttpUrl(c.url));
+      return {
+        speaker: m.speaker as "modelA" | "modelB",
+        roundLabel: m.roundLabel,
+        stance: m.stance,
+        content: m.content,
+        ...(citations.length > 0 ? { citations } : {}),
+      };
+    });
 
   return {
     v: 1,

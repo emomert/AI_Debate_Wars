@@ -8,6 +8,7 @@ import "server-only";
 
 import type { Citation, TokenUsage } from "@/lib/debate/debateTypes";
 import { ProviderError, type AppErrorCode } from "@/lib/utils/errors";
+import { isSafeHttpUrl } from "@/lib/utils/url";
 
 interface ChatCallOptions {
   baseUrl: string;
@@ -58,7 +59,10 @@ function parseCitations(annotations: unknown): Citation[] | undefined {
   for (const raw of annotations as UrlCitationAnnotation[]) {
     const c = raw?.url_citation;
     const url = typeof c?.url === "string" ? c.url : "";
-    if (!url || seen.has(url)) continue;
+    // Native `:online` search is untrusted web content — drop any non-http(s)
+    // scheme at ingestion so a hostile javascript:/data: URL never becomes a
+    // Citation (defense-in-depth; the injected Brave path already pre-filters).
+    if (!url || !isSafeHttpUrl(url) || seen.has(url)) continue;
     seen.add(url);
     out.push({
       index: out.length + 1,
