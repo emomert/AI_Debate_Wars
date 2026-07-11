@@ -90,9 +90,16 @@ export function ModelSelector({
   const [activeBrand, setActiveBrand] = useState<string>(selected?.brand ?? "");
 
   // Which brands have their "show all models" list expanded (keyed by brand so
-  // the choice survives tile-hopping). A brand whose current pick is a non-
-  // recommended model is shown expanded regardless (see showRest below).
-  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
+  // the choice survives tile-hopping). Seeded with the selection's brand when
+  // the current pick is a non-recommended model, so a rehydrated pick is
+  // visible on arrival — but the user stays in control: the toggle never
+  // disappears, and "Show fewer" collapses the list even around the pick.
+  const [expandedBrands, setExpandedBrands] = useState<Set<string>>(
+    () =>
+      new Set(
+        selected && !RECOMMENDED_MODEL_IDS.has(selected.id) ? [selected.brand] : [],
+      ),
+  );
 
   // The selected model can change AFTER mount (config rehydrates from
   // sessionStorage a tick later), which would otherwise leave the provider grid
@@ -102,6 +109,17 @@ export function ModelSelector({
   useEffect(() => {
     if (!selected) return;
     setActiveBrand(selected.brand);
+    // A late-arriving non-recommended pick lives in the collapsed "rest" list —
+    // expand its brand once so the picked row is visible (still collapsible).
+    if (!RECOMMENDED_MODEL_IDS.has(selected.id)) {
+      const brand = selected.brand;
+      setExpandedBrands((prev) => {
+        if (prev.has(brand)) return prev;
+        const next = new Set(prev);
+        next.add(brand);
+        return next;
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
@@ -133,8 +151,7 @@ export function ModelSelector({
     recommendedModels = brandModels.slice(0, 1);
     restModels = brandModels.slice(1);
   }
-  const selectedInRest = !!selected && restModels.some((m) => m.id === selected.id);
-  const showRest = selectedInRest || expandedBrands.has(currentBrand);
+  const showRest = expandedBrands.has(currentBrand);
 
   const toggleBrandExpand = (brand: string) => {
     setExpandedBrands((prev) => {
@@ -212,27 +229,26 @@ export function ModelSelector({
 
         {restModels.length > 0 ? (
           <>
-            {/* Hide the toggle when the current pick is a non-recommended model:
-                the rest list is force-shown (showRest) so it can't be collapsed,
-                and a "Show fewer" button that does nothing would be a dead click. */}
-            {!selectedInRest ? (
-              <button
-                type="button"
-                aria-expanded={showRest}
-                onClick={() => {
-                  playSound(showRest ? "buttonClick" : "modeSelect");
-                  toggleBrandExpand(currentBrand);
-                }}
-                className={cn(
-                  "w-full rounded-btn border-3 border-dashed border-ink/40 bg-paper px-3 py-2 text-sm font-extrabold text-ink/70 transition",
-                  "hover:border-ink hover:text-ink focus-visible:outline-3 focus-visible:outline-offset-2",
-                )}
-              >
-                {showRest
-                  ? d.setup.models.showFewer
-                  : d.setup.models.showAll(brandModels.length)}
-              </button>
-            ) : null}
+            {/* The toggle is ALWAYS rendered — picking a model from the expanded
+                list must not make it vanish (owner feedback). "Show fewer" may
+                collapse the list around the current pick; the header still names
+                the selection, so nothing is lost. */}
+            <button
+              type="button"
+              aria-expanded={showRest}
+              onClick={() => {
+                playSound(showRest ? "buttonClick" : "modeSelect");
+                toggleBrandExpand(currentBrand);
+              }}
+              className={cn(
+                "w-full rounded-btn border-3 border-dashed border-ink/40 bg-paper px-3 py-2 text-sm font-extrabold text-ink/70 transition",
+                "hover:border-ink hover:text-ink focus-visible:outline-3 focus-visible:outline-offset-2",
+              )}
+            >
+              {showRest
+                ? d.setup.models.showFewer
+                : d.setup.models.showAll(brandModels.length)}
+            </button>
 
             <AnimatePresence initial={false}>
               {showRest ? (
