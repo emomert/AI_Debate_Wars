@@ -36,6 +36,7 @@ import {
 import { readJsonBody } from "@/lib/api/serverBody";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { recordMatchAnalytics } from "@/lib/analytics/recordMatch";
 import { buildSharePayload } from "@/lib/share/shareLink";
 import { signSharePayload } from "@/lib/share/signing";
 import {
@@ -168,6 +169,13 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     // Record the judge call's cost against the daily spend ledger.
     await recordSpend(req, cost.totalCost);
+
+    // Record the dimensions-only analytics card (no content) — best-effort, at
+    // the match-finalize point. Never fails the verdict.
+    await recordMatchAnalytics(session, {
+      judgeModelId,
+      verdictCost: cost.totalCost,
+    });
 
     const verdict: DebateVerdict = {
       id: createId("verdict"),
