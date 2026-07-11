@@ -69,18 +69,28 @@ function WelcomeInner() {
       // Record signup consent (P0-7): reaching /welcome means the user just
       // affirmed 13+ & Terms on the login form (the explicit checkbox for email
       // signup, or the consent notice for the magic-link / OAuth paths). Stamp it
-      // durably on the profile row. The payload sets ONLY the consent columns, so
-      // it never clobbers a handle/avatar chosen later in the fighter-card form.
-      // Log (don't swallow) a failed write so a dropped consent record is visible.
+      // durably in profile_consent — a PRIVATE own-rows-only table (migration
+      // 0008), NOT the world-readable profiles row. A bare profiles row is still
+      // upserted so "has a profile" checks (login/callback routing) and the
+      // community FK keep working; it never clobbers a handle/avatar chosen
+      // later in the fighter-card form. Log (don't swallow) failed writes so a
+      // dropped consent record is visible.
+      const now = new Date().toISOString();
       supabase
         .from("profiles")
+        .upsert({ user_id: data.user.id, updated_at: now }, { onConflict: "user_id" })
+        .then(({ error }) => {
+          if (error) console.error("[welcome] profile upsert failed:", error.message);
+        });
+      supabase
+        .from("profile_consent")
         .upsert(
           {
             user_id: data.user.id,
-            terms_accepted_at: new Date().toISOString(),
+            terms_accepted_at: now,
             age_confirmed: true,
             terms_version: TERMS_VERSION,
-            updated_at: new Date().toISOString(),
+            updated_at: now,
           },
           { onConflict: "user_id" },
         )
