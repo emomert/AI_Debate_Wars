@@ -1,21 +1,34 @@
 /**
  * GET /api/admin/analytics — owner-only. Authenticates via the cookie session,
  * checks the ADMIN_USER_IDS allowlist, and (for admins) reads the flat analytics
- * cards with the service-role key to bypass RLS, then returns the aggregated
- * dashboard. Non-admins get a 404 so the route's existence isn't revealed.
+ * cards with the service-role key to bypass RLS. Returns the RAW cards (newest
+ * first, capped) so the interactive dashboard can filter + re-aggregate in the
+ * browser without a round trip per filter — the cards are dimensions-only, so
+ * even a large set is small. Non-admins get a 404 so the route's existence
+ * isn't revealed.
  */
 import { NextResponse } from "next/server";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/admin";
 import { isAdminUserId } from "@/lib/admin/access";
-import { buildDashboard, type StoredMatchCard } from "@/lib/analytics/aggregate";
+import type { StoredMatchCard } from "@/lib/analytics/aggregate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const COLUMNS =
-  "app_session_id,user_id,mode,round_count,battle_count,deep_debate,tone,response_length,pace,language,model_a_id,model_b_id,judge_mode,judge_model_id,winner,score_a,score_b,match_cost,verdict_cost,created_at";
+  "app_session_id,user_id,mode,round_count,battle_count,deep_debate,tone,response_length,pace,language,model_a_id,model_b_id,judge_mode,judge_model_id,winner,score_a,score_b,match_cost,verdict_cost,cost_openai,cost_deepseek,cost_openrouter,cost_search,created_at";
+
+// Dimensions-only rows are ~300 bytes each; 20k ≈ a few MB — fine for an
+// owner-only page. Revisit (server-side aggregation / pagination) at scale.
+const MAX_CARDS = 20_000;
+
+export interface AdminAnalyticsResponse {
+  cards: StoredMatchCard[];
+  /** True when MAX_CARDS was hit — older matches are missing from the payload. */
+  truncated: boolean;
+}
 
 export async function GET(_req: Request): Promise<NextResponse> {
   const supabase = await getSupabaseServerClient();
@@ -35,10 +48,15 @@ export async function GET(_req: Request): Promise<NextResponse> {
     .from("match_analytics")
     .select(COLUMNS)
     .order("created_at", { ascending: false })
-    .limit(50_000);
+    .limit(MAX_CARDS);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(buildDashboard((rows ?? []) as StoredMatchCard[]));
+  const cards = (rows ?? []) as unknown as StoredMatchCard[];
+  const res: AdminAnalyticsResponse = {
+    cards,
+    truncated: cards.length >= MAX_CARDS,
+  };
+  return NextResponse.json(res);
 }

@@ -94,6 +94,53 @@ describe("buildMatchCard", () => {
     expect(card.score_b).toBeNull();
   });
 
+  it("splits cost per billed API key (backend from the catalog, search split out)", () => {
+    const card = buildMatchCard(
+      baseSession({
+        messages: [
+          // OpenRouter fighter turn with a Brave search fee folded in.
+          {
+            speaker: "modelA",
+            modelId: "x-ai/grok-4.5",
+            providerId: "openrouter",
+            status: "complete",
+            content: "x",
+            cost: { totalCost: 0.015, searchCost: 0.005, inputCost: 0, outputCost: 0, currency: "USD" },
+          },
+          // DeepSeek-direct fighter turn.
+          {
+            speaker: "modelB",
+            modelId: "deepseek-v4-pro",
+            providerId: "deepseek",
+            status: "complete",
+            content: "y",
+            cost: { totalCost: 0.02, inputCost: 0, outputCost: 0, currency: "USD" },
+          },
+          // Incomplete turn: never billed, must not count.
+          {
+            speaker: "modelA",
+            modelId: "x-ai/grok-4.5",
+            providerId: "openrouter",
+            status: "error",
+            content: "z",
+            cost: { totalCost: 99, inputCost: 0, outputCost: 0, currency: "USD" },
+          },
+        ],
+        // A previous judge call (re-judge flow) already paid on DeepSeek.
+        pastVerdicts: [
+          { judgeModelId: "deepseek-v4-flash", cost: { totalCost: 0.003, inputCost: 0, outputCost: 0, currency: "USD" } },
+        ],
+        verdict: undefined,
+      } as never),
+      // This verdict billed the OpenAI key.
+      { judgeModelId: "gpt-4.1-mini", verdictCost: 0.002, userId: null, winner: "modelA", scoreA: 60, scoreB: 40 },
+    );
+    expect(card.cost_openrouter).toBeCloseTo(0.01, 6); // 0.015 minus the search fee
+    expect(card.cost_search).toBeCloseTo(0.005, 6);
+    expect(card.cost_deepseek).toBeCloseTo(0.023, 6); // turn + past judge
+    expect(card.cost_openai).toBeCloseTo(0.002, 6); // this verdict
+  });
+
   it("records the outcome from opts even when the session carries no verdict (route call shape)", () => {
     const card = buildMatchCard(baseSession({ verdict: undefined }), {
       judgeModelId: "gpt-4.1-mini",
