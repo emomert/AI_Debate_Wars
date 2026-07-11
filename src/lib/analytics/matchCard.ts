@@ -30,9 +30,15 @@ export interface MatchCard {
 
 export function buildMatchCard(
   session: DebateSession,
-  opts: { judgeModelId: string; verdictCost: number; userId: string | null },
+  opts: {
+    judgeModelId: string;
+    verdictCost: number;
+    userId: string | null;
+    winner: string | null;
+    scoreA: number | null;
+    scoreB: number | null;
+  },
 ): MatchCard {
-  const v = session.verdict;
   return {
     app_session_id: session.id,
     user_id: opts.userId,
@@ -48,9 +54,9 @@ export function buildMatchCard(
     model_b_id: session.modelB.modelId,
     judge_mode: session.judge.mode,
     judge_model_id: opts.judgeModelId,
-    winner: v?.winner ?? null,
-    score_a: typeof v?.scoreModelA === "number" ? v.scoreModelA : null,
-    score_b: typeof v?.scoreModelB === "number" ? v.scoreModelB : null,
+    winner: opts.winner,
+    score_a: opts.scoreA,
+    score_b: opts.scoreB,
     match_cost: session.costSummary.totalCost,
     verdict_cost: opts.verdictCost,
   };

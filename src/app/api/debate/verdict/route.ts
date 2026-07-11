@@ -170,13 +170,6 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Record the judge call's cost against the daily spend ledger.
     await recordSpend(req, cost.totalCost);
 
-    // Record the dimensions-only analytics card (no content) — best-effort, at
-    // the match-finalize point. Never fails the verdict.
-    await recordMatchAnalytics(session, {
-      judgeModelId,
-      verdictCost: cost.totalCost,
-    });
-
     const verdict: DebateVerdict = {
       id: createId("verdict"),
       sessionId: session.id,
@@ -209,6 +202,16 @@ export async function POST(req: Request): Promise<NextResponse> {
       ),
     );
     if (signature) verdict.signature = signature;
+
+    // Record the dimensions-only analytics card (no content) at the finalize
+    // point — best-effort, uses the freshly-computed verdict. Never throws.
+    await recordMatchAnalytics(session, {
+      judgeModelId,
+      verdictCost: cost.totalCost,
+      winner: verdict.winner ?? null,
+      scoreA: typeof verdict.scoreModelA === "number" ? verdict.scoreModelA : null,
+      scoreB: typeof verdict.scoreModelB === "number" ? verdict.scoreModelB : null,
+    });
 
     const res: GenerateVerdictResponse = { verdict };
     return NextResponse.json(res);

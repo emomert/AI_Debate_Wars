@@ -36,6 +36,9 @@ describe("buildMatchCard", () => {
       judgeModelId: "gpt-4.1-mini",
       verdictCost: 0.002,
       userId: "user-9",
+      winner: "modelA",
+      scoreA: 60,
+      scoreB: 40,
     });
     expect(card).toMatchObject({
       app_session_id: "sess-1",
@@ -65,6 +68,9 @@ describe("buildMatchCard", () => {
       judgeModelId: "gpt-4.1-mini",
       verdictCost: 0.002,
       userId: null,
+      winner: "modelA",
+      scoreA: 60,
+      scoreB: 40,
     });
     const serialized = JSON.stringify(card);
     expect(serialized).not.toContain("SECRET TOPIC TEXT");
@@ -79,12 +85,26 @@ describe("buildMatchCard", () => {
   it("defaults battle_count/language and tolerates a missing verdict", () => {
     const card = buildMatchCard(
       baseSession({ battleCount: undefined, language: undefined, verdict: undefined }),
-      { judgeModelId: "gpt-4o-mini", verdictCost: 0, userId: null },
+      { judgeModelId: "gpt-4o-mini", verdictCost: 0, userId: null, winner: null, scoreA: null, scoreB: null },
     );
     expect(card.battle_count).toBe(1);
     expect(card.language).toBe("en");
     expect(card.winner).toBeNull();
     expect(card.score_a).toBeNull();
     expect(card.score_b).toBeNull();
+  });
+
+  it("records the outcome from opts even when the session carries no verdict (route call shape)", () => {
+    const card = buildMatchCard(baseSession({ verdict: undefined }), {
+      judgeModelId: "gpt-4.1-mini",
+      verdictCost: 0.002,
+      userId: "u1",
+      winner: "modelB",
+      scoreA: 45,
+      scoreB: 55,
+    });
+    expect(card.winner).toBe("modelB");
+    expect(card.score_a).toBe(45);
+    expect(card.score_b).toBe(55);
   });
 });

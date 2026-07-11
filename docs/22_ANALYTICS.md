@@ -13,6 +13,9 @@ writes ONE flat "card" per match to `public.match_analytics`. It stores
 - **Never stored:** the topic text, any message/transcript text, or the custom-
   tone wording. This is enforced by `matchCard.test.ts`.
 
+Each battle in a multi-battle match writes its own card, so match counts are
+per-battle, not per match-set.
+
 The user's own full-session history (`matches`, client-saved, RLS-locked to the
 owner) is a separate feature and is unchanged.
 

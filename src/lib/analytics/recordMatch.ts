@@ -14,7 +14,13 @@ import { buildMatchCard } from "@/lib/analytics/matchCard";
 
 export async function recordMatchAnalytics(
   session: DebateSession,
-  opts: { judgeModelId: string; verdictCost: number },
+  opts: {
+    judgeModelId: string;
+    verdictCost: number;
+    winner: string | null;
+    scoreA: number | null;
+    scoreB: number | null;
+  },
 ): Promise<void> {
   const admin = getSupabaseServiceRoleClient();
   if (!admin) return; // analytics disabled unless service-role configured

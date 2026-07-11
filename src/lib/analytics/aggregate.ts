@@ -77,13 +77,14 @@ export function buildDashboard(cards: StoredMatchCard[]): DashboardData {
     .sort((a, b) => a.day.localeCompare(b.day));
 
   // Fighters appear in either slot — count both.
-  const fighters = tally(
-    cards.flatMap((c) => [
-      { ...c, __k: c.model_a_id },
-      { ...c, __k: c.model_b_id },
-    ]) as unknown as StoredMatchCard[],
-    (c) => (c as unknown as { __k: string }).__k,
-  );
+  const fighterCounts = new Map<string, number>();
+  for (const c of cards) {
+    fighterCounts.set(c.model_a_id, (fighterCounts.get(c.model_a_id) ?? 0) + 1);
+    fighterCounts.set(c.model_b_id, (fighterCounts.get(c.model_b_id) ?? 0) + 1);
+  }
+  const topFighters: Tally[] = [...fighterCounts.entries()]
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count);
 
   return {
     overview: {
@@ -94,7 +95,7 @@ export function buildDashboard(cards: StoredMatchCard[]): DashboardData {
       avgRounds: matches ? totalRounds / matches : 0,
     },
     perDay,
-    topFighters: fighters,
+    topFighters,
     topJudges: tally(cards, (c) => c.judge_model_id),
     judgeModes: tally(cards, (c) => c.judge_mode),
     winners: tally(cards, (c) => c.winner ?? "none"),

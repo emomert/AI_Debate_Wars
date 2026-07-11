@@ -80,6 +80,7 @@ export function AdminDashboard() {
   if (!data) return <p className="p-6 text-sm text-ink/60">Loading analytics…</p>;
 
   const o = data.overview;
+  const perDayMax = data.perDay.reduce((m, x) => Math.max(m, x.count), 0) || 1;
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-6">
       <h1 className="mb-4 font-heading text-2xl font-extrabold uppercase">Match Analytics</h1>
@@ -97,6 +98,7 @@ export function AdminDashboard() {
         <BarList title="Judge models used" rows={data.topJudges} labelOf={modelName} />
         <BarList title="Judge selection" rows={data.judgeModes} labelOf={(k) => JUDGE_MODE_LABEL[k] ?? k} />
         <BarList title="Winners" rows={data.winners} />
+        <BarList title="Match mode" rows={data.modes} />
         <BarList title="Tone" rows={data.tones} />
         <BarList title="Response length" rows={data.lengths} />
       </div>
@@ -110,13 +112,12 @@ export function AdminDashboard() {
         ) : (
           <div className="flex items-end gap-1 overflow-x-auto" style={{ height: 120 }}>
             {data.perDay.map((p) => {
-              const max = data.perDay.reduce((m, x) => Math.max(m, x.count), 0) || 1;
               return (
                 <div
                   key={p.day}
                   title={`${p.day}: ${p.count} matches · ${formatCost(p.cost)}`}
                   className="w-3 shrink-0 rounded-t border-2 border-ink bg-arcade-purple"
-                  style={{ height: `${Math.max(4, Math.round((p.count / max) * 110))}px` }}
+                  style={{ height: `${Math.max(4, Math.round((p.count / perDayMax) * 110))}px` }}
                 />
               );
             })}

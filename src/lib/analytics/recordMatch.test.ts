@@ -26,7 +26,7 @@ const session = {
 describe("recordMatchAnalytics", () => {
   it("no-ops and never throws when the service-role key is unconfigured", async () => {
     await expect(
-      recordMatchAnalytics(session, { judgeModelId: "j", verdictCost: 0.002 }),
+      recordMatchAnalytics(session, { judgeModelId: "j", verdictCost: 0.002, winner: "modelA", scoreA: 60, scoreB: 40 }),
     ).resolves.toBeUndefined();
   });
 });
