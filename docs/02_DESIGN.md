@@ -367,11 +367,10 @@ Large final result card.
 Should include:
 
 - winner or stronger side
-- summary
-- score breakdown
-- strongest arguments
-- weakest arguments
-- practical conclusion
+- winning argument + winner-leaning reasoning
+- score breakdown — ONE center-zero "tug-of-war" bar (0/tie at the middle;
+  fill pulls left toward Fighter A or right toward Fighter B by
+  winner-score − 50, capped at ±50)
 
 Visual style:
 
@@ -438,7 +437,6 @@ Show:
 - debate complete badge
 - winner/verdict
 - summary
-- strongest arguments
 - cost summary
 - restart/share buttons
 

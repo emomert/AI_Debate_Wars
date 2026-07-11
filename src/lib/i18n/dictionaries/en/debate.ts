@@ -215,11 +215,6 @@ export const debate = {
     pro: "PRO",
     against: "AGAINST",
   },
-  // Displayed fighter roles (the English ones still flow to prompts via MODE_OPTIONS)
-  roles: {
-    debate: { a: "Pro side", b: "Against side" },
-    discussion: { a: "Supportive Strategist", b: "Critical Evaluator" },
-  },
 
   // CostBadge
   cost: {

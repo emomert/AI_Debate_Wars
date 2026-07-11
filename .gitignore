@@ -33,3 +33,7 @@ next-env.d.ts.bak
 
 # Windows crash dumps
 *.stackdump
+
+# agent session scratch (subagent-run ledgers, memory buffers)
+.superpowers/
+.remember/

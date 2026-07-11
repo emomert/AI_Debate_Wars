@@ -44,7 +44,7 @@ Users want to evaluate ideas, compare AI models, or explore both sides of an arg
 
 - Options: no judge, **auto** (a neutral, cheap-but-capable model is selected automatically), or a user-picked **third model**.
 - Using fighter A or B as judge was removed from the UI for neutrality (types remain for backward compatibility).
-- The judge evaluates the transcript **blind** (model names hidden) and returns a decisive verdict: winner, 0–100 scores, reasoning, strongest/weakest arguments per side.
+- The judge evaluates the transcript **blind** (model names hidden) and returns a decisive verdict: winner, 0–100 scores (shown as a single center-zero tug-of-war bar), the decisive winning argument, and winner-leaning reasoning. (Strongest/weakest per side were retired July 2026.)
 - The judge can be changed and the match re-judged from the result screen.
 
 ### Live Debate Page

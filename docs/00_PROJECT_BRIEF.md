@@ -69,7 +69,7 @@ With Deep Debate enabled, fighters search the web and cite sources, turning the 
 
 ### 4. Get a verdict
 
-With the judge enabled, a neutral model evaluates the transcript blind (no model names) and produces a decisive verdict: winner, scores, strongest and weakest arguments, and reasoning. The verdict can be shared as an auto-unfurling link with a generated image.
+The judge (a neutral model, mandatory since July 2026) evaluates the transcript blind (no model names) and produces a decisive verdict: winner, a 0–100 score split rendered as a center-zero tug-of-war bar, the single most decisive winning argument, and winner-leaning reasoning. The verdict can be shared as an auto-unfurling link with a generated image.
 
 ## Product Positioning
 

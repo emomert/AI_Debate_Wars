@@ -215,11 +215,6 @@ export const debate = {
     pro: "LEHTE",
     against: "ALEYHTE",
   },
-  // Displayed fighter roles (the English ones still flow to prompts via MODE_OPTIONS)
-  roles: {
-    debate: { a: "Lehte taraf", b: "Aleyhte taraf" },
-    discussion: { a: "Destekleyici Stratejist", b: "Eleştirel Değerlendirici" },
-  },
 
   // CostBadge
   cost: {

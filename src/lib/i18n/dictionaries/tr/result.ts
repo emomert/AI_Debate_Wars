@@ -52,8 +52,6 @@ export const result = {
     discussionComplete: "Tartışma tamamlandı",
     winningArgument: "💥 Kazanan argüman: ",
     whyThis: "⚖️ Neden bu karar",
-    strongest: (name: string) => `${name} en güçlü`,
-    weakest: (name: string) => `${name} en zayıf`,
   },
 
   // FinalSummaryCard

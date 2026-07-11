@@ -52,8 +52,6 @@ export const result = {
     discussionComplete: "Discussion complete",
     winningArgument: "💥 Winning argument: ",
     whyThis: "⚖️ Why this verdict",
-    strongest: (name: string) => `${name} strongest`,
-    weakest: (name: string) => `${name} weakest`,
   },
 
   // FinalSummaryCard
