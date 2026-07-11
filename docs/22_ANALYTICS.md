@@ -54,6 +54,11 @@ every interaction is instant:
   Brave search) and a stacked per-day spend chart (hover for exact figures).
 - **Matches per day** chart, most-used fighters, most-winning models, and a
   recent-matches table (time, pairing, judge, winner, cost).
+- **API errors panel**: the paid routes (turn / verdict / topic / tts) log
+  failures to `api_errors` (migration 0011; deny-all RLS, service-role only) —
+  route, normalized error code, model, backend, truncated server message. No
+  topics/transcripts/prompts. The panel shows counts by code + recent rows so
+  recurring failures (e.g. a model that keeps timing out) are visible.
 
 ## Known limitation
 

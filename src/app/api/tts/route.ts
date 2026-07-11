@@ -15,6 +15,7 @@
 import { NextResponse } from "next/server";
 
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { recordApiError } from "@/lib/analytics/errorLog";
 import {
   isServerTtsConfigured,
   synthesizeSpeech,
@@ -106,6 +107,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       },
     });
   } catch (err) {
+    await recordApiError("tts", err); // owner error log (TTS model isn't in the catalog)
     const appErr = toAppError(err);
     const errorBody: ApiErrorBody = { error: appErr };
     return NextResponse.json(errorBody, { status: httpStatusForCode(appErr.code) });

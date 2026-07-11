@@ -13,6 +13,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/admin";
 import { isAdminUserId } from "@/lib/admin/access";
 import type { StoredMatchCard } from "@/lib/analytics/aggregate";
+import type { ApiErrorRow } from "@/lib/analytics/errorLog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,10 +25,14 @@ const COLUMNS =
 // owner-only page. Revisit (server-side aggregation / pagination) at scale.
 const MAX_CARDS = 20_000;
 
+// Recent API errors shown on the dashboard (spot recurring failures).
+const MAX_ERRORS = 300;
+
 export interface AdminAnalyticsResponse {
   cards: StoredMatchCard[];
   /** True when MAX_CARDS was hit — older matches are missing from the payload. */
   truncated: boolean;
+  errors: ApiErrorRow[];
 }
 
 export async function GET(_req: Request): Promise<NextResponse> {
@@ -44,19 +49,28 @@ export async function GET(_req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "analytics-unconfigured" }, { status: 503 });
   }
 
-  const { data: rows, error } = await admin
-    .from("match_analytics")
-    .select(COLUMNS)
-    .order("created_at", { ascending: false })
-    .limit(MAX_CARDS);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const [cardsRes, errorsRes] = await Promise.all([
+    admin
+      .from("match_analytics")
+      .select(COLUMNS)
+      .order("created_at", { ascending: false })
+      .limit(MAX_CARDS),
+    admin
+      .from("api_errors")
+      .select("route,code,message,model_id,provider,status,created_at")
+      .order("created_at", { ascending: false })
+      .limit(MAX_ERRORS),
+  ]);
+  if (cardsRes.error) {
+    return NextResponse.json({ error: cardsRes.error.message }, { status: 500 });
   }
+  if (errorsRes.error) console.error("[admin] error-log read failed:", errorsRes.error.message);
 
-  const cards = (rows ?? []) as unknown as StoredMatchCard[];
+  const cards = (cardsRes.data ?? []) as unknown as StoredMatchCard[];
   const res: AdminAnalyticsResponse = {
     cards,
     truncated: cards.length >= MAX_CARDS,
+    errors: (errorsRes.data ?? []) as unknown as ApiErrorRow[],
   };
   return NextResponse.json(res);
 }

@@ -15,11 +15,18 @@ import { cn } from "@/lib/utils/cn";
 import type { DebatePace, SessionCostSummary } from "@/lib/debate/debateTypes";
 import type { RunnerPhase } from "@/lib/debate/useDebateRunner";
 import { RoundCounter } from "@/components/debate/RoundCounter";
-import { Badge } from "@/components/game/Badge";
 import { formatCost, formatTokens } from "@/lib/utils/format";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { VOICE_ENABLED } from "@/lib/tts/config";
+
+/**
+ * One shared metric set for EVERY chip on this bar (round pill, tone, length,
+ * pace/voice/skip buttons) — they were four slightly different sizes (owner
+ * feedback). Sized to the former pace-button look.
+ */
+export const HUD_CHIP =
+  "inline-flex items-center gap-1 rounded-badge border-3 border-ink px-2 py-1 text-[11px] font-heading font-extrabold uppercase tracking-wide leading-none";
 
 interface DebateHUDProps {
   currentRound: number;
@@ -74,29 +81,34 @@ function DebateHUDComponent({
   }, []);
 
   // top offset = compact header height (52px). Kept tight: this bar plus the
-  // header are sticky and were eating too much reading space.
+  // header are sticky and were eating too much reading space. FULL-BLEED: the
+  // margin pulls the bar's background + border out to the viewport edges (so it
+  // aligns with the full-width sticky header above it instead of stopping at
+  // the content box), and the padding pushes the chips back to the content
+  // edge. body{overflow-x:clip} absorbs the scrollbar-width overshoot of 50vw.
   return (
     <div
       className={cn(
-        "sticky top-[52px] z-20 -mx-4 border-b-4 border-ink px-4 py-1.5 transition-colors duration-200",
+        "sticky top-[52px] z-20 mx-[calc(50%-50vw)] border-b-4 border-ink px-[calc(50vw-50%)] py-1.5 transition-colors duration-200",
         scrolled ? "bg-paper/90 backdrop-blur" : "bg-transparent",
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <RoundCounter roundNumber={currentRound} totalRounds={totalRounds} />
-          <Badge color="white" size="sm" className="max-w-[12rem] truncate">
+          <span className={cn(HUD_CHIP, "max-w-[12rem] truncate bg-surface text-ink")}>
             {toneText}
-          </Badge>
-          <Badge color="white" size="sm">
-            {formatText}
-          </Badge>
+          </span>
+          <span className={cn(HUD_CHIP, "bg-surface text-ink")}>{formatText}</span>
           {live ? (
             <button
               type="button"
               onClick={onTogglePace}
               aria-label={d.debate.hud.paceLabel(pace)}
-              className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
+              className={cn(
+                HUD_CHIP,
+                "bg-surface transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2",
+              )}
             >
               {pace === "auto" ? d.debate.hud.paceSwitchNormal : d.debate.hud.paceSwitchFast}
             </button>
@@ -108,7 +120,8 @@ function DebateHUDComponent({
               aria-pressed={voiceEnabled}
               aria-label={d.debate.voice.toggleLabel(voiceEnabled)}
               className={cn(
-                "inline-flex items-center gap-1 rounded-badge border-3 border-ink px-2 py-1 text-[11px] font-extrabold uppercase transition focus-visible:outline-3 focus-visible:outline-offset-2",
+                HUD_CHIP,
+                "transition focus-visible:outline-3 focus-visible:outline-offset-2",
                 voiceEnabled
                   ? "bg-arcade-green text-night"
                   : "bg-surface hover:bg-arcade-yellow hover:text-night",
@@ -122,7 +135,10 @@ function DebateHUDComponent({
               type="button"
               onClick={onSkip}
               aria-label={d.debate.voice.skipLabel}
-              className="inline-flex items-center gap-1 rounded-badge border-3 border-ink bg-surface px-2 py-1 text-[11px] font-extrabold uppercase transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2"
+              className={cn(
+                HUD_CHIP,
+                "bg-surface transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2",
+              )}
             >
               {d.debate.voice.skip}
             </button>

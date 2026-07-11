@@ -23,7 +23,9 @@ export function RoundCounter({ roundNumber, totalRounds }: RoundCounterProps) {
       initial={{ scale: 0.9, opacity: 0.6 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      className="inline-flex items-center gap-1.5 rounded-btn border-3 border-ink bg-night px-2 py-0.5 font-mono text-xs font-bold text-arcade-yellow"
+      // Metrics match HUD_CHIP (DebateHUD) so every chip on the bar is the same
+      // size; keeps its mono/night/yellow identity.
+      className="inline-flex items-center gap-1.5 rounded-badge border-3 border-ink bg-night px-2 py-1 font-mono text-[11px] font-bold leading-none text-arcade-yellow"
     >
       {d.debate.round.counter(Math.min(roundNumber, totalRounds), totalRounds)}
     </motion.div>

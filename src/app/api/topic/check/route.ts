@@ -25,6 +25,7 @@ import {
   type Backend,
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
+import { recordApiError } from "@/lib/analytics/errorLog";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
 import { moderateText } from "@/lib/moderation/moderate";
 import {
@@ -66,6 +67,8 @@ function resolveTopicCheckModel(): { providerId: Backend; modelId: string } {
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
+  // Which checker model the failed call targeted — read by the catch's error log.
+  let errModelId: string | undefined;
   try {
     await enforceLimits(req, "topic");
     const deadlineMs = Date.now() + 25_000;
@@ -100,6 +103,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     const { providerId, modelId } = resolveTopicCheckModel();
+    errModelId = modelId;
     const modelConfig = getProviderModelConfig(modelId);
     const provider = getProvider(providerId);
 
@@ -135,6 +139,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const res: TopicCheckResponse = { result: parseTopicCheck(result.content, topic) };
     return NextResponse.json(res);
   } catch (err) {
+    await recordApiError("topic", err, { modelId: errModelId }); // owner error log
     const appErr = toAppError(err);
     const errorBody: ApiErrorBody = { error: appErr };
     return NextResponse.json(errorBody, { status: httpStatusForCode(appErr.code) });

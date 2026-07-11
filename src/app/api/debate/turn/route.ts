@@ -45,6 +45,7 @@ import {
   injectedSearchCostUsd,
 } from "@/lib/search/searchRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
+import { recordApiError } from "@/lib/analytics/errorLog";
 import {
   enforceLimits,
   enforceSearchBudget,
@@ -77,6 +78,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: Request): Promise<NextResponse> {
+  // Which model the failed call targeted — set once resolved, read by the
+  // error log in the catch (owner dashboard: spot models that keep failing).
+  let errModelId: string | undefined;
   try {
     // Cost/abuse guard FIRST: cheaply reject floods + enforce the daily spend
     // cap before doing any paid work (rate limit + spend caps, per IP).
@@ -116,6 +120,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     await assertTopicAllowed(session.topic, req.signal);
 
     const model = speakerModel(session, turn.speaker);
+    errModelId = model.modelId;
     const modelConfig = getProviderModelConfig(model.modelId);
     const provider = getProvider(modelConfig.providerId);
 
@@ -257,6 +262,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const res: GenerateTurnResponse = { message };
     return NextResponse.json(res);
   } catch (err) {
+    await recordApiError("turn", err, { modelId: errModelId }); // owner error log
     const appErr = toAppError(err);
     const errorBody: ApiErrorBody = { error: appErr };
     return NextResponse.json(errorBody, { status: httpStatusForCode(appErr.code) });

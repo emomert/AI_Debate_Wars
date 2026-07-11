@@ -79,6 +79,11 @@ html[lang="tr"] .font-display {
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* The page never scrolls horizontally. `clip` (not `hidden`) so ancestors
+       don't become scroll containers — position:sticky keeps working. Also
+       absorbs the ~scrollbar-width overshoot of full-bleed 50vw elements
+       (e.g. the debate HUD bar). */
+    overflow-x: clip;
   }
 
   /* Visible, arcade-friendly focus ring for keyboard users (accessibility). */

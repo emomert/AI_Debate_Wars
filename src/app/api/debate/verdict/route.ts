@@ -34,6 +34,7 @@ import {
   getProviderModelConfig,
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
+import { recordApiError } from "@/lib/analytics/errorLog";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
 import { recordMatchAnalytics } from "@/lib/analytics/recordMatch";
@@ -83,6 +84,8 @@ function resolveJudgeModelId(session: DebateSession): string {
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
+  // Which judge the failed call targeted — read by the error log in the catch.
+  let errModelId: string | undefined;
   try {
     await enforceLimits(req, "verdict"); // cost/abuse guard before any paid work
     const deadlineMs = Date.now() + 55_000; // stay under Vercel maxDuration=60
@@ -110,6 +113,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     await assertTopicAllowed(session.topic, req.signal);
 
     const judgeModelId = resolveJudgeModelId(session);
+    errModelId = judgeModelId;
     const modelConfig = getProviderModelConfig(judgeModelId);
     const provider = getProvider(modelConfig.providerId);
 
@@ -221,6 +225,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const res: GenerateVerdictResponse = { verdict };
     return NextResponse.json(res);
   } catch (err) {
+    await recordApiError("verdict", err, { modelId: errModelId }); // owner error log
     const appErr = toAppError(err);
     const errorBody: ApiErrorBody = { error: appErr };
     return NextResponse.json(errorBody, { status: httpStatusForCode(appErr.code) });
