@@ -75,7 +75,6 @@ export const result = {
 
   // Share row inside the VerdictCard
   share: {
-    label: "📣 Share",
     copied: "✅ Copied!",
     copyImage: "🖼️ Copy image",
     post: "Share on X",

@@ -75,7 +75,6 @@ export const result = {
 
   // VerdictCard içindeki paylaşım satırı
   share: {
-    label: "📣 Paylaş",
     copied: "✅ Kopyalandı!",
     copyImage: "🖼️ Görseli kopyala",
     post: "X'te paylaş",

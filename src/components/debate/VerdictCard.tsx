@@ -316,9 +316,6 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
           ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="font-heading text-xs font-extrabold uppercase tracking-wide text-ink/45">
-              {t.label}
-            </span>
             <button
               type="button"
               onClick={() => openShare("x")}
