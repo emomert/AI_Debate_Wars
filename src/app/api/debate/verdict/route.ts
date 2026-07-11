@@ -115,10 +115,12 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const systemPrompt = JUDGE_SYSTEM_PROMPT;
     const userPrompt = buildJudgePrompt(session);
-    // Reasoning models spend part of this budget on hidden thinking before the
-    // JSON comes out — 1000 was getting verdicts cut off mid-JSON (the parser
-    // now salvages truncation, but a full verdict beats a repaired one).
-    const maxOutputTokens = Math.min(1600, modelConfig.maxOutputTokens);
+    // The judge's VISIBLE budget (each provider adds its own hidden-thinking
+    // headroom on top — +1300/+2000/+2500 by backend). 1000 was getting verdicts
+    // cut off mid-JSON when a judge's uncapped thinking ate the whole budget;
+    // this is a ceiling, not a target, so generous costs nothing when the JSON
+    // is done in ~400 tokens. The parser additionally salvages any truncation.
+    const maxOutputTokens = Math.min(2500, modelConfig.maxOutputTokens);
 
     const result = await generateWithRetry(
       provider,
