@@ -67,6 +67,8 @@ The AI models only generate individual turn responses based on strict prompts. T
 - `src/lib/cost/` — pricing table (`pricing.ts`) and cost calculation
 - `src/lib/search/` — injected web search (Brave) behind a search-provider interface
 - `src/lib/supabase/` — auth clients, match persistence, stats
+- `src/lib/analytics/` — dimensions-only match "cards" (no content): builder, pure aggregation, server writer (service-role)
+- `src/lib/admin/access.ts` — `ADMIN_USER_IDS` allowlist gate for `/admin`
 - `src/lib/community/` — shared-match types, publish-time snapshot sanitizer, profile presets, community API client
 - `src/lib/security/rateLimit.ts` — rate limits, daily spend caps, trusted client IP, and the Brave search-count cap
 - `src/lib/moderation/` — OpenAI `omni-moderation` gate (topics + published transcripts), fail-open
@@ -103,6 +105,7 @@ Moderation: OFF by default; `MODERATION_ENABLED=true` (plus `OPENAI_API_KEY`) en
 Sharing: `SHARE_SECRET` — HMAC key for signing share verdicts. Unset = signing dormant (shares render normally, never falsely "verified"). **Set a strong random value in prod to activate verification.**
 Voice: `TTS_PROVIDER` (`none` disables; otherwise on whenever `OPENAI_API_KEY` is set), `TTS_OPENAI_MODEL` (default `gpt-4o-mini-tts`), `TTS_SPEED` (0.25–4.0, default 1.3), `TTS_COST_USD_PER_1M` (price override), `RL_TTS_PER_MIN`.
 Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Admin/migrations (server-only, never client): `SUPABASE_DB_URL`.
+Analytics/admin (server-only): `SUPABASE_SERVICE_ROLE_KEY` (enables the dimensions-only match-analytics writer + admin dashboard; never expose to the client), `ADMIN_USER_IDS` (comma-separated Supabase user ids allowed to view `/admin`).
 Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `RL_REPORT_PER_MIN`, `RL_OG_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
 
 ## Development Workflow

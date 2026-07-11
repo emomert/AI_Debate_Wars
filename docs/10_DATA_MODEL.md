@@ -35,6 +35,7 @@ One row per saved match: `id, user_id, app_session_id, topic, mode, round_count,
 - `session` stores the full `DebateSession` snapshot so the schema doesn't churn as types evolve; reopening rehydrates it into `ArenaContext`.
 - Promoted columns power the history list and stats without parsing blobs; `computeStats(rows)` derives totals, win counts, top fighter, mode split, Deep Debate usage.
 - RLS: a user reads/writes only their own rows; size caps mirror the server validators.
+- `match_analytics` — one dimensions-only row per finished match (no topic/transcript/custom-tone text), written server-side at verdict time via the service-role key; deny-all RLS. Powers the owner-only `/admin` dashboard. See `docs/22_ANALYTICS.md`.
 
 ### `shared_matches`, `shared_match_votes`, `shared_match_comments`
 
