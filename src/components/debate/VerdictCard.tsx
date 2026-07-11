@@ -28,27 +28,6 @@ function judgeDisplayName(id: string): string {
   return getModelById(id)?.displayName ?? id;
 }
 
-function Insight({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value?: string;
-  tone: "good" | "risk";
-}) {
-  if (!value) return null;
-  return (
-    <li className="rounded-card border-3 border-ink bg-surface p-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-        {tone === "good" ? "💪 " : "⚠️ "}
-        {label}
-      </p>
-      <p className="mt-0.5 text-sm">{value}</p>
-    </li>
-  );
-}
-
 export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
   const reduce = useReducedMotion();
   const d = useT();
@@ -117,13 +96,6 @@ export function VerdictCard({ verdict, modelA, modelB }: VerdictCardProps) {
             />
           </div>
         ) : null}
-
-        <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Insight label={d.result.verdict.strongest(modelA.displayName)} value={verdict.strongestModelA} tone="good" />
-          <Insight label={d.result.verdict.strongest(modelB.displayName)} value={verdict.strongestModelB} tone="good" />
-          <Insight label={d.result.verdict.weakest(modelA.displayName)} value={verdict.weakestModelA} tone="risk" />
-          <Insight label={d.result.verdict.weakest(modelB.displayName)} value={verdict.weakestModelB} tone="risk" />
-        </ul>
 
         {COST_UI_ENABLED ? (
           <div className="mt-4">

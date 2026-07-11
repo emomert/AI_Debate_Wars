@@ -25,7 +25,7 @@ Each model must behave like a participant in a structured debate, not a generic 
 ## System Prompts
 
 - **Debate:** argue from the assigned side even when seeing merit in the other; acknowledge valid concerns without collapsing into agreement; respond only for the current turn; never write the opponent's response, ask to continue, or reveal internal mechanics.
-- **Judge:** evaluate **blind** — model names are hidden from the judge. Summarize fairly, identify strongest/weakest arguments per side, score both sides 0–100, and pick a winner decisively (verdicts are intentionally winner-leaning; ties are discouraged). Output is structured for `verdictParser.ts`.
+- **Judge:** evaluate **blind** — model names are hidden from the judge. Score both sides 0–100, pick a winner decisively (verdicts are intentionally winner-leaning; ties are discouraged), and justify it in 4–6 sentences plus the single most decisive winning argument. Output is strict JSON for `verdictParser.ts`, which also salvages truncated responses (reasoning models can burn the token budget on hidden thinking). Strongest/weakest per side were retired from the prompt + UI (July 2026); the parser still reads them from legacy verdicts.
 - **Discussion (legacy, hidden):** improve/challenge the idea from the assigned perspective; kept in code for backward compatibility.
 
 ## Tones

@@ -23,7 +23,7 @@ Generates exactly one AI turn.
 
 Generates the judge verdict, only after the debate is complete.
 
-- Resolves the judge (auto / third model), builds a blind judge prompt from the transcript, parses the response into a structured `DebateVerdict` (winner, 0–100 scores, reasoning, strongest/weakest arguments).
+- Resolves the judge (auto / third model), builds a blind judge prompt from the transcript, parses the response into a structured `DebateVerdict` (winner, 0–100 scores, winner-leaning reasoning; the parser salvages truncated JSON and never surfaces raw JSON text). Strongest/weakest fields are legacy-only (no longer requested).
 - Rate-limited and spend-capped like `/turn`. `maxDuration = 60`.
 
 ### POST `/api/topic/check`

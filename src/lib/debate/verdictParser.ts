@@ -40,6 +40,68 @@ function extractJsonObject(text: string): Record<string, unknown> {
   }
 }
 
+/**
+ * Salvage fields from TRUNCATED / malformed judge output. Reasoning models can
+ * burn their token budget on hidden thinking and get cut off mid-JSON — strict
+ * parsing then fails and (before this) the UI fell back to showing the raw JSON
+ * text itself. Field-level regexes recover whatever keys made it out intact,
+ * including a string value cut off before its closing quote.
+ */
+function looseExtractFields(text: string): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const strField = (key: string): string | undefined => {
+    // Capture escaped-char-tolerant string content up to the closing quote OR
+    // the end of the (truncated) text.
+    const m = text.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)`));
+    if (!m) return undefined;
+    // Unescape via JSON.parse; a truncation can leave a dangling backslash.
+    const captured = m[1].replace(/\\$/, "");
+    try {
+      return JSON.parse(`"${captured}"`) as string;
+    } catch {
+      return captured;
+    }
+  };
+  const numField = (key: string): number | undefined => {
+    const m = text.match(new RegExp(`"${key}"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`));
+    return m ? parseFloat(m[1]) : undefined;
+  };
+  for (const key of [
+    "winner",
+    "winnerArgument",
+    "reasoning",
+    "summary",
+    "strongestModelA",
+    "strongestModelB",
+    "weakestModelA",
+    "weakestModelB",
+  ]) {
+    const v = strField(key);
+    if (v !== undefined) out[key] = v;
+  }
+  for (const key of ["scoreModelA", "scoreModelB"]) {
+    const v = numField(key);
+    if (v !== undefined) out[key] = v;
+  }
+  return out;
+}
+
+/**
+ * Tidy a string recovered from a truncated response: if it was cut off
+ * mid-sentence, trim back to the last complete sentence (kept only when that
+ * doesn't destroy most of the text).
+ */
+function tidyTruncated(text: string): string {
+  let t = text.trim();
+  if (!t || /[.!?…"']$/.test(t)) return t;
+  const lastStop = Math.max(t.lastIndexOf("."), t.lastIndexOf("!"), t.lastIndexOf("?"));
+  if (lastStop > t.length * 0.4) return t.slice(0, lastStop + 1);
+  // No usable sentence boundary: drop a dangling opened **bold** marker and the
+  // cut-off partial word, then mark the cutoff with an ellipsis.
+  t = t.replace(/\s*\*\*[^*]*$/, "").replace(/\s+\S*$/, "").trimEnd();
+  return t ? `${t}…` : "";
+}
+
 function str(v: unknown, fallback = "—"): string {
   return typeof v === "string" && v.trim() ? v.trim() : fallback;
 }
@@ -90,7 +152,14 @@ export function parseVerdict(
   modelAName?: string,
   modelBName?: string,
 ): ParsedVerdict {
-  const obj = extractJsonObject(raw);
+  let obj = extractJsonObject(raw);
+  // Strict parse failed (typically a TRUNCATED response) → salvage what we can
+  // field-by-field, and tidy strings that were cut off mid-sentence.
+  let truncated = false;
+  if (Object.keys(obj).length === 0) {
+    obj = looseExtractFields(raw);
+    truncated = true;
+  }
 
   // Resolve raw scores (with fallbacks), then ALWAYS normalize to two ints that
   // sum to exactly 100 derived from a single rounded anchor.
@@ -136,18 +205,24 @@ export function parseVerdict(
     }
   }
 
+  // NEVER fall back to the raw text: on a failed parse the raw text IS the
+  // (truncated) JSON blob, and slicing it into the summary rendered literal
+  // `{ "winner": …` on the verdict card. A generic line beats leaked JSON.
+  const tidy = (s: string): string => (truncated ? tidyTruncated(s) : s);
   return {
     // "reasoning" is the new key; fall back to the legacy "summary" for safety.
-    summary: str(obj.reasoning ?? obj.summary, raw.trim().slice(0, 280) || "Verdict delivered."),
+    summary: tidy(str(obj.reasoning ?? obj.summary, "Verdict delivered.")) || "Verdict delivered.",
     // Only a concrete fighter winner has a "winning argument" — clear it for a
     // tie / discussion so it can never sit under an "It's a draw" headline
     // (mirrors how scores are reconciled to the winner above).
     winnerArgument:
-      winner === "modelA" || winner === "modelB" ? str(obj.winnerArgument, "") : "",
-    strongestModelA: str(obj.strongestModelA),
-    strongestModelB: str(obj.strongestModelB),
-    weakestModelA: str(obj.weakestModelA),
-    weakestModelB: str(obj.weakestModelB),
+      winner === "modelA" || winner === "modelB" ? tidy(str(obj.winnerArgument, "")) : "",
+    // Legacy fields — no longer requested from the judge or shown in the UI,
+    // but still parsed when a model volunteers them (empty otherwise).
+    strongestModelA: str(obj.strongestModelA, ""),
+    strongestModelB: str(obj.strongestModelB, ""),
+    weakestModelA: str(obj.weakestModelA, ""),
+    weakestModelB: str(obj.weakestModelB, ""),
     winner,
     // No "score" in Discussion mode — it isn't a contest.
     scoreModelA: mode === "discussion" ? undefined : a,
@@ -164,14 +239,23 @@ export function formatVerdictText(
     // Plain text — strip the **bold** markers the reasoning may contain.
     `Verdict: ${p.summary.replace(/\*\*/g, "")}`,
     ...(p.winnerArgument ? [``, `Winning argument: ${p.winnerArgument}`] : []),
-    ``,
-    `Strongest arguments:`,
-    `- ${modelAName}: ${p.strongestModelA}`,
-    `- ${modelBName}: ${p.strongestModelB}`,
-    ``,
-    `Weakest points:`,
-    `- ${modelAName}: ${p.weakestModelA}`,
-    `- ${modelBName}: ${p.weakestModelB}`,
+    // Legacy sections — only present when an (older) judge response included them.
+    ...(p.strongestModelA || p.strongestModelB
+      ? [
+          ``,
+          `Strongest arguments:`,
+          ...(p.strongestModelA ? [`- ${modelAName}: ${p.strongestModelA}`] : []),
+          ...(p.strongestModelB ? [`- ${modelBName}: ${p.strongestModelB}`] : []),
+        ]
+      : []),
+    ...(p.weakestModelA || p.weakestModelB
+      ? [
+          ``,
+          `Weakest points:`,
+          ...(p.weakestModelA ? [`- ${modelAName}: ${p.weakestModelA}`] : []),
+          ...(p.weakestModelB ? [`- ${modelBName}: ${p.weakestModelB}`] : []),
+        ]
+      : []),
   ];
   return lines.join("\n");
 }

@@ -66,7 +66,6 @@ You judge BLIND: the two sides are shown to you only as "Debater A" and "Debater
 
 Rules:
 - In Debate Mode, pick the stronger side and JUSTIFY the decision: name the specific arguments that won it and explain why the other side's were weaker. Your reasoning must clearly favor the side you chose — it is a verdict, not a balanced recap of the debate.
-- Identify the strongest and the weakest argument from each side.
 - In Discussion Mode there is no winner — surface the best insights, risks and next steps instead.
 - Be specific and refer to actual points made in the transcript; do not invent new arguments of your own.
 - Do not continue the debate or ask follow-up questions.
@@ -392,11 +391,7 @@ export function buildJudgePrompt(session: DebateSession): string {
     `{`,
     `  "winner": string,                 // ${winnerRule}`,
     `  "winnerArgument": string,         // the winning side's single most decisive argument, in one sentence (empty string for a tie or a discussion)`,
-    `  "reasoning": string,              // 2-4 sentences explaining WHY the winner won: which specific arguments were more convincing and where the other side fell short. Clearly favor the chosen side — a verdict, not a neutral summary. Refer to the sides as "Debater A" / "Debater B". Wrap the 2-4 most decisive phrases in **double asterisks** for emphasis.`,
-    `  "strongestModelA": string,        // strongest argument from Debater A`,
-    `  "strongestModelB": string,        // strongest argument from Debater B`,
-    `  "weakestModelA": string,          // weakest point or risk in Debater A's case`,
-    `  "weakestModelB": string,          // weakest point or risk in Debater B's case`,
+    `  "reasoning": string,              // 4-6 sentences explaining WHY the winner won: which specific arguments were more convincing and where the other side fell short. Clearly favor the chosen side — a verdict, not a neutral summary. Refer to the sides as "Debater A" / "Debater B". Wrap the 2-4 most decisive phrases in **double asterisks** for emphasis.`,
     `  "scoreModelA": number,            // 0-100 for Debater A`,
     `  "scoreModelB": number             // 0-100 for Debater B, scoreModelA + scoreModelB = 100`,
     `}`,

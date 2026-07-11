@@ -115,7 +115,10 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const systemPrompt = JUDGE_SYSTEM_PROMPT;
     const userPrompt = buildJudgePrompt(session);
-    const maxOutputTokens = Math.min(1000, modelConfig.maxOutputTokens);
+    // Reasoning models spend part of this budget on hidden thinking before the
+    // JSON comes out — 1000 was getting verdicts cut off mid-JSON (the parser
+    // now salvages truncation, but a full verdict beats a repaired one).
+    const maxOutputTokens = Math.min(1600, modelConfig.maxOutputTokens);
 
     const result = await generateWithRetry(
       provider,

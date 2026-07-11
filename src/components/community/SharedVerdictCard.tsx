@@ -13,27 +13,6 @@ import { MarkdownText } from "@/components/debate/MarkdownText";
 import { ScoreBreakdown } from "@/components/result/ScoreBreakdown";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
-function Insight({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value?: string;
-  tone: "good" | "risk";
-}) {
-  if (!value) return null;
-  return (
-    <li className="rounded-card border-3 border-ink bg-surface p-2.5">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-ink/45">
-        {tone === "good" ? "💪 " : "⚠️ "}
-        {label}
-      </p>
-      <p className="mt-0.5 text-sm">{value}</p>
-    </li>
-  );
-}
-
 export function SharedVerdictCard({ snapshot }: { snapshot: SharedSnapshot }) {
   const d = useT();
   const verdict = snapshot.verdict;
@@ -96,12 +75,6 @@ export function SharedVerdictCard({ snapshot }: { snapshot: SharedSnapshot }) {
           </div>
         ) : null}
 
-        <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Insight label={d.result.verdict.strongest(nameA)} value={verdict.strongestModelA} tone="good" />
-          <Insight label={d.result.verdict.strongest(nameB)} value={verdict.strongestModelB} tone="good" />
-          <Insight label={d.result.verdict.weakest(nameA)} value={verdict.weakestModelA} tone="risk" />
-          <Insight label={d.result.verdict.weakest(nameB)} value={verdict.weakestModelB} tone="risk" />
-        </ul>
       </div>
     </section>
   );

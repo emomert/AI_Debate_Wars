@@ -17,7 +17,7 @@
 - `DebateSession` — config + deterministic `turns[]` + `messages[]` + optional `verdict` + `costSummary` + status (`setup | running | judging | complete | stopped | error`).
 - `DebateTurn` — round number/label, speaker, task, role, stance, modelId, status.
 - `DebateMessage` — content, usage (`TokenUsage` incl. cached input), `CostBreakdown` (input/output/cachedSavings/search/total), latency, `Citation[]`, status.
-- `DebateVerdict` — winner (`modelA | modelB | tie | not_applicable`), 0–100 scores, reasoning, strongest/weakest arguments per side, judge model, usage/cost.
+- `DebateVerdict` — winner (`modelA | modelB | tie | not_applicable`), 0–100 scores, reasoning, judge model, usage/cost. (Strongest/weakest per side are legacy-optional — retired from the judge prompt and the UI in July 2026; old stored verdicts may still carry them.)
 
 ## Supabase Tables
 
