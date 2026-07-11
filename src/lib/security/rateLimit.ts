@@ -11,11 +11,15 @@ import "server-only";
  *     the public app can burn per day. Free models cost ~$0 so they barely
  *     touch it; paid models (GPT/DeepSeek/Deep Debate search) are what it bounds.
  *
- * FAIL-OPEN by design: if Supabase isn't configured, or an RPC errors, requests
- * are allowed (and logged). A transient DB blip should never take the whole app
- * down — the global cap is the real backstop, and these are best-effort guards,
- * not a security boundary. Production MUST run migration 0003 and configure
- * Supabase for these to take effect.
+ * FAIL-SOFT, not fail-open: Supabase (migration 0003) is the real, cross-instance
+ * guard. When it's unconfigured or an RPC errors, we no longer allow the request
+ * unconditionally — we fall back to an IN-PROCESS backstop (per-instance
+ * fixed-window rate limit + daily spend/search ledger). That backstop can't hard
+ * fail the app (a DB blip never takes it down) but it bounds a single-origin
+ * flood instead of leaving paid routes completely uncapped. It's best-effort:
+ * serverless runs many short-lived instances, so the effective ceiling is
+ * roughly limit × instances — far better than "unbounded", not a substitute for
+ * running migration 0003 in production.
  */
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -83,6 +87,78 @@ const IP_DAILY_CAP_USD = num(process.env.SPEND_IP_DAILY_USD, 3);
 const SEARCH_DAILY_CAP = num(process.env.SEARCH_DAILY_MAX, 2000);
 const DAY_SECONDS = 86_400;
 
+// ── In-process backstop (used only when Supabase is unavailable/erroring) ─────
+// The Supabase RPCs above are authoritative and shared across instances. These
+// per-process maps are the fallback so the fail path bounds abuse instead of
+// allowing everything. They reset on cold start and are not shared between
+// instances — deliberately simple; the goal is a floor, not a distributed
+// limiter. Bounded in size by opportunistic pruning of expired entries.
+interface MemWindow {
+  windowStart: number; // ms, start of the fixed window
+  count: number;
+}
+const memRateBuckets = new Map<string, MemWindow>();
+// day (UTC epoch-day) → scope ('global' | 'ip:<addr>') → USD spent that day.
+interface MemSpend {
+  day: number;
+  usd: number;
+}
+const memSpend = new Map<string, MemSpend>();
+const MEM_MAX_BUCKETS = 50_000; // hard cap so a spoofed-IP flood can't OOM us
+
+const epochDay = (): number => Math.floor(Date.now() / (DAY_SECONDS * 1000));
+
+/** Drop rate buckets whose window has passed and spend rows from earlier days. */
+function pruneMem(nowMs: number, today: number): void {
+  for (const [key, w] of memRateBuckets) {
+    // A window is stale once we're past its end; window length is encoded by the
+    // caller, so approximate with "older than a day" for the search bucket and
+    // exact for the rest via re-derivation on hit. Cheap heuristic: prune any
+    // window that started more than a day ago (covers every kind we use).
+    if (nowMs - w.windowStart > DAY_SECONDS * 1000) memRateBuckets.delete(key);
+  }
+  for (const [key, s] of memSpend) {
+    if (s.day !== today) memSpend.delete(key);
+  }
+}
+
+/** In-process fixed-window hit. Returns true when still under the limit. */
+function memRateHit(bucket: string, limit: number, windowSeconds: number): boolean {
+  const nowMs = Date.now();
+  const windowMs = windowSeconds * 1000;
+  const windowStart = Math.floor(nowMs / windowMs) * windowMs;
+  const cur = memRateBuckets.get(bucket);
+  if (!cur || cur.windowStart !== windowStart) {
+    memRateBuckets.set(bucket, { windowStart, count: 1 });
+    // Opportunistic cleanup so the maps don't grow without bound.
+    if (memRateBuckets.size > MEM_MAX_BUCKETS) pruneMem(nowMs, epochDay());
+    return 1 <= limit;
+  }
+  cur.count += 1;
+  return cur.count <= limit;
+}
+
+/** In-process daily spend check (per-instance view of global + per-IP). */
+function memSpendAllowed(ip: string, globalCap: number, ipCap: number): boolean {
+  const today = epochDay();
+  const g = memSpend.get("global");
+  const i = memSpend.get(`ip:${ip}`);
+  const gUsd = g && g.day === today ? g.usd : 0;
+  const iUsd = i && i.day === today ? i.usd : 0;
+  return gUsd < globalCap && iUsd < ipCap;
+}
+
+/** Add a completed call's cost to the in-process ledgers (best-effort). */
+function memSpendRecord(ip: string, amount: number): void {
+  if (!(amount > 0)) return;
+  const today = epochDay();
+  for (const scope of ["global", `ip:${ip}`]) {
+    const cur = memSpend.get(scope);
+    if (!cur || cur.day !== today) memSpend.set(scope, { day: today, usd: amount });
+    else cur.usd += amount;
+  }
+}
+
 /**
  * Trusted client IP for the per-IP guards.
  *
@@ -114,21 +190,24 @@ let warnedUnconfigured = false;
  * paid work.
  */
 export async function enforceLimits(req: Request, kind: RouteKind): Promise<void> {
+  const ip = clientIp(req);
   const supabase = await getSupabaseServerClient();
+
   if (!supabase) {
     if (!warnedUnconfigured) {
       console.warn(
-        "[rate-limit] Supabase not configured — paid routes are UNPROTECTED. " +
-          "Configure Supabase + run migration 0003 before a public launch.",
+        "[rate-limit] Supabase not configured — falling back to the in-process " +
+          "backstop. Configure Supabase + run migration 0003 for the real " +
+          "cross-instance caps before a public launch.",
       );
       warnedUnconfigured = true;
     }
-    return; // fail-open
+    enforceLimitsInMemory(ip, kind); // per-instance backstop, not fail-open
+    return;
   }
 
-  const ip = clientIp(req);
-
-  // 1) Rate limit (fixed window per IP per route).
+  // 1) Rate limit (fixed window per IP per route). On any Supabase failure, fall
+  //    back to the in-process limiter rather than allowing the request through.
   try {
     const { data: allowed, error } = await supabase.rpc("rl_hit", {
       p_bucket: `${kind}:ip:${ip}`,
@@ -136,13 +215,15 @@ export async function enforceLimits(req: Request, kind: RouteKind): Promise<void
       p_window_seconds: WINDOW_SECONDS,
     });
     if (error) {
-      console.error("[rate-limit] rl_hit failed (allowing):", error.message);
+      console.error("[rate-limit] rl_hit failed (backstop):", error.message);
+      memEnforceRate(ip, kind);
     } else if (allowed === false) {
       throw new ProviderError("TOO_MANY_REQUESTS", "Request rate limit exceeded");
     }
   } catch (err) {
     if (err instanceof ProviderError) throw err;
-    console.error("[rate-limit] rl_hit threw (allowing):", err);
+    console.error("[rate-limit] rl_hit threw (backstop):", err);
+    memEnforceRate(ip, kind);
   }
 
   // 2) Daily spend caps (global + per-IP) — paid provider routes only.
@@ -154,14 +235,36 @@ export async function enforceLimits(req: Request, kind: RouteKind): Promise<void
       p_ip_cap: IP_DAILY_CAP_USD,
     });
     if (error) {
-      console.error("[rate-limit] spend_allowed failed (allowing):", error.message);
+      console.error("[rate-limit] spend_allowed failed (backstop):", error.message);
+      memEnforceSpend(ip);
     } else if (spendOk === false) {
       throw new ProviderError("DAILY_LIMIT_REACHED", "Daily spend cap reached");
     }
   } catch (err) {
     if (err instanceof ProviderError) throw err;
-    console.error("[rate-limit] spend_allowed threw (allowing):", err);
+    console.error("[rate-limit] spend_allowed threw (backstop):", err);
+    memEnforceSpend(ip);
   }
+}
+
+/** Backstop rate check → throws TOO_MANY_REQUESTS when the per-instance cap trips. */
+function memEnforceRate(ip: string, kind: RouteKind): void {
+  if (!memRateHit(`${kind}:ip:${ip}`, PER_MIN[kind], WINDOW_SECONDS)) {
+    throw new ProviderError("TOO_MANY_REQUESTS", "Request rate limit exceeded");
+  }
+}
+
+/** Backstop spend check → throws DAILY_LIMIT_REACHED when the per-instance cap trips. */
+function memEnforceSpend(ip: string): void {
+  if (!memSpendAllowed(ip, GLOBAL_DAILY_CAP_USD, IP_DAILY_CAP_USD)) {
+    throw new ProviderError("DAILY_LIMIT_REACHED", "Daily spend cap reached");
+  }
+}
+
+/** Full backstop (rate + spend) for the Supabase-absent path. */
+function enforceLimitsInMemory(ip: string, kind: RouteKind): void {
+  memEnforceRate(ip, kind);
+  if (PAID_KINDS.has(kind)) memEnforceSpend(ip);
 }
 
 /**
@@ -172,8 +275,16 @@ export async function enforceLimits(req: Request, kind: RouteKind): Promise<void
  * fail-open like the other guards (a DB blip never blocks a search).
  */
 export async function enforceSearchBudget(): Promise<void> {
+  const memCheck = () => {
+    if (!memRateHit("search:global", SEARCH_DAILY_CAP, DAY_SECONDS)) {
+      throw new ProviderError("DAILY_LIMIT_REACHED", "Daily web-search budget reached");
+    }
+  };
   const supabase = await getSupabaseServerClient();
-  if (!supabase) return; // fail-open
+  if (!supabase) {
+    memCheck(); // backstop instead of fail-open
+    return;
+  }
   try {
     const { data: allowed, error } = await supabase.rpc("rl_hit", {
       p_bucket: "search:global",
@@ -181,13 +292,15 @@ export async function enforceSearchBudget(): Promise<void> {
       p_window_seconds: DAY_SECONDS,
     });
     if (error) {
-      console.error("[rate-limit] search rl_hit failed (allowing):", error.message);
+      console.error("[rate-limit] search rl_hit failed (backstop):", error.message);
+      memCheck();
     } else if (allowed === false) {
       throw new ProviderError("DAILY_LIMIT_REACHED", "Daily web-search budget reached");
     }
   } catch (err) {
     if (err instanceof ProviderError) throw err;
-    console.error("[rate-limit] search rl_hit threw (allowing):", err);
+    console.error("[rate-limit] search rl_hit threw (backstop):", err);
+    memCheck();
   }
 }
 
@@ -198,11 +311,15 @@ export async function enforceSearchBudget(): Promise<void> {
  */
 export async function recordSpend(req: Request, amountUsd: number): Promise<void> {
   if (!(amountUsd > 0)) return;
+  const ip = clientIp(req);
+  // Always update the in-process ledger too, so the backstop's spend cap has a
+  // running total to enforce against if Supabase drops out later in the day.
+  memSpendRecord(ip, amountUsd);
   const supabase = await getSupabaseServerClient();
   if (!supabase) return;
   try {
     const { error } = await supabase.rpc("spend_record", {
-      p_ip: clientIp(req),
+      p_ip: ip,
       p_amount: amountUsd,
     });
     if (error) console.error("[rate-limit] spend_record failed:", error.message);

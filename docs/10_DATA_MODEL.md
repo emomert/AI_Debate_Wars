@@ -59,4 +59,4 @@ The community layer (migration 0004, full detail in `docs/20_COMMUNITY.md`):
 - Each message stores its own usage and cost.
 - The verdict is separate from turn messages.
 - Session status is explicit at every stage.
-- The app remains fully functional with no database configured (matches just aren't saved; limits fail open).
+- The app remains fully functional with no database configured (matches just aren't saved; rate/spend limits fall back to an in-process per-instance backstop instead of failing fully open).

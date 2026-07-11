@@ -59,9 +59,11 @@ choice enum, comment length, session shape + completeness on publish); see
 - Per-IP cap: `SPEND_IP_DAILY_USD` (default $3 — raised so a single 3-battle match can't trip it mid-way).
 - `spend_allowed` is checked before paid work; `spend_record` logs actual cost after each response (best-effort — a ledger failure never fails the user's request).
 
-### Fail-open behavior
+### Fail-soft behavior (in-process backstop)
 
-If Supabase isn't configured or an RPC fails, requests are allowed (with a logged warning). This keeps local dev and keyless deploys working; a production deploy must have Supabase configured for the armor to be active.
+Supabase (migration 0003) is the authoritative, cross-instance guard. If it isn't configured, or an RPC errors/throws, the limiter no longer allows the request unconditionally — it falls back to an **in-process per-instance backstop**: a per-process fixed-window rate limit plus a daily spend/search ledger, using the same env-configured limits (`memRateHit` / `memSpendAllowed` / `memSpendRecord` in `src/lib/security/rateLimit.ts`). The backstop can never hard-fail the app (a DB blip doesn't take it down) but it bounds a single-origin flood instead of leaving paid routes uncapped.
+
+It's best-effort, not a substitute for Supabase: serverless runs many short-lived instances, so the effective ceiling is roughly `limit × instances`, and the maps reset on cold start. A production deploy must still configure Supabase + run migration 0003 for the real distributed caps.
 
 ### Input validation
 

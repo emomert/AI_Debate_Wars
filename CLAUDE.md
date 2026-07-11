@@ -54,7 +54,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Stateless share links (`/s?d=...`) with generated OG images (`/api/og`). The verdict is HMAC-signed at generation (`src/lib/share/signing.ts`); `/s` + OG render verified vs ⚠ unverified to defeat forged share links. Dormant + safe until `SHARE_SECRET` is set.
 - Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie, sign-in required), flat comments, profile handles + preset avatars, and a **report/flag** path on matches + comments with an operator admin-takedown script (see `docs/20_COMMUNITY.md`)
 - Optional Supabase auth (magic link + Google); a signup consent + **13+ age gate** (recorded on the profile), match history/stats on `/profile`, and self-serve account deletion + JSON data export (`delete_my_account` cascade RPC, migration 0007)
-- Per-IP rate limits (spoof-proof trusted IP) and global/per-IP daily spend caps (Supabase RPCs, fail-open)
+- Per-IP rate limits (spoof-proof trusted IP) and global/per-IP daily spend caps (Supabase RPCs; when Supabase is down/unconfigured they fall back to an in-process per-instance backstop, not fully open)
 - Arcade UI: synth SFX, generative background music (off by default), sound toggle, a **reduce-motion / instant-text** toggle + OS `prefers-reduced-motion` support, screen-reader live regions, mobile-responsive
 - Legal pages (`/about`, `/privacy`, `/terms`, `/contact`) with a named operator / data-controller identity and governing-law clause (values are placeholders in `src/lib/legal/identity.ts` — set before launch), and a living tech report (`/report`)
 
@@ -92,7 +92,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Moderation is OPT-IN (July 2026): the `omni-moderation` gate on topics + published transcripts only runs when `MODERATION_ENABLED=true`; when enabled it still fails open. Do not re-enable by default without an explicit request.
 - Shareable verdicts are HMAC-signed server-side; `/s` and the OG image must never present an unsigned/forged verdict as verified.
 - Honor reduced motion (OS flag or the in-app toggle): no infinite/continuous animation, and reveal turns instantly when it's set — see `src/lib/motion/`.
-- Supabase is optional: the app must keep working signed-out and without Supabase configured (limits fail open).
+- Supabase is optional: the app must keep working signed-out and without Supabase configured. Without Supabase the rate/spend caps fall back to an in-process per-instance backstop (`src/lib/security/rateLimit.ts`) rather than failing fully open — keep that backstop when touching the limiter.
 - The `/report` page must keep rendering from the real source of truth (prompt builder, model registry, pricing).
 
 ## Environment Variables

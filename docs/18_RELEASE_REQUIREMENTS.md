@@ -18,8 +18,10 @@ of the items below are optional for a public launch.
   fixed-window limits on turn/verdict/topic routes plus global and per-IP
   daily spend caps, all enforced before paid work. Defaults and env vars in
   `docs/11_SECURITY_RATE_LIMITS.md`.
-- Note: limits **fail open** when Supabase is unconfigured — production must
-  have Supabase env vars set for the armor to be active.
+- Note: when Supabase is unconfigured/down the limits **fall back to an
+  in-process per-instance backstop** (not fully open) — but that's best-effort
+  (`limit × instances`, resets on cold start), so production must still have
+  Supabase env vars set + migration 0003 applied for the real distributed caps.
 
 **Needs from owner:** nothing further (Supabase project already required for auth).
 
