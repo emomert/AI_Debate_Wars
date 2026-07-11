@@ -36,6 +36,7 @@ import {
 import { readJsonBody } from "@/lib/api/serverBody";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { recordMatchAnalytics } from "@/lib/analytics/recordMatch";
 import { buildSharePayload } from "@/lib/share/shareLink";
 import { signSharePayload } from "@/lib/share/signing";
 import {
@@ -201,6 +202,16 @@ export async function POST(req: Request): Promise<NextResponse> {
       ),
     );
     if (signature) verdict.signature = signature;
+
+    // Record the dimensions-only analytics card (no content) at the finalize
+    // point — best-effort, uses the freshly-computed verdict. Never throws.
+    await recordMatchAnalytics(session, {
+      judgeModelId,
+      verdictCost: cost.totalCost,
+      winner: verdict.winner ?? null,
+      scoreA: typeof verdict.scoreModelA === "number" ? verdict.scoreModelA : null,
+      scoreB: typeof verdict.scoreModelB === "number" ? verdict.scoreModelB : null,
+    });
 
     const res: GenerateVerdictResponse = { verdict };
     return NextResponse.json(res);
