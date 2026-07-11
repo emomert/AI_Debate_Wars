@@ -89,18 +89,21 @@ interface Note {
 
 /** Each key is a tiny sequence of notes. */
 const PATTERNS: Record<SoundKey, Note[]> = {
-  buttonClick: [{ freq: 420, start: 0, dur: 0.06, type: "square", gain: 0.12 }],
+  // The everyday "click" family is SINE, not square — square harmonics read as
+  // harsh/clicky on rapid taps (owner feedback, July 2026). Squares stay
+  // reserved for the celebratory fanfares below.
+  buttonClick: [{ freq: 620, start: 0, dur: 0.09, type: "sine", gain: 0.14 }],
   next: [
-    { freq: 520, start: 0, dur: 0.05, type: "square", gain: 0.12 },
-    { freq: 700, start: 0.05, dur: 0.06, type: "square", gain: 0.12 },
+    { freq: 520, start: 0, dur: 0.07, type: "sine", gain: 0.13 },
+    { freq: 700, start: 0.06, dur: 0.09, type: "sine", gain: 0.13 },
   ],
   modeSelect: [
     { freq: 500, start: 0, dur: 0.06, type: "triangle", gain: 0.14 },
     { freq: 660, start: 0.06, dur: 0.08, type: "triangle", gain: 0.14 },
   ],
   modelSelected: [
-    { freq: 600, start: 0, dur: 0.05, type: "square", gain: 0.12 },
-    { freq: 820, start: 0.06, dur: 0.07, type: "square", gain: 0.12 },
+    { freq: 523.25, start: 0, dur: 0.07, type: "sine", gain: 0.14 },
+    { freq: 783.99, start: 0.07, dur: 0.11, type: "sine", gain: 0.14 },
   ],
   debateStart: [
     { freq: 392, start: 0, dur: 0.1, type: "square", gain: 0.16 },

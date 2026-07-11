@@ -147,11 +147,7 @@ export const setup = {
 
   // ModelSelector
   models: {
-    freeModels: "🌐 Diğer markalar",
-    freeBrands: "Diğer markalar",
     ready: "hazır",
-    freeVia: "OpenRouter üzerinden sunulur",
-    needsOpenRouterKey: " · OPENROUTER_API_KEY gerektirir",
     picked: "Seçildi",
     unavailable: "Kullanılamıyor",
     pickedWith: (name: string) => `Seçildi: ${name}`,

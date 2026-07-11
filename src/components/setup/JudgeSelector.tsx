@@ -12,6 +12,7 @@ import { JUDGE_MODE_OPTIONS } from "@/lib/constants";
 import { previewAutoJudge, type ModelCatalogEntry } from "@/lib/models/modelRegistry";
 import type { JudgeConfig, JudgeMode, ModelRef } from "@/lib/debate/debateTypes";
 import { Badge } from "@/components/game/Badge";
+import { BrandLogo } from "@/components/report/BrandLogo";
 import { ModelSelector } from "@/components/setup/ModelSelector";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
 import { cn } from "@/lib/utils/cn";
@@ -129,9 +130,7 @@ export function JudgeSelector({
             <div className="rounded-card border-3 border-dashed border-ink/40 bg-paper p-3">
               {autoJudge ? (
                 <div className="flex items-start gap-2.5">
-                  <span aria-hidden className="text-2xl leading-none">
-                    {autoJudge.avatar}
-                  </span>
+                  <BrandLogo brand={autoJudge.brand} size={18} />
                   <div className="min-w-0">
                     <p className="font-heading text-sm font-extrabold">
                       {d.setup.judge.autoPickPrefix} {autoJudge.displayName}

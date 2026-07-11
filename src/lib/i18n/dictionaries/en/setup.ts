@@ -149,11 +149,7 @@ export const setup = {
 
   // ModelSelector
   models: {
-    freeModels: "🌐 More brands",
-    freeBrands: "More brands",
     ready: "ready",
-    freeVia: "Served via OpenRouter",
-    needsOpenRouterKey: " · needs OPENROUTER_API_KEY",
     picked: "Picked",
     unavailable: "Unavailable",
     pickedWith: (name: string) => `Picked: ${name}`,

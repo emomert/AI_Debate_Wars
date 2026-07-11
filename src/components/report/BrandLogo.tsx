@@ -1,7 +1,8 @@
 /**
  * BrandLogo — a round sticker with a brand's logo (SVGs in /public/brands,
- * sourced from the CC0 Simple Icons set). Brands without a logo in the set
- * fall back to their roster emoji so every brand still gets a face.
+ * sourced from the CC0 Simple Icons set, plus Grok/Zhipu marks from the
+ * LobeHub icon set). Every catalogue brand has a real company mark; unknown
+ * brands fall back to a generic face so the sticker never renders empty.
  *
  * The sticker background is fixed white (not the adaptive surface token) so
  * dark-fill logos stay readable in dark mode.
@@ -17,10 +18,10 @@ const LOGO_FILE: Record<string, string> = {
   Qwen: "qwen",
   Kimi: "moonshotai",
   Claude: "anthropic",
-  // Simple Icons has no dedicated xAI mark; the X logomark is xAI's own X.
-  Grok: "x",
+  Grok: "grok",
   Gemini: "googlegemini",
   Xiaomi: "xiaomi",
+  GLM: "zhipu",
   MiniMax: "minimax",
   Nemotron: "nvidia",
   OpenRouter: "openrouter",
@@ -28,11 +29,6 @@ const LOGO_FILE: Record<string, string> = {
   deepseek: "deepseek",
   openrouter: "openrouter",
   "Brave Search": "brave",
-};
-
-/** Brands without a Simple Icons mark keep their roster emoji as a face. */
-const FALLBACK_EMOJI: Record<string, string> = {
-  GLM: "🌀",
 };
 
 interface BrandLogoProps {
@@ -58,7 +54,7 @@ export function BrandLogo({ brand, size = 16, className }: BrandLogoProps) {
         <Image src={`/brands/${file}.svg`} alt="" width={size} height={size} />
       ) : (
         <span style={{ fontSize: size - 2 }} className="leading-none">
-          {FALLBACK_EMOJI[brand] ?? "🤖"}
+          🤖
         </span>
       )}
     </span>

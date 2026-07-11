@@ -16,7 +16,7 @@ Sound and animation make the product feel alive without distracting from reading
 - The AudioContext is created lazily on the first user gesture, so nothing autoplays before interaction (browser policy compliant).
 - **Verdict drum roll:** a looping suspense cue while the judge deliberates; `playVerdictRoll()` returns a promise so the verdict reveal is timed to the roll's end.
 
-SFX keys: `buttonClick`, `modeSelect`, `modelSelected`, `debateStart`, `roundStart`, `typingStart`, `turnComplete`, `costTick`, `judgeEnter`, `verdictReveal`, `next`, `error`.
+SFX keys: `buttonClick`, `modeSelect`, `modelSelected`, `debateStart`, `roundStart`, `typingStart`, `turnComplete`, `costTick`, `judgeEnter`, `verdictReveal`, `next`, `error`. The everyday click family (`buttonClick`, `next`, `modelSelected`) uses soft sine taps — square waves are reserved for the celebratory fanfares (they read as harsh on rapid taps).
 
 ## Animation Principles
 

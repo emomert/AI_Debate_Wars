@@ -3,9 +3,11 @@
 /**
  * ModelSelector — fighter picker (docs/02 "choose your fighters").
  *
- * Step 1: pick a BRAND (OpenAI / DeepSeek / Qwen / Llama / …) with key hints.
- * Step 2: pick a model LINE (GPT-5.4, DeepSeek V4, …) — multi-model lines
- * expand into a collapsible variant list, single-model lines select directly.
+ * Step 1: pick a PROVIDER from a uniform grid of company tiles (logo + name,
+ * alphabetical — every provider is presented as an equal; the backend that
+ * actually serves a model is never surfaced as a hierarchy).
+ * Step 2: pick a model inside that provider — a short recommended list first,
+ * the rest behind a "Show all" expander.
  *
  * Brands map to a backend internally (e.g. Qwen → OpenRouter), but the user only
  * ever sees the brand.
@@ -15,7 +17,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import {
-  BRANDS,
   COST_TIER_LABEL,
   RECOMMENDED_MODEL_IDS,
   brandsForLocale,
@@ -27,6 +28,7 @@ import {
   type ModelCatalogEntry,
 } from "@/lib/models/modelRegistry";
 import { Badge } from "@/components/game/Badge";
+import { BrandLogo } from "@/components/report/BrandLogo";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
 import { useReduceMotion } from "@/lib/motion/useReduceMotion";
@@ -85,44 +87,43 @@ export function ModelSelector({
   // Blitz roster restriction: when set, only these model ids are pickable.
   const allowSet =
     allowedModelIds && allowedModelIds.length > 0 ? new Set(allowedModelIds) : null;
-  const [activeBrand, setActiveBrand] = useState<string>(
-    selected?.brand ?? BRANDS[0]?.brand ?? "OpenAI",
-  );
-  // OpenRouter brands live behind a collapsible "More brands" menu — there are
-  // many of them. Open it by default if the current pick is one of them.
-  const [freeOpen, setFreeOpen] = useState<boolean>(
-    selected?.providerId === "openrouter",
-  );
+  const [activeBrand, setActiveBrand] = useState<string>(selected?.brand ?? "");
 
   // Which brands have their "show all models" list expanded (keyed by brand so
-  // the choice survives tab-hopping). A brand whose current pick is a non-
+  // the choice survives tile-hopping). A brand whose current pick is a non-
   // recommended model is shown expanded regardless (see showRest below).
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
 
   // The selected model can change AFTER mount (config rehydrates from
-  // sessionStorage a tick later), which would otherwise leave the brand tab
-  // stuck on its mount-time default. Re-sync the active tab / free menu to the
-  // selection when it changes — without clobbering a user's mid-browse tab click
+  // sessionStorage a tick later), which would otherwise leave the provider grid
+  // stuck on its mount-time default. Re-sync the active tile to the selection
+  // when it changes — without clobbering a user's mid-browse tile click
   // (this only fires when the selection actually changes).
   useEffect(() => {
     if (!selected) return;
     setActiveBrand(selected.brand);
-    if (selected.providerId === "openrouter") setFreeOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
-  // In Turkish mode, brands whose models all lack fluent Turkish disappear; if
-  // the active tab was one of them, fall back to the first available brand.
-  useEffect(() => {
-    if (!brandsForLocale(locale).some((b) => b.brand === activeBrand)) {
-      setActiveBrand(brandsForLocale(locale)[0]?.brand ?? "OpenAI");
-    }
-  }, [locale, activeBrand]);
+  // Every provider is an equal — one uniform grid, alphabetical so no company
+  // reads as "the default". (Locale can hide brands; Blitz can restrict them.)
+  const brands = brandsForLocale(locale)
+    .filter(
+      (b) =>
+        !allowSet || modelsForBrand(b.brand, locale).some((m) => allowSet.has(m.id)),
+    )
+    .sort((a, b) => a.brand.localeCompare(b.brand));
+
+  // The active tile, derived at render so a vanished brand (locale switch,
+  // Blitz restriction) falls back gracefully instead of via an effect.
+  const currentBrand = brands.some((b) => b.brand === activeBrand)
+    ? activeBrand
+    : (brands[0]?.brand ?? "");
 
   // Flatten the active brand into a recommended-first list. A short curated set
   // shows by default; the rest live behind a "Show all" expander so the picker
   // isn't an overwhelming wall of models.
-  const brandModels = [...modelsForBrand(activeBrand, locale)]
+  const brandModels = [...modelsForBrand(currentBrand, locale)]
     .filter((m) => !allowSet || allowSet.has(m.id))
     .sort((a, b) => b.debateRating - a.debateRating);
   let recommendedModels = brandModels.filter((m) => RECOMMENDED_MODEL_IDS.has(m.id));
@@ -133,7 +134,7 @@ export function ModelSelector({
     restModels = brandModels.slice(1);
   }
   const selectedInRest = !!selected && restModels.some((m) => m.id === selected.id);
-  const showRest = selectedInRest || expandedBrands.has(activeBrand);
+  const showRest = selectedInRest || expandedBrands.has(currentBrand);
 
   const toggleBrandExpand = (brand: string) => {
     setExpandedBrands((prev) => {
@@ -144,18 +145,8 @@ export function ModelSelector({
     });
   };
 
-  const localeBrands = brandsForLocale(locale).filter(
-    (b) => !allowSet || modelsForBrand(b.brand, locale).some((m) => allowSet.has(m.id)),
-  );
-  const primaryBrands = localeBrands.filter((b) => b.backend !== "openrouter");
-  const freeBrands = localeBrands.filter((b) => b.backend === "openrouter");
-  const freeModelCount = freeBrands.reduce(
-    (n, b) => n + modelsForBrand(b.brand, locale).filter((m) => !allowSet || allowSet.has(m.id)).length,
-    0,
-  );
-
-  const renderTab = (b: BrandInfo) => {
-    const active = activeBrand === b.brand;
+  const renderTile = (b: BrandInfo) => {
+    const active = currentBrand === b.brand;
     const ready = backendReady(b.backend, availability);
     return (
       <button
@@ -167,17 +158,23 @@ export function ModelSelector({
           setActiveBrand(b.brand);
         }}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-btn border-3 border-ink px-3 py-1.5 text-sm font-extrabold transition",
+          "flex flex-col items-center gap-1.5 rounded-btn border-3 border-ink px-1.5 py-2.5 transition",
           "focus-visible:outline-3 focus-visible:outline-offset-2",
           active ? "bg-night text-white shadow-hard-sm" : "bg-surface hover:bg-paper",
         )}
       >
-        <span>{b.brand}</span>
-        {ready === null ? null : ready ? (
-          <span aria-label={d.setup.models.ready} className="h-2 w-2 rounded-full bg-arcade-green" />
-        ) : (
-          <span className="text-[10px] font-bold text-arcade-orange">🔑</span>
-        )}
+        <BrandLogo brand={b.brand} size={18} />
+        <span className="flex min-w-0 max-w-full items-center gap-1 text-[11px] font-extrabold leading-none">
+          <span className="truncate">{b.brand}</span>
+          {ready === null ? null : ready ? (
+            <span
+              aria-label={d.setup.models.ready}
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-arcade-green"
+            />
+          ) : (
+            <span className="shrink-0 text-[10px] font-bold text-arcade-orange">🔑</span>
+          )}
+        </span>
       </button>
     );
   };
@@ -195,54 +192,15 @@ export function ModelSelector({
         ) : null}
       </div>
 
-      {/* Step 1 — brand tabs (OpenRouter brands behind a collapsible menu) */}
-      <div className="mb-2 flex flex-wrap items-center gap-2" role="group" aria-label={`${label} brand`}>
-        {primaryBrands.map((b) => renderTab(b))}
-        {freeBrands.length > 0 ? (
-          <button
-            type="button"
-            aria-expanded={freeOpen}
-            onClick={() => {
-              playSound(freeOpen ? "buttonClick" : "modeSelect");
-              setFreeOpen((v) => !v);
-            }}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-btn border-3 border-ink px-3 py-1.5 text-sm font-extrabold transition",
-              "focus-visible:outline-3 focus-visible:outline-offset-2",
-              freeOpen ? "bg-arcade-green text-night" : "bg-arcade-yellow text-night",
-            )}
-          >
-            <span>{d.setup.models.freeModels}</span>
-            <span className="rounded-badge border-2 border-night bg-white px-1 text-[10px] text-night">
-              {freeModelCount}
-            </span>
-            <span aria-hidden>{freeOpen ? "▴" : "▾"}</span>
-          </button>
-        ) : null}
+      {/* Step 1 — provider grid: one identical tile per company (logo + name),
+          alphabetical. No provider is promoted above another. */}
+      <div
+        className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4"
+        role="group"
+        aria-label={`${label} provider`}
+      >
+        {brands.map((b) => renderTile(b))}
       </div>
-
-      <AnimatePresence initial={false}>
-        {freeOpen ? (
-          <motion.div
-            key="free-brands"
-            initial={reduce ? false : { opacity: 0, scale: 0.96, y: -6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: -4 }}
-            transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
-            className="mb-3 origin-top rounded-card border-3 border-dashed border-ink/40 bg-paper p-2.5"
-          >
-            <p className="mb-2 px-0.5 text-[10px] font-bold uppercase tracking-wide text-ink/45">
-              {d.setup.models.freeVia}
-              {backendReady("openrouter", availability) === false
-                ? d.setup.models.needsOpenRouterKey
-                : null}
-            </p>
-            <div className="flex flex-wrap gap-2" role="group" aria-label={d.setup.models.freeBrands}>
-              {freeBrands.map((b) => renderTab(b))}
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
 
       {/* Step 2 — a short RECOMMENDED list for the active brand, with the rest
           tucked behind a "Show all" expander at the bottom so the picker stays
@@ -263,7 +221,7 @@ export function ModelSelector({
                 aria-expanded={showRest}
                 onClick={() => {
                   playSound(showRest ? "buttonClick" : "modeSelect");
-                  toggleBrandExpand(activeBrand);
+                  toggleBrandExpand(currentBrand);
                 }}
                 className={cn(
                   "w-full rounded-btn border-3 border-dashed border-ink/40 bg-paper px-3 py-2 text-sm font-extrabold text-ink/70 transition",
@@ -334,9 +292,7 @@ export function ModelSelector({
             : "border-ink bg-surface shadow-hard-sm hover:-translate-y-0.5 hover:shadow-hard",
         )}
       >
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-btn border-3 border-ink bg-paper text-2xl">
-          {m.avatar}
-        </span>
+        <BrandLogo brand={m.brand} size={24} />
 
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
