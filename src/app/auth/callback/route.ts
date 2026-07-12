@@ -2,6 +2,8 @@
  * Auth callback (docs/19). Handles BOTH sign-in flows:
  *   - OAuth (Google/GitHub) and PKCE email links return ?code= → exchangeCodeForSession
  *   - token-hash style email links return ?token_hash=&type= → verifyOtp
+ *     (the branded email templates link here on our own domain, carrying the
+ *     original callback URL as ?redirect_to= — see resolveAuthNext)
  * On success redirects to a sanitized same-origin `next` path (default "/") —
  * except first-time users (no profiles row yet), who are routed through
  * /welcome to create their fighter card. Password-recovery links carry
@@ -12,12 +14,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType, SupabaseClient } from "@supabase/supabase-js";
 
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-/** Only allow a same-origin absolute path → blocks open-redirect abuse. */
-function safeNext(next: string | null): string {
-  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
-  return "/";
-}
+import { resolveAuthNext } from "@/lib/utils/url";
 
 /** Where a freshly signed-in session should land (welcome for new users). */
 async function landingPath(supabase: SupabaseClient, next: string): Promise<string> {
@@ -41,7 +38,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = safeNext(searchParams.get("next"));
+  const next = resolveAuthNext(searchParams);
 
   // Behind Vercel, redirect to the user-facing host, not the internal one.
   const forwardedHost = request.headers.get("x-forwarded-host");

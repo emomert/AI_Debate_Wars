@@ -129,6 +129,28 @@ Cheap aggregates over the user's `matches`, all from the promoted columns:
   matches; a "Profile" entry joins the header nav (next to Tech Report).
 - **Header**: a small auth widget (sign in / avatar menu) in `GameShell`.
 
+### Branded auth emails (July 2026 — no supabase.co in front of users)
+
+The default Supabase emails link to `<project>.supabase.co/auth/v1/verify`,
+which reads as phishing-adjacent. The templates in `supabase/templates/*.html`
+(pasted into Dashboard → Authentication → Emails) instead link straight to
+`{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=…`, and the
+callback verifies the token server-side via its existing `verifyOtp` branch —
+the Supabase domain never appears in the email. Details:
+
+- **Magic link + signup confirmation** use `type=email`; **password reset**
+  uses `type=recovery&next=/reset-password`.
+- The dynamic return-to page can't be embedded directly (templates only expose
+  the full redirect URL as `{{ .RedirectTo }}`), so the link carries it as
+  `redirect_to=` and `resolveAuthNext` (`lib/utils/url.ts`) recovers the inner
+  `next`, sanitized to a same-origin path.
+- Requires the dashboard **Site URL** to be the production domain — emailed
+  links point at `{{ .SiteURL }}`, so magic links requested from localhost land
+  on prod (swap the host manually when testing locally).
+- The Google consent screen ("to continue to `<project>.supabase.co`") is fixed
+  separately: Google Cloud Console → Branding (app name/logo + verification),
+  or fully by the paid Supabase custom-domain add-on.
+
 ## 7. Security
 
 - `SUPABASE_SERVICE_ROLE_KEY` is **server-only** (never `NEXT_PUBLIC_`), used only

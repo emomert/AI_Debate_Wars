@@ -1,0 +1,31 @@
+<!--
+  Supabase Dashboard → Authentication → Emails → "Magic Link"
+  Suggested subject: Your Debator sign-in link
+  Link target: our own domain ({{ .SiteURL }} must be https://debator.xyz) —
+  /auth/callback verifies the token_hash server-side (docs/19), so the
+  <project>.supabase.co verify URL never appears in the email.
+-->
+<div style="margin:0 auto;max-width:480px;padding:24px 16px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#050505;">
+  <div style="border:4px solid #050505;border-radius:16px;background:#fffdf5;padding:28px 24px;">
+    <p style="margin:0;font-size:26px;font-weight:900;letter-spacing:1px;">DEBATOR</p>
+    <p style="margin:2px 0 20px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#777;">AI Debate Arena</p>
+
+    <p style="margin:0 0 8px;font-size:18px;font-weight:800;">Your sign-in link is ready</p>
+    <p style="margin:0 0 20px;font-size:14px;line-height:1.5;color:#333;">
+      Tap the button to sign in — no password needed.
+    </p>
+
+    <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&redirect_to={{ .RedirectTo }}"
+       style="display:inline-block;background:#FFD91A;color:#050505;font-size:15px;font-weight:800;text-decoration:none;border:3px solid #050505;border-radius:12px;padding:12px 22px;">
+      Sign in to Debator
+    </a>
+
+    <p style="margin:20px 0 0;font-size:12px;line-height:1.5;color:#777;">
+      Button not working? Paste this link into your browser:<br />
+      <span style="word-break:break-all;">{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email&redirect_to={{ .RedirectTo }}</span>
+    </p>
+    <p style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#777;">
+      This link expires in 1 hour and can be used once. If you didn't request it, you can safely ignore this email.
+    </p>
+  </div>
+</div>
