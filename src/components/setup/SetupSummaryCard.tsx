@@ -11,6 +11,8 @@ import { Badge } from "@/components/game/Badge";
 import type { DebateConfig } from "@/lib/debate/debateTypes";
 import type { ValidationResult } from "@/lib/debate/validators";
 import { ALL_TONE_OPTIONS } from "@/lib/constants";
+import { COINS_ENABLED } from "@/lib/coins/config";
+import { matchCoinCost } from "@/lib/coins/economy";
 import { getBattlePairs } from "@/lib/debate/orchestrator";
 import { getModelById, previewAutoJudge } from "@/lib/models/modelRegistry";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
@@ -32,6 +34,7 @@ export function SetupSummaryCard({
 }: SetupSummaryCardProps) {
   const d = useT();
   const pairs = getBattlePairs(config);
+  // (matchCoinCost renders below only when COINS_ENABLED.)
 
   // Name the judge in the match card: the chosen third model, or — for Auto —
   // the same neutral model the server will pick (previewAutoJudge). Falls back
@@ -140,6 +143,25 @@ export function SetupSummaryCard({
               (fixed 4 rounds / 8 turns) since its shape differs. */}
           {config.mode === "blitz" ? (
             <Badge color="white" size="sm">{d.setup.summary.blitzRounds}</Badge>
+          ) : null}
+          {COINS_ENABLED ? (
+            // Total match price (multi-battle: each battle is priced + charged
+            // on its own, so the card shows the sum across all pairs).
+            <Badge color="yellow" size="sm">
+              {d.coins.matchCost(
+                pairs.reduce(
+                  (sum, p) =>
+                    sum +
+                    matchCoinCost({
+                      modelAId: p.modelA.modelId,
+                      modelBId: p.modelB.modelId,
+                      deepDebate: config.deepDebate,
+                      responseLength: config.responseLength,
+                    }),
+                  0,
+                ),
+              )}
+            </Badge>
           ) : null}
           <Badge color="white" size="sm" className="max-w-[12rem] truncate">{toneLabel}</Badge>
           <Badge color="white" size="sm">

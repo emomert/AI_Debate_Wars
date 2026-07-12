@@ -24,6 +24,9 @@ import { SetupSummaryCard } from "@/components/setup/SetupSummaryCard";
 
 import { useArena, toSelectedModel, defaultFighters } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
+import { COINS_ENABLED } from "@/lib/coins/config";
+import { PricingPopup } from "@/components/coins/PricingPopup";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { validateSetup } from "@/lib/debate/validators";
 import { getBattlePairs } from "@/lib/debate/orchestrator";
 import { blitzRosterModelIds, isBlitzModel } from "@/lib/debate/blitzRoster";
@@ -234,9 +237,25 @@ export default function SetupPage() {
     setConfig({ battles: extras });
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     setAttempted(true);
     if (!validateSetup(config, { injectedSearchReady, locale }).valid) return;
+    // Coin gate (docs/23_COINS.md): matches need an account once coins are on.
+    // Everything up to here stays browsable signed-out — pressing START is the
+    // signup moment (the server enforces the same rule; this is just the UX).
+    if (COINS_ENABLED) {
+      const supabase = getSupabaseBrowserClient();
+      if (supabase) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          playSound("buttonClick");
+          router.push("/login?next=/setup");
+          return;
+        }
+      }
+    }
     playSound("debateStart");
     startMatch();
     router.push("/debate");
@@ -244,6 +263,7 @@ export default function SetupPage() {
 
   return (
     <GameShell wide>
+      {COINS_ENABLED ? <PricingPopup /> : null}
       <div className="mb-5">
         <h1 className="font-display text-4xl tracking-tight sm:text-5xl">
           {d.setup.heading}

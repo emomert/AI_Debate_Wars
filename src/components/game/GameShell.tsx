@@ -20,11 +20,17 @@ import { MotionToggle } from "@/components/game/MotionToggle";
 import { HelpButton } from "@/components/game/HelpButton";
 import { LanguageToggle } from "@/components/game/LanguageToggle";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { COINS_ENABLED } from "@/lib/coins/config";
 
 // Code-split the auth widget so the Supabase SDK stays OFF every page's initial
 // bundle (incl. the debate page) and never loads on deployments without auth.
 const AuthButton = dynamic(
   () => import("@/components/game/AuthButton").then((m) => m.AuthButton),
+  { ssr: false },
+);
+// Same treatment for the coin balance chip (it also pulls the Supabase SDK).
+const CoinBalance = dynamic(
+  () => import("@/components/coins/CoinBalance").then((m) => m.CoinBalance),
   { ssr: false },
 );
 const authEnabled = isSupabaseConfigured();
@@ -122,6 +128,7 @@ export function GameShell({
                 <span aria-hidden className="mx-0.5 hidden h-6 w-px bg-ink/15 sm:block" />
               </>
             ) : null}
+            {COINS_ENABLED ? <CoinBalance /> : null}
             {authEnabled ? <AuthButton /> : null}
             {MULTILOCALE_ENABLED ? <LanguageToggle /> : null}
             <MotionToggle />
@@ -179,6 +186,14 @@ export function GameShell({
             <Link href="/report" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
               {d.shell.techReport}
             </Link>
+            {COINS_ENABLED ? (
+              <>
+                <span aria-hidden className="text-ink/30">·</span>
+                <Link href="/pricing" className="transition hover:text-ink hover:underline focus-visible:outline-3 focus-visible:outline-offset-2">
+                  {d.coins.pricing.title}
+                </Link>
+              </>
+            ) : null}
           </p>
         </footer>
       )}

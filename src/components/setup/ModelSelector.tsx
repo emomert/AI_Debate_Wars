@@ -29,6 +29,8 @@ import {
 } from "@/lib/models/modelRegistry";
 import { Badge } from "@/components/game/Badge";
 import { BrandLogo } from "@/components/report/BrandLogo";
+import { COINS_ENABLED, FREE_MAX_FIGHTER_COINS } from "@/lib/coins/config";
+import { coinPriceForModel } from "@/lib/coins/economy";
 import { cn } from "@/lib/utils/cn";
 import { playSound } from "@/lib/audio/soundManager";
 import { useReduceMotion } from "@/lib/motion/useReduceMotion";
@@ -360,9 +362,23 @@ export function ModelSelector({
           ) : null}
         </span>
 
-        <Badge color="white" size="sm">
-          {COST_TIER_LABEL[m.costTier]}
-        </Badge>
+        {COINS_ENABLED ? (
+          // Coin price replaces the abstract $-tier (docs/23_COINS.md); ★ marks
+          // premium fighters that need purchased coins (above the free band).
+          <span title={coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? d.coins.premiumHint : undefined}>
+            <Badge
+              color={coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? "purple" : "yellow"}
+              size="sm"
+            >
+              {d.coins.coinChip(coinPriceForModel(m.id))}
+              {coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? ` ${d.coins.premiumTag}` : ""}
+            </Badge>
+          </span>
+        ) : (
+          <Badge color="white" size="sm">
+            {COST_TIER_LABEL[m.costTier]}
+          </Badge>
+        )}
       </button>
     );
   }
