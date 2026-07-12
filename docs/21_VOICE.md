@@ -6,7 +6,8 @@
 > the arena HUD voice toggle + cost badge, and the per-message play/stop buttons
 > are not rendered; `voicePlayer` no-ops (no Web Speech either); and
 > `isServerTtsConfigured()` returns `false` so `/api/tts` 503s and no paid speech
-> can fire. This is unrelated to the arcade SFX/music toggles, which stay on.
+> can fire. This is unrelated to the arcade audio control (SFX + music merged
+> into ONE header toggle on 2026-07-12), which stays available.
 > Flip `VOICE_ENABLED` to `true` to restore everything below. Source of truth:
 > `src/lib/tts/`, `src/app/api/tts/route.ts`. Cost facts render live on
 > `/report` §8 (also gated by the flag).

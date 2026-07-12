@@ -4,7 +4,6 @@ export const coins = {
   // Header balance chip (links to /pricing)
   balance: (n: number) => `🪙 ${n}`,
   balanceLabel: "Your coin balance — see packs & pricing",
-  dailySuffix: (n: number) => `+${n} today`,
 
   // Model rows / match card
   coinChip: (n: number) => `🪙 ${n}`,

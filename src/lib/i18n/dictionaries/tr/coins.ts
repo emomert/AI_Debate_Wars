@@ -2,7 +2,6 @@
 export const coins = {
   balance: (n: number) => `🪙 ${n}`,
   balanceLabel: "Jeton bakiyeniz — paketleri ve fiyatları görün",
-  dailySuffix: (n: number) => `+${n} bugün`,
 
   coinChip: (n: number) => `🪙 ${n}`,
   premiumTag: "★",

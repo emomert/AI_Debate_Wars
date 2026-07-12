@@ -30,10 +30,13 @@ Building this also unlocks two things from docs/18:
 ## 2. Why Supabase (chosen)
 
 One free-tier vendor covering everything we need, so we don't stitch 3 services:
-- **Auth** — email+password, email magic-link, Google + GitHub OAuth; sessions
-  stored in cookies. New users without a profile are routed through `/welcome`
-  (fighter-card onboarding) by `/auth/callback` (or client-side after a
-  password sign-in).
+- **Auth** — email+password, email magic-link, Google OAuth (GitHub was removed
+  from the login page 2026-07-12 — owner decision; disable the provider in the
+  Supabase dashboard too); sessions stored in cookies. New users without a
+  profile are routed through `/welcome` (fighter-card onboarding — which also
+  asks the optional promo-code question) by `/auth/callback` (or client-side
+  after a password sign-in). The 13+/terms checkbox applies to the email
+  SIGNUP form only; passwordless paths use the passive consent notice.
 - **Postgres** — match history + stats, with **Row Level Security** so a user
   can only ever read/write their own rows (enforced in the DB, not just app code).
 - **Storage** (later) — if we ever host generated verdict images for unfurl.
