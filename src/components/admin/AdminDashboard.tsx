@@ -20,6 +20,7 @@ import {
   type Tally,
 } from "@/lib/analytics/aggregate";
 import type { ApiErrorRow } from "@/lib/analytics/errorLog";
+import type { AdminPromoRow as PromoRow } from "@/app/api/admin/analytics/route";
 
 /* ── Formatting ──────────────────────────────────────────────────────────── */
 
@@ -259,6 +260,7 @@ function ProviderSpendChart({ perDay }: { perDay: { day: string; providers: Prov
 export function AdminDashboard() {
   const [cards, setCards] = useState<StoredMatchCard[] | null>(null);
   const [apiErrors, setApiErrors] = useState<ApiErrorRow[]>([]);
+  const [promos, setPromos] = useState<PromoRow[]>([]);
   const [truncated, setTruncated] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rangeDays, setRangeDays] = useState<number>(30);
@@ -279,12 +281,20 @@ export function AdminDashboard() {
         }
         return r.json();
       })
-      .then((data: { cards: StoredMatchCard[]; truncated: boolean; errors?: ApiErrorRow[] }) => {
-        if (cancelled) return;
-        setCards(data.cards);
-        setTruncated(data.truncated);
-        setApiErrors(data.errors ?? []);
-      })
+      .then(
+        (data: {
+          cards: StoredMatchCard[];
+          truncated: boolean;
+          errors?: ApiErrorRow[];
+          promos?: PromoRow[];
+        }) => {
+          if (cancelled) return;
+          setCards(data.cards);
+          setTruncated(data.truncated);
+          setApiErrors(data.errors ?? []);
+          setPromos(data.promos ?? []);
+        },
+      )
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
       });
@@ -537,6 +547,60 @@ export function AdminDashboard() {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        {/* Promo codes (docs/23_COINS.md) — read-only; mint with scripts/create-promo.mjs */}
+        <div className="mb-4">
+          <Panel title={`Promo codes (${promos.length})`}>
+            {promos.length === 0 ? (
+              <p className="text-xs text-gray-400">
+                No promo codes yet — mint one with <code>node scripts/create-promo.mjs --coins 50 --max 100</code>.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-[10px] uppercase tracking-wider text-gray-400">
+                      <th className="py-1.5 pr-3 font-medium">Code</th>
+                      <th className="py-1.5 pr-3 font-medium">Grants</th>
+                      <th className="py-1.5 pr-3 font-medium">Redeemed</th>
+                      <th className="py-1.5 pr-3 font-medium">Expires</th>
+                      <th className="py-1.5 pr-3 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {promos.map((p) => {
+                      const exhausted = p.redeemed_count >= p.max_redemptions;
+                      const expired = p.expires_at !== null && new Date(p.expires_at) < new Date();
+                      return (
+                        <tr key={p.code} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-1.5 pr-3 font-mono text-gray-700">{p.code}</td>
+                          <td className="py-1.5 pr-3 text-gray-600">{p.coins} coins</td>
+                          <td className="py-1.5 pr-3 font-mono text-gray-600">
+                            {p.redeemed_count} / {p.max_redemptions}
+                          </td>
+                          <td className="py-1.5 pr-3 font-mono text-gray-400">
+                            {p.expires_at ? p.expires_at.slice(0, 10) : "never"}
+                          </td>
+                          <td className="py-1.5 pr-3">
+                            <span
+                              className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                                !p.active || expired || exhausted
+                                  ? "bg-gray-100 text-gray-500"
+                                  : "bg-emerald-50 text-emerald-700"
+                              }`}
+                            >
+                              {!p.active ? "disabled" : expired ? "expired" : exhausted ? "exhausted" : "live"}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

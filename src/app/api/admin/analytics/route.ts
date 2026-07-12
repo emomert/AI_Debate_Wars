@@ -28,11 +28,23 @@ const MAX_CARDS = 20_000;
 // Recent API errors shown on the dashboard (spot recurring failures).
 const MAX_ERRORS = 300;
 
+export interface AdminPromoRow {
+  code: string;
+  coins: number;
+  redeemed_count: number;
+  max_redemptions: number;
+  active: boolean;
+  expires_at: string | null;
+  created_at: string;
+}
+
 export interface AdminAnalyticsResponse {
   cards: StoredMatchCard[];
   /** True when MAX_CARDS was hit — older matches are missing from the payload. */
   truncated: boolean;
   errors: ApiErrorRow[];
+  /** Promo codes + redemption counts (docs/23_COINS.md); minted via scripts/create-promo.mjs. */
+  promos: AdminPromoRow[];
 }
 
 export async function GET(_req: Request): Promise<NextResponse> {
@@ -49,7 +61,7 @@ export async function GET(_req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "analytics-unconfigured" }, { status: 503 });
   }
 
-  const [cardsRes, errorsRes] = await Promise.all([
+  const [cardsRes, errorsRes, promosRes] = await Promise.all([
     admin
       .from("match_analytics")
       .select(COLUMNS)
@@ -60,17 +72,24 @@ export async function GET(_req: Request): Promise<NextResponse> {
       .select("route,code,message,model_id,provider,status,created_at")
       .order("created_at", { ascending: false })
       .limit(MAX_ERRORS),
+    admin
+      .from("promo_codes")
+      .select("code,coins,redeemed_count,max_redemptions,active,expires_at,created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
   if (cardsRes.error) {
     return NextResponse.json({ error: cardsRes.error.message }, { status: 500 });
   }
   if (errorsRes.error) console.error("[admin] error-log read failed:", errorsRes.error.message);
+  if (promosRes.error) console.error("[admin] promo read failed:", promosRes.error.message);
 
   const cards = (cardsRes.data ?? []) as unknown as StoredMatchCard[];
   const res: AdminAnalyticsResponse = {
     cards,
     truncated: cards.length >= MAX_CARDS,
     errors: (errorsRes.data ?? []) as unknown as ApiErrorRow[],
+    promos: (promosRes.data ?? []) as unknown as AdminPromoRow[],
   };
   return NextResponse.json(res);
 }
