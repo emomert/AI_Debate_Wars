@@ -22,6 +22,7 @@ import { COINS_ENABLED } from "@/lib/coins/config";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TERMS_VERSION } from "@/lib/constants";
 import { useT } from "@/lib/i18n/LocaleProvider";
+import { safeNextPath } from "@/lib/utils/url";
 
 export default function WelcomePage() {
   return (
@@ -50,9 +51,7 @@ function WelcomeInner() {
   const [userId, setUserId] = useState<string | null>(null);
   const [skipping, setSkipping] = useState(false);
 
-  const nextParam = params.get("next");
-  const nextPath =
-    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+  const nextPath = safeNextPath(params.get("next"));
 
   // Signed-out (or auth disabled) → nothing to onboard; go sign in.
   useEffect(() => {

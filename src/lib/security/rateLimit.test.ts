@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // rateLimit.ts imports "server-only" (throws outside a server bundle) and the
-// Supabase server client. Stub both so we can exercise the in-process backstop
-// that runs when Supabase is unavailable. getSupabaseServerClient → null makes
-// every call take the Supabase-absent fallback path.
+// service-role Supabase client. Stub both so we can exercise the in-process
+// backstop that runs when Supabase is unavailable. getSupabaseServiceRoleClient
+// → null makes every call take the Supabase-absent fallback path.
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => null,
+vi.mock("@/lib/supabase/admin", () => ({
+  getSupabaseServiceRoleClient: () => null,
 }));
 
 /**

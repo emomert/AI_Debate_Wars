@@ -41,7 +41,7 @@ export const coins = {
       "A match costs fighter A + fighter B coins — the price is on every fighter card.",
       "Long response length doubles the fighter total; Deep Debate adds 2 coins flat.",
       "The Auto judge is included free. Picking your own judge adds that model's coin price.",
-      "Re-judging costs the judge's coin price each time (minimum 1 coin).",
+      "Switching to a different judge costs that judge's coin price; re-running the same judge (or the Auto judge) is free.",
       "Premium fighters (8 coins and up) use purchased or promo coins — daily free coins cover everything up to 4 coins.",
       "Purchased and promo coins never expire.",
     ],

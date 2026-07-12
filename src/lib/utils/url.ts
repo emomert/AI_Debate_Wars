@@ -19,10 +19,26 @@ export function isSafeHttpUrl(url: unknown): url is string {
   }
 }
 
-/** Only allow a same-origin absolute path → blocks open-redirect abuse. */
+/**
+ * Only allow a same-origin relative path → blocks open-redirect abuse.
+ *
+ * A naive `startsWith("/") && !startsWith("//")` check is bypassable: browsers
+ * (and the WHATWG URL parser) normalize `\` to `/` and strip embedded tab/
+ * newline, so `/\evil.com` or `/<tab>/evil.com` resolve to the cross-origin
+ * `//evil.com`. Instead we RESOLVE the input against a sentinel origin and keep
+ * it only if it stayed on that origin — then return the parser's canonical
+ * path+query+hash (never the raw string).
+ */
 export function safeNextPath(next: string | null | undefined): string {
-  if (next && next.startsWith("/") && !next.startsWith("//")) return next;
-  return "/";
+  if (!next) return "/";
+  const SENTINEL = "https://x.invalid";
+  try {
+    const url = new URL(next, SENTINEL);
+    if (url.origin !== SENTINEL) return "/";
+    return url.pathname + url.search + url.hash;
+  } catch {
+    return "/";
+  }
 }
 
 /**

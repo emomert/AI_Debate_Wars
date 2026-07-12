@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// access.ts imports "server-only" (throws outside a server bundle).
+vi.mock("server-only", () => ({}));
+
 import { isAdminUserId } from "./access";
 
 afterEach(() => vi.unstubAllEnvs());

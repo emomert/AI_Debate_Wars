@@ -47,6 +47,17 @@ describe("safeNextPath", () => {
     expect(safeNextPath("https://evil.com")).toBe("/");
     expect(safeNextPath("javascript:alert(1)")).toBe("/");
   });
+
+  it("blocks the backslash + control-char bypasses that browsers normalize to cross-origin", () => {
+    // `\` is normalized to `/` by the URL parser, so `/\evil.com` resolves like
+    // `//evil.com` → a different origin. The old startsWith("//") check missed it.
+    expect(safeNextPath("/\\evil.com")).toBe("/");
+    expect(safeNextPath("\\\\evil.com")).toBe("/");
+    expect(safeNextPath("/\\/evil.com")).toBe("/");
+    // Embedded tab/newline are stripped by the parser, exposing `//evil.com`.
+    expect(safeNextPath("/\t/evil.com")).toBe("/");
+    expect(safeNextPath("/\n/evil.com")).toBe("/");
+  });
 });
 
 describe("resolveAuthNext", () => {

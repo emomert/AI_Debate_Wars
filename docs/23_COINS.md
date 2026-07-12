@@ -10,12 +10,20 @@
 ## The user-facing rule
 
 A match costs **fighter A + fighter B coins**. Long response length ×2 (on the
-fighter total), Deep Debate +2 flat. The **Auto judge is included free**; a
-PICKED judge adds its coin price (flat — owner 7/12: a free Fable judge on a
-2-coin match was cash-negative). **Re-judging is never free**: each re-judge
-costs the judge's coin price, minimum 1 coin (charged in the verdict route,
-idempotent per session+judge+ordinal). Multi-battle: each battle is priced and
-charged separately.
+fighter total), Deep Debate +2 flat. The judge is priced **separately, at the
+verdict route** (decoupled from the match charge 2026-07-13 — see below): the
+**Auto judge (and a fighter-as-judge) is free**; a PICKED third-model judge adds
+its coin price (flat). Judge charges are keyed on **(session, judge, transcript)**,
+so switching to a *different* judge costs that judge's price while re-running the
+**same** judge (or Auto) is idempotent/free. Multi-battle: each battle is priced
+and charged separately.
+
+> **Why decoupled (2026-07-13 security fix).** The judge used to be folded into
+> the match charge, and re-judges were gated on a client-supplied "verdict
+> ordinal" — which a crafted client could pin to 0 to run premium judges free.
+> Pricing the judge from the RESOLVED judge at the verdict route, keyed on the
+> transcript, removes that trust entirely. Trade-off: re-running the *same* judge
+> no longer costs (it's the identical verdict); only *switching* judges does.
 
 ## Coin prices
 
@@ -40,7 +48,7 @@ When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
   renders them with disabled "coming soon" buys until Polar is wired.
 - Signed-out: everything browsable; START routes to `/login?next=/setup`.
 
-## Data & enforcement (migration 0012)
+## Data & enforcement (migrations 0012 + 0013)
 
 - `coin_ledger` — append-only; buckets `purchased` / `promo` / `daily`;
   own-rows SELECT RLS; writes only via SECURITY DEFINER RPCs keyed on
@@ -49,10 +57,19 @@ When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
 - `coin_status()` → purchased balance + today's daily spend.
 - `coin_spend_match(session, total, premium, allowance)` — advisory-locked,
   idempotent per (user, charge-key), splits daily-first, premium part
-  purchased-only. Called by the turn route on EVERY turn (`ensureMatchCharged`,
-  `src/lib/coins/server.ts`) — the charge key embeds the total so mutating a
-  paid session's config re-charges instead of riding free. Fails CLOSED when
-  the ledger is unreachable.
+  purchased-only. Called by the turn route on EVERY turn (`ensureMatchCharged`)
+  and the verdict route for a picked judge (`ensureJudgeCharged`),
+  `src/lib/coins/server.ts`. Fails CLOSED when the ledger is unreachable.
+- **Charge keys are HMAC-signed (2026-07-13, `src/lib/coins/chargeKey.ts`).**
+  `coin_spend_match` is reachable over PostgREST, so the key is bound to an HMAC
+  over (session id, amount, match/transcript content) with a server-only secret
+  (`SUPABASE_SERVICE_ROLE_KEY`, or `COIN_CHARGE_SECRET`). A hostile client can't
+  forge a real match's key to pre-seed a free "ALREADY", nor replay one paid key
+  across *different* matches. Coins therefore now require the service-role key;
+  the charge fails closed without it.
+- **Migration 0013** additionally makes the DB ignore a client-supplied
+  `p_allowance` (the 15/day free cap is a server constant), so the free daily
+  bucket can't be inflated even by a direct RPC call.
 - `coin_redeem_promo(code)` — normalized codes, expiry, global cap
   (row-locked), one-per-account PK, **10 attempts/hour/user inside the DB**
   (reuses `rl_hit`), atomic credit.

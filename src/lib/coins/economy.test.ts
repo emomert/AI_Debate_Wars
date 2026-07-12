@@ -7,7 +7,8 @@ import {
   estimatedFighterCostUsd,
   matchCoinCost,
   premiumCoinCost,
-  rejudgeCoinCost,
+  judgeCoinCost,
+  judgePremiumCoinCost,
   COIN_PACKS,
 } from "./economy";
 import { FREE_MAX_FIGHTER_COINS } from "./config";
@@ -78,36 +79,36 @@ describe("matchCoinCost", () => {
     ).toBe(40);
   });
 
-  it("auto judge is included; a PICKED judge adds its coin price (flat, no length multiplier)", () => {
-    expect(matchCoinCost({ ...base, judge: { mode: "auto" } })).toBe(2);
-    expect(
-      matchCoinCost({ ...base, judge: { mode: "thirdModel", modelId: "anthropic/claude-fable-5" } }),
-    ).toBe(22);
-    // Length doubles the fighters, not the judge's single verdict.
-    expect(
-      matchCoinCost({
-        ...base,
-        responseLength: "long",
-        judge: { mode: "thirdModel", modelId: "anthropic/claude-sonnet-5" },
-      }),
-    ).toBe(8);
-  });
-
-  it("a premium picked judge counts into the purchased-only share", () => {
-    expect(
-      premiumCoinCost({ ...base, judge: { mode: "thirdModel", modelId: "gpt-5.5" } }),
-    ).toBe(12);
-    expect(
-      premiumCoinCost({ ...base, judge: { mode: "thirdModel", modelId: "anthropic/claude-haiku-4.5" } }),
-    ).toBe(0);
+  it("the match charge covers fighters only — the judge is charged separately at verdict time", () => {
+    // Judge cost was decoupled from the match charge (2026-07-13 security fix):
+    // charging the judge at the verdict route, keyed on the RESOLVED judge, is
+    // what closes the free-premium-judge bypass. So matchCoinCost never varies
+    // with the judge — an unused `judge` field is simply ignored.
+    expect(matchCoinCost(base)).toBe(2);
+    expect(matchCoinCost({ ...base, responseLength: "long" })).toBe(4);
   });
 });
 
-describe("rejudgeCoinCost — re-judging is never free (owner 7/12)", () => {
-  it("costs the judge's coin price, minimum 1 for auto", () => {
-    expect(rejudgeCoinCost(undefined)).toBe(1);
-    expect(rejudgeCoinCost("gpt-4.1-mini")).toBe(1);
-    expect(rejudgeCoinCost("anthropic/claude-fable-5")).toBe(20);
+describe("judgeCoinCost — charged at the verdict route (decoupled 2026-07-13)", () => {
+  it("is free for the auto judge and for a fighter-as-judge", () => {
+    expect(judgeCoinCost({ mode: "auto" })).toBe(0);
+    expect(judgeCoinCost({ mode: "modelA" })).toBe(0);
+    expect(judgeCoinCost({ mode: "modelB" })).toBe(0);
+    expect(judgeCoinCost(undefined)).toBe(0);
+  });
+
+  it("charges a picked third-model judge its flat coin price (no length multiplier)", () => {
+    expect(judgeCoinCost({ mode: "thirdModel", modelId: "anthropic/claude-fable-5" })).toBe(20);
+    expect(judgeCoinCost({ mode: "thirdModel", modelId: "gpt-5.5" })).toBe(12);
+    expect(judgeCoinCost({ mode: "thirdModel", modelId: "anthropic/claude-haiku-4.5" })).toBe(2);
+    // A thirdModel mode with no model id can't be priced → free (validated elsewhere).
+    expect(judgeCoinCost({ mode: "thirdModel" })).toBe(0);
+  });
+
+  it("only a premium picked judge (above the free band) draws on purchased coins", () => {
+    expect(judgePremiumCoinCost({ mode: "thirdModel", modelId: "gpt-5.5" })).toBe(12);
+    expect(judgePremiumCoinCost({ mode: "thirdModel", modelId: "anthropic/claude-haiku-4.5" })).toBe(0);
+    expect(judgePremiumCoinCost({ mode: "auto" })).toBe(0);
   });
 });
 

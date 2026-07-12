@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Share-link verdict signing (audit critical #2).
  *

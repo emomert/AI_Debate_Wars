@@ -38,8 +38,12 @@ Window length: `RL_WINDOW_SECONDS` (default 60). Client IP comes from the
 platform-set `x-vercel-forwarded-for` / `x-real-ip` headers, which Vercel
 overwrites with the real TCP peer — spoof-proof there. The client-supplied
 leftmost `x-forwarded-for` is only a no-proxy local-dev fallback; **do not port
-this app to a non-Vercel host without revisiting `clientIp()`**, or per-IP
-guards become spoofable.
+this app to a non-Vercel host without revisiting `clientIp()`** (per-IP guards
+become spoofable) **and `x-forwarded-host` in `auth/callback`** (a spoofed host
+would turn the post-login redirect into an open redirect). On any non-Vercel
+host, strip/rewrite `x-vercel-forwarded-for`, `x-real-ip`, and
+`x-forwarded-host` at the edge, or gate the fallbacks behind an explicit trust
+flag.
 
 The turn/verdict caps are sized for **multi-battle matches**: a single match can
 run up to 3 battles at once (each on its own session), so it fires ~3× the
@@ -58,6 +62,8 @@ choice enum, comment length, session shape + completeness on publish); see
 - Global cap: `SPEND_GLOBAL_DAILY_USD` (default $15).
 - Per-IP cap: `SPEND_IP_DAILY_USD` (default $3 — raised so a single 3-battle match can't trip it mid-way).
 - `spend_allowed` is checked before paid work; `spend_record` logs actual cost after each response (best-effort — a ledger failure never fails the user's request).
+
+**Service-role only (migration 0013).** `rl_hit`, `spend_allowed`, and `spend_record` mutate app-wide ledgers — a single `spend_record('global', 999999)` would trip the daily cap for *everyone*. They are therefore **revoked from `anon`/`authenticated` and granted to `service_role`**, and the server now calls them with the service-role client (`getSupabaseServiceRoleClient`). The cross-instance limiter consequently needs `SUPABASE_SERVICE_ROLE_KEY`; without it the in-process backstop takes over (same as an unconfigured Supabase).
 
 ### Fail-soft behavior (in-process backstop)
 

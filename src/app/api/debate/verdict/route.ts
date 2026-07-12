@@ -34,7 +34,7 @@ import {
   getProviderModelConfig,
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
-import { ensureRejudgeCharged } from "@/lib/coins/server";
+import { ensureJudgeCharged } from "@/lib/coins/server";
 import { recordApiError } from "@/lib/analytics/errorLog";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
@@ -116,10 +116,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     const judgeModelId = resolveJudgeModelId(session);
     errModelId = judgeModelId;
 
-    // Coin gate for RE-JUDGES (docs/23_COINS.md; no-op while COINS_ENABLED is
-    // off or on a match's FIRST verdict, which the match charge covers). Runs
-    // before any paid judge work; each re-judge costs the judge's coin price.
-    await ensureRejudgeCharged(session, judgeModelId);
+    // Coin gate for the JUDGE (docs/23_COINS.md; no-op while COINS_ENABLED is
+    // off, or for the Auto/fighter judge which is free). Priced from the
+    // RESOLVED judge and keyed on (session, judge, transcript), so it runs
+    // before any paid judge work and can't be dodged with a forged verdict
+    // ordinal — each distinct picked third-model judge costs its coin price.
+    await ensureJudgeCharged(session, judgeModelId);
 
     const modelConfig = getProviderModelConfig(judgeModelId);
     const provider = getProvider(modelConfig.providerId);

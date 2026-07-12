@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Admin gating. There is no admin role in the DB — the owner is identified by an
  * env allowlist of Supabase user ids (ADMIN_USER_IDS, comma-separated). Simple,

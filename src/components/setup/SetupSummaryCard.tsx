@@ -12,7 +12,7 @@ import type { DebateConfig } from "@/lib/debate/debateTypes";
 import type { ValidationResult } from "@/lib/debate/validators";
 import { ALL_TONE_OPTIONS } from "@/lib/constants";
 import { COINS_ENABLED } from "@/lib/coins/config";
-import { matchCoinCost } from "@/lib/coins/economy";
+import { judgeCoinCost, matchCoinCost } from "@/lib/coins/economy";
 import { getBattlePairs } from "@/lib/debate/orchestrator";
 import { getModelById, previewAutoJudge } from "@/lib/models/modelRegistry";
 import type { ProviderAvailability } from "@/lib/state/ArenaContext";
@@ -159,10 +159,12 @@ export function SetupSummaryCard({
                       modelBId: p.modelB.modelId,
                       deepDebate: config.deepDebate,
                       responseLength: config.responseLength,
-                      judge: {
-                        mode: config.judge.mode === "thirdModel" ? "thirdModel" : "auto",
-                        modelId: config.judge.model?.modelId,
-                      },
+                    }) +
+                    // The judge is priced per battle (each pair renders its own
+                    // verdict) — Auto is free, a picked third-model judge adds its coin price.
+                    judgeCoinCost({
+                      mode: config.judge.mode,
+                      modelId: config.judge.model?.modelId,
                     }),
                   0,
                 ),

@@ -1,8 +1,10 @@
 /**
- * The coin economy (docs/23_COINS.md; spec 2026-07-12-coin-economy-design.md).
+ * The coin economy (docs/23_COINS.md).
  *
  * One rule users see: a match costs fighter A + fighter B coins. Modifiers:
- * long length ×2 (on the fighter total), Deep Debate +2 flat, judge free.
+ * long length ×2 (on the fighter total), Deep Debate +2 flat. The judge is
+ * priced separately at the verdict route (Auto is free; a picked third-model
+ * judge costs its coin price) — see judgeCoinCost.
  *
  * Coin prices are an EXPLICIT per-model map (auditable, owner-approved) derived
  * from real per-match API cost bands — 1 (≤$0.0065) · 2 (≤$0.02) · 4 (≤$0.04) ·
@@ -110,55 +112,54 @@ export interface CoinCostInput {
   modelBId: string;
   deepDebate: boolean;
   responseLength: ResponseLength;
-  /** Judge config: Auto is included free; a PICKED judge adds its coin price
-   *  (owner 7/12 — a free Fable judge on a 2-coin match was cash-negative). */
-  judge?: { mode: "auto" | "thirdModel"; modelId?: string };
+}
+
+/** A judge's config, as far as pricing cares. Only a picked `thirdModel` judge
+ *  costs coins; Auto and fighter-as-judge (`modelA`/`modelB`) are free. */
+export interface JudgeCostInput {
+  mode: string;
+  modelId?: string;
 }
 
 const lengthMultiplier = (l: ResponseLength) => (l === "long" ? 2 : 1);
 
-/** A picked judge's flat price (one verdict — no length multiplier). */
-function pickedJudgeCoins(judge: CoinCostInput["judge"]): number {
-  if (!judge || judge.mode !== "thirdModel" || !judge.modelId) return 0;
-  return coinPriceForModel(judge.modelId);
-}
-
-/** Total coins a match charges:
- *  (A + B) × lengthMult, +2 for Deep Debate, + picked-judge price (flat). */
+/** Total coins a MATCH charges (fighters only — the judge is separate):
+ *  (A + B) × lengthMult, +2 for Deep Debate. */
 export function matchCoinCost(input: CoinCostInput): number {
   const fighters = coinPriceForModel(input.modelAId) + coinPriceForModel(input.modelBId);
-  return (
-    fighters * lengthMultiplier(input.responseLength) +
-    (input.deepDebate ? 2 : 0) +
-    pickedJudgeCoins(input.judge)
-  );
+  return fighters * lengthMultiplier(input.responseLength) + (input.deepDebate ? 2 : 0);
 }
 
 /**
- * The premium share of a match — the part daily free coins may NOT pay
- * (fighters above FREE_MAX_FIGHTER_COINS with the length multiplier, plus a
- * premium PICKED judge). The deep surcharge and free-band models stay
- * daily-eligible.
+ * The premium share of a match — the fighter coins daily free coins may NOT pay
+ * (fighters above FREE_MAX_FIGHTER_COINS with the length multiplier). The deep
+ * surcharge and free-band models stay daily-eligible.
  */
 export function premiumCoinCost(input: CoinCostInput): number {
   const premium = [input.modelAId, input.modelBId]
     .map(coinPriceForModel)
     .filter((c) => c > FREE_MAX_FIGHTER_COINS)
     .reduce((s, c) => s + c, 0);
-  const judge = pickedJudgeCoins(input.judge);
-  return (
-    premium * lengthMultiplier(input.responseLength) +
-    (judge > FREE_MAX_FIGHTER_COINS ? judge : 0)
-  );
+  return premium * lengthMultiplier(input.responseLength);
 }
 
 /**
- * Re-judging is NEVER free (owner 7/12): each re-judge costs the new judge's
- * coin price — minimum 1 coin for the auto judge — or unlimited free premium
- * verdicts would quietly drain the daily spend caps.
+ * A judge's coin price, charged at the verdict route (decoupled from the match
+ * charge 2026-07-13 to close the free-premium-judge bypass — the judge is now
+ * always priced from the RESOLVED judge, never a client-supplied ordinal).
+ * Auto and fighter-as-judge are free; a picked third-model judge costs its
+ * flat coin price (one verdict — no length multiplier).
  */
-export function rejudgeCoinCost(judgeModelId: string | undefined): number {
-  return judgeModelId ? coinPriceForModel(judgeModelId) : 1;
+export function judgeCoinCost(judge: JudgeCostInput | undefined): number {
+  if (!judge || judge.mode !== "thirdModel" || !judge.modelId) return 0;
+  return coinPriceForModel(judge.modelId);
+}
+
+/** The share of a judge charge that only purchased/promo coins may pay (a
+ *  picked judge above the free band). */
+export function judgePremiumCoinCost(judge: JudgeCostInput | undefined): number {
+  const c = judgeCoinCost(judge);
+  return c > FREE_MAX_FIGHTER_COINS ? c : 0;
 }
 
 /* ---- cost model for the margin test (mirrors the monetization report) ---- */

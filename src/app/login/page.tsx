@@ -26,6 +26,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TERMS_VERSION } from "@/lib/constants";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
+import { safeNextPath } from "@/lib/utils/url";
 
 type Mode = "signin" | "signup";
 type Busy = "password" | "magic" | "reset" | "google" | null;
@@ -117,12 +118,10 @@ function LoginForm() {
   // Return the user to where they came from (e.g. the match they wanted to
   // save). The callback sanitizes `next` to a same-origin path. Lazy (called
   // from handlers only) so SSR never touches `window`.
-  const nextParam = params.get("next");
-  const nextPath =
-    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
+  const nextPath = safeNextPath(params.get("next"));
   const callbackUrl = () =>
     `${window.location.origin}/auth/callback${
-      nextParam ? `?next=${encodeURIComponent(nextParam)}` : ""
+      nextPath !== "/" ? `?next=${encodeURIComponent(nextPath)}` : ""
     }`;
 
   // Consent recorded at the SIGNUP gesture (P0-7), straight into the user's auth
@@ -160,7 +159,7 @@ function LoginForm() {
     router.replace(
       data
         ? nextPath
-        : `/welcome${nextParam ? `?next=${encodeURIComponent(nextPath)}` : ""}`,
+        : `/welcome${nextPath !== "/" ? `?next=${encodeURIComponent(nextPath)}` : ""}`,
     );
   };
 

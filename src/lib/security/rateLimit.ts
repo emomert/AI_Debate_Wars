@@ -20,9 +20,16 @@ import "server-only";
  * serverless runs many short-lived instances, so the effective ceiling is
  * roughly limit × instances — far better than "unbounded", not a substitute for
  * running migration 0003 in production.
+ *
+ * These RPCs are called with the SERVICE-ROLE client (not the caller's cookie
+ * client): the spend/rate functions mutate app-wide ledgers, so migration 0013
+ * revokes them from anon/authenticated and grants them to service_role only —
+ * otherwise any client could POST spend_record('global', 999999) over PostgREST
+ * and trip the daily cap for everyone. The cross-instance guard therefore needs
+ * SUPABASE_SERVICE_ROLE_KEY; without it we fall back to the in-process backstop.
  */
 
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/admin";
 import { ProviderError } from "@/lib/utils/errors";
 
 type RouteKind =
@@ -191,14 +198,14 @@ let warnedUnconfigured = false;
  */
 export async function enforceLimits(req: Request, kind: RouteKind): Promise<void> {
   const ip = clientIp(req);
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
 
   if (!supabase) {
     if (!warnedUnconfigured) {
       console.warn(
-        "[rate-limit] Supabase not configured — falling back to the in-process " +
-          "backstop. Configure Supabase + run migration 0003 for the real " +
-          "cross-instance caps before a public launch.",
+        "[rate-limit] service-role Supabase not configured — falling back to the " +
+          "in-process backstop. Set SUPABASE_SERVICE_ROLE_KEY + run migrations " +
+          "0003/0013 for the real cross-instance caps before a public launch.",
       );
       warnedUnconfigured = true;
     }
@@ -272,7 +279,8 @@ function enforceLimitsInMemory(ip: string, kind: RouteKind): void {
  * backstop that sits alongside (not inside) the dollar spend caps. Reuses the
  * same atomic fixed-window RPC with a 1-day window, so no extra schema is needed.
  * Call right BEFORE issuing a search. Throws DAILY_LIMIT_REACHED when tripped;
- * fail-open like the other guards (a DB blip never blocks a search).
+ * fails SOFT to the in-process backstop like the other guards (a DB blip falls
+ * back to the per-instance count, it doesn't leave search uncapped).
  */
 export async function enforceSearchBudget(): Promise<void> {
   const memCheck = () => {
@@ -280,7 +288,7 @@ export async function enforceSearchBudget(): Promise<void> {
       throw new ProviderError("DAILY_LIMIT_REACHED", "Daily web-search budget reached");
     }
   };
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
   if (!supabase) {
     memCheck(); // backstop instead of fail-open
     return;
@@ -315,7 +323,7 @@ export async function recordSpend(req: Request, amountUsd: number): Promise<void
   // Always update the in-process ledger too, so the backstop's spend cap has a
   // running total to enforce against if Supabase drops out later in the day.
   memSpendRecord(ip, amountUsd);
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseServiceRoleClient();
   if (!supabase) return;
   try {
     const { error } = await supabase.rpc("spend_record", {

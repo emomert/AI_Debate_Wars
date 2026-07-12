@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Brave Web Search implementation of `SearchProvider`.
  *
