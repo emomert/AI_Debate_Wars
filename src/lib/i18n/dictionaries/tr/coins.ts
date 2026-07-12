@@ -19,7 +19,7 @@ export const coins = {
 
   pricing: {
     title: "Jetonlar ve Fiyatlandırma",
-    subtitle: "Her yarışmacının bir jeton fiyatı var. Bir maç, iki yarışmacının toplamına mal olur — hakem her zaman ücretsizdir.",
+    subtitle: "Her yarışmacının bir jeton fiyatı var. Bir maç, iki yarışmacının toplamına mal olur — Otomatik hakem dahildir.",
     freeTitle: "🎁 Her gün ücretsiz",
     freeBody: (daily: number, maxBand: number) =>
       `Giriş yapan oyuncular her gün ${daily} ücretsiz jeton alır. Bu jetonlar ${maxBand} jetona kadar fiyatlanan her yarışmacıda geçer — kadronun çoğunu kapsar. Kullanılmayan günlük jetonlar devretmez; UTC gece yarısında yenilenir.`,
@@ -38,7 +38,8 @@ export const coins = {
     rules: [
       "Bir maç, Yarışmacı A + Yarışmacı B jetonlarına mal olur — fiyat her yarışmacı kartında yazar.",
       "Uzun yanıt uzunluğu yarışmacı toplamını ikiye katlar; Derin Münazara sabit 2 jeton ekler.",
-      "Hakem (ve yeniden hakemlik) her zaman ücretsizdir.",
+      "Otomatik hakem ücretsiz dahildir. Kendi hakeminizi seçmek o modelin jeton fiyatını ekler.",
+      "Yeniden hakemlik her seferinde hakemin jeton fiyatına mal olur (en az 1 jeton).",
       "Premium yarışmacılar (8 jeton ve üzeri) satın alınmış ya da promosyon jetonu kullanır — günlük ücretsiz jetonlar 4 jetona kadar her şeyi kapsar.",
       "Satın alınan ve promosyon jetonlarının süresi asla dolmaz.",
     ],

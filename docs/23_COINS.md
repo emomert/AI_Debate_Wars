@@ -13,8 +13,12 @@
 ## The user-facing rule
 
 A match costs **fighter A + fighter B coins**. Long response length ×2 (on the
-fighter total), Deep Debate +2 flat, the judge (and re-judging) is free.
-Multi-battle: each battle is priced and charged separately.
+fighter total), Deep Debate +2 flat. The **Auto judge is included free**; a
+PICKED judge adds its coin price (flat — owner 7/12: a free Fable judge on a
+2-coin match was cash-negative). **Re-judging is never free**: each re-judge
+costs the judge's coin price, minimum 1 coin (charged in the verdict route,
+idempotent per session+judge+ordinal). Multi-battle: each battle is priced and
+charged separately.
 
 ## Coin prices
 

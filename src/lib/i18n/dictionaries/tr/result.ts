@@ -70,7 +70,7 @@ export const result = {
     fighterWarning: "⚠️ Bu hakem maçta yarıştığı için karar daha az tarafsız olabilir.",
     deliberating: "⚖️ Hakem değerlendiriyor…",
     runVerdict: "🏆 Yeni kararı çalıştırın",
-    billingNote: "Yeni bir hakem turu çalıştırır — her karar gibi ücretlendirilir. Önceki karar maç maliyetine dahil kalır.",
+    billingNote: "Yeni bir hakem turu çalıştırır — hakemin jeton fiyatına mal olur (en az 1 jeton). Önceki karar kayıtta kalır.",
   },
 
   // VerdictCard içindeki paylaşım satırı

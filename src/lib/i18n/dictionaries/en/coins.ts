@@ -23,7 +23,7 @@ export const coins = {
 
   pricing: {
     title: "Coins & Pricing",
-    subtitle: "Every fighter has a coin price. A match costs the two fighters added together — the judge is always free.",
+    subtitle: "Every fighter has a coin price. A match costs the two fighters added together — the Auto judge is included.",
     freeTitle: "🎁 Free, every single day",
     freeBody: (daily: number, maxBand: number) =>
       `Signed-in players get ${daily} coins a day, free. They work on every fighter priced up to ${maxBand} coins — that covers most of the roster. Unused daily coins don't roll over; they refresh at midnight UTC.`,
@@ -42,7 +42,8 @@ export const coins = {
     rules: [
       "A match costs fighter A + fighter B coins — the price is on every fighter card.",
       "Long response length doubles the fighter total; Deep Debate adds 2 coins flat.",
-      "The judge (and re-judging) is always free.",
+      "The Auto judge is included free. Picking your own judge adds that model's coin price.",
+      "Re-judging costs the judge's coin price each time (minimum 1 coin).",
       "Premium fighters (8 coins and up) use purchased or promo coins — daily free coins cover everything up to 4 coins.",
       "Purchased and promo coins never expire.",
     ],

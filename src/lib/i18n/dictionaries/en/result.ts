@@ -70,7 +70,7 @@ export const result = {
     fighterWarning: "⚠️ This judge fought in the match, so the verdict may be less neutral.",
     deliberating: "⚖️ The judge is deliberating…",
     runVerdict: "🏆 Run the new verdict",
-    billingNote: "Runs one fresh judge turn — billed like any verdict. The previous verdict stays counted in the match cost.",
+    billingNote: "Runs one fresh judge turn — it costs the judge's coin price (minimum 1 coin). The previous verdict stays on record.",
   },
 
   // Share row inside the VerdictCard

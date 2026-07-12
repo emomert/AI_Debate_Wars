@@ -157,6 +157,10 @@ export function SetupSummaryCard({
                       modelBId: p.modelB.modelId,
                       deepDebate: config.deepDebate,
                       responseLength: config.responseLength,
+                      judge: {
+                        mode: config.judge.mode === "thirdModel" ? "thirdModel" : "auto",
+                        modelId: config.judge.model?.modelId,
+                      },
                     }),
                   0,
                 ),

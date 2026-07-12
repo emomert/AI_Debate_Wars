@@ -110,27 +110,55 @@ export interface CoinCostInput {
   modelBId: string;
   deepDebate: boolean;
   responseLength: ResponseLength;
+  /** Judge config: Auto is included free; a PICKED judge adds its coin price
+   *  (owner 7/12 — a free Fable judge on a 2-coin match was cash-negative). */
+  judge?: { mode: "auto" | "thirdModel"; modelId?: string };
 }
 
 const lengthMultiplier = (l: ResponseLength) => (l === "long" ? 2 : 1);
 
-/** Total coins a match charges: (A + B) × lengthMult, +2 for Deep Debate. */
+/** A picked judge's flat price (one verdict — no length multiplier). */
+function pickedJudgeCoins(judge: CoinCostInput["judge"]): number {
+  if (!judge || judge.mode !== "thirdModel" || !judge.modelId) return 0;
+  return coinPriceForModel(judge.modelId);
+}
+
+/** Total coins a match charges:
+ *  (A + B) × lengthMult, +2 for Deep Debate, + picked-judge price (flat). */
 export function matchCoinCost(input: CoinCostInput): number {
   const fighters = coinPriceForModel(input.modelAId) + coinPriceForModel(input.modelBId);
-  return fighters * lengthMultiplier(input.responseLength) + (input.deepDebate ? 2 : 0);
+  return (
+    fighters * lengthMultiplier(input.responseLength) +
+    (input.deepDebate ? 2 : 0) +
+    pickedJudgeCoins(input.judge)
+  );
 }
 
 /**
  * The premium share of a match — the part daily free coins may NOT pay
- * (fighters above FREE_MAX_FIGHTER_COINS, with the length multiplier).
- * The deep surcharge and free-band fighters stay daily-eligible.
+ * (fighters above FREE_MAX_FIGHTER_COINS with the length multiplier, plus a
+ * premium PICKED judge). The deep surcharge and free-band models stay
+ * daily-eligible.
  */
 export function premiumCoinCost(input: CoinCostInput): number {
   const premium = [input.modelAId, input.modelBId]
     .map(coinPriceForModel)
     .filter((c) => c > FREE_MAX_FIGHTER_COINS)
     .reduce((s, c) => s + c, 0);
-  return premium * lengthMultiplier(input.responseLength);
+  const judge = pickedJudgeCoins(input.judge);
+  return (
+    premium * lengthMultiplier(input.responseLength) +
+    (judge > FREE_MAX_FIGHTER_COINS ? judge : 0)
+  );
+}
+
+/**
+ * Re-judging is NEVER free (owner 7/12): each re-judge costs the new judge's
+ * coin price — minimum 1 coin for the auto judge — or unlimited free premium
+ * verdicts would quietly drain the daily spend caps.
+ */
+export function rejudgeCoinCost(judgeModelId: string | undefined): number {
+  return judgeModelId ? coinPriceForModel(judgeModelId) : 1;
 }
 
 /* ---- cost model for the margin test (mirrors the monetization report) ---- */

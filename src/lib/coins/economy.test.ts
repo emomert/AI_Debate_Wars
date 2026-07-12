@@ -7,6 +7,7 @@ import {
   estimatedFighterCostUsd,
   matchCoinCost,
   premiumCoinCost,
+  rejudgeCoinCost,
   COIN_PACKS,
 } from "./economy";
 import { FREE_MAX_FIGHTER_COINS } from "./config";
@@ -75,6 +76,38 @@ describe("matchCoinCost", () => {
     expect(
       matchCoinCost({ ...base, modelAId: "anthropic/claude-fable-5", modelBId: "anthropic/claude-fable-5" }),
     ).toBe(40);
+  });
+
+  it("auto judge is included; a PICKED judge adds its coin price (flat, no length multiplier)", () => {
+    expect(matchCoinCost({ ...base, judge: { mode: "auto" } })).toBe(2);
+    expect(
+      matchCoinCost({ ...base, judge: { mode: "thirdModel", modelId: "anthropic/claude-fable-5" } }),
+    ).toBe(22);
+    // Length doubles the fighters, not the judge's single verdict.
+    expect(
+      matchCoinCost({
+        ...base,
+        responseLength: "long",
+        judge: { mode: "thirdModel", modelId: "anthropic/claude-sonnet-5" },
+      }),
+    ).toBe(8);
+  });
+
+  it("a premium picked judge counts into the purchased-only share", () => {
+    expect(
+      premiumCoinCost({ ...base, judge: { mode: "thirdModel", modelId: "gpt-5.5" } }),
+    ).toBe(12);
+    expect(
+      premiumCoinCost({ ...base, judge: { mode: "thirdModel", modelId: "anthropic/claude-haiku-4.5" } }),
+    ).toBe(0);
+  });
+});
+
+describe("rejudgeCoinCost — re-judging is never free (owner 7/12)", () => {
+  it("costs the judge's coin price, minimum 1 for auto", () => {
+    expect(rejudgeCoinCost(undefined)).toBe(1);
+    expect(rejudgeCoinCost("gpt-4.1-mini")).toBe(1);
+    expect(rejudgeCoinCost("anthropic/claude-fable-5")).toBe(20);
   });
 });
 
