@@ -1,7 +1,10 @@
 # 23 — Coin Economy
 
-> Shipped dark 2026-07-12 behind `COINS_ENABLED = false`
-> (`src/lib/coins/config.ts`). Design + analysis:
+> LIVE since 2026-07-12 (owner decision: launch before checkout — coins are
+> distributed via promo codes + `scripts/mint-coins.mjs` until Polar lands).
+> `COINS_ENABLED` (`src/lib/coins/config.ts`) defaults ON; the kill switch is
+> `NEXT_PUBLIC_COINS_ENABLED=false` + redeploy (build-time inlined).
+> Design + analysis:
 > `docs/superpowers/specs/2026-07-12-coin-economy-design.md` and the
 > owner's `Debator-Monetization-Report.html` (untracked, repo root).
 > Payment checkout (Polar) is the NEXT step — everything up to the buy
@@ -72,9 +75,18 @@ bucket = spendable on any fighter, never expire.
   promo redemption. Footer link (flag-gated).
 - `PricingPopup`: once-per-device tier intro for signed-in users on setup.
 
-## Launch checklist for flipping COINS_ENABLED
+## Operator tools
 
-1. Wire Polar checkout + webhook (order → `coin_ledger` credit, service role).
-2. Test the full loop in prod-preview: signup → daily coins → cheap match →
-   premium block → promo redeem → pack purchase (test mode).
-3. Flip `COINS_ENABLED = true`, deploy, mint launch promo codes.
+- Mint coins: `node scripts/mint-coins.mjs --user <uuid|email> --coins 500
+  [--note "reason"]` (negative claws back; `--balance` to just look).
+- Promo codes: `node scripts/create-promo.mjs --coins 25 --max 100 [--days 30]
+  [--prefix LAUNCH]`; `--list` shows all; /admin has the redemption table.
+- The full RPC loop (daily charge, idempotency, premium block, purchased
+  split, promo normalize + re-redeem block) was verified against the live DB
+  on 2026-07-12 in a rolled-back transaction.
+
+## Remaining: Polar checkout
+
+Wire checkout per pack + webhook (`order.paid` → `coin_ledger` credit via
+service role, idempotent on the UNIQUE `order_id` index) and replace the
+disabled "coming soon" buttons on /pricing.

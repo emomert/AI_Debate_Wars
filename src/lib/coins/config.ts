@@ -2,13 +2,15 @@
  * Coin economy flags + free-tier constants (spec:
  * docs/superpowers/specs/2026-07-12-coin-economy-design.md).
  *
- * COINS_ENABLED follows the repo's feature-flag pattern (BLITZ_ENABLED,
- * VOICE_ENABLED…): everything ships dark and the flag flips after the owner
- * has tested the full loop (signup → daily coins → match charge → promo).
- * While false: matches stay free-for-all exactly as today.
+ * COINS_ENABLED defaults ON (owner decision 2026-07-12: launch the coin
+ * economy before checkout — coins are distributed via promo codes and
+ * scripts/mint-coins.mjs until Polar lands; pack buys stay "coming soon").
+ * Kill switch: set NEXT_PUBLIC_COINS_ENABLED=false and redeploy (NEXT_PUBLIC_
+ * because both the UI and the turn-route charge read it; Next.js inlines the
+ * value at BUILD time). While off: matches are free-for-all, no sign-in gate.
  */
 
-export const COINS_ENABLED = false;
+export const COINS_ENABLED = process.env.NEXT_PUBLIC_COINS_ENABLED !== "false";
 
 /** Daily free allowance for signed-in users. NON-ROLLOVER by design: the
  *  remaining amount is computed as (allowance − today's daily-bucket spend),
