@@ -9,7 +9,13 @@ export const coins = {
   premiumHint: "Premium yarışmacı — satın alınmış jeton kullanır",
   matchCost: (n: number) => `🪙 Bu maç: ${n} jeton`,
 
-  gateNote: "Dövüşmek için kaydolun — günlük ücretsiz jetonlar dahil.",
+  gate: {
+    title: "Önce kaydolun",
+    body: (daily: number) =>
+      `Maçlar için bir hesap gerekir — kaydolmak saniyeler sürer ve her gün ${daily} ücretsiz jetonla gelir.`,
+    cta: "Ücretsiz kaydolun",
+    later: "Şimdi değil",
+  },
 
   pricing: {
     title: "Jetonlar ve Fiyatlandırma",

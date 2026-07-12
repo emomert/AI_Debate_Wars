@@ -12,8 +12,14 @@ export const coins = {
   premiumHint: "Premium fighter — uses purchased coins",
   matchCost: (n: number) => `🪙 This match: ${n} ${n === 1 ? "coin" : "coins"}`,
 
-  // Signed-out START gate
-  gateNote: "Sign up to fight — free daily coins included.",
+  // Signed-out START gate (warning modal — owner 7/12: warn, don't redirect)
+  gate: {
+    title: "Sign up first",
+    body: (daily: number) =>
+      `Matches need an account — signing up takes seconds and comes with ${daily} free coins every day.`,
+    cta: "Sign up free",
+    later: "Not now",
+  },
 
   pricing: {
     title: "Coins & Pricing",

@@ -26,6 +26,7 @@ import { useArena, toSelectedModel, defaultFighters } from "@/lib/state/ArenaCon
 import { playSound } from "@/lib/audio/soundManager";
 import { COINS_ENABLED } from "@/lib/coins/config";
 import { PricingPopup } from "@/components/coins/PricingPopup";
+import { SignupGateModal } from "@/components/coins/SignupGateModal";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { validateSetup } from "@/lib/debate/validators";
 import { getBattlePairs } from "@/lib/debate/orchestrator";
@@ -50,6 +51,8 @@ export default function SetupPage() {
   const { locale } = useLocale();
   const d = useT();
   const [attempted, setAttempted] = useState(false);
+  // "Sign up first" warning for signed-out START presses (coin gate).
+  const [gateOpen, setGateOpen] = useState(false);
 
   // In Turkish mode, a fighter (or third-model judge) that can't speak fluent
   // Turkish is hidden from the picker — so if the persisted config still holds
@@ -241,8 +244,9 @@ export default function SetupPage() {
     setAttempted(true);
     if (!validateSetup(config, { injectedSearchReady, locale }).valid) return;
     // Coin gate (docs/23_COINS.md): matches need an account once coins are on.
-    // Everything up to here stays browsable signed-out — pressing START is the
-    // signup moment (the server enforces the same rule; this is just the UX).
+    // Everything up to here stays browsable signed-out — pressing START shows a
+    // "sign up first" warning (owner 7/12: warn, don't redirect immediately);
+    // the server enforces the same rule regardless.
     if (COINS_ENABLED) {
       const supabase = getSupabaseBrowserClient();
       if (supabase) {
@@ -250,8 +254,8 @@ export default function SetupPage() {
           data: { user },
         } = await supabase.auth.getUser();
         if (!user) {
-          playSound("buttonClick");
-          router.push("/login?next=/setup");
+          playSound("error");
+          setGateOpen(true);
           return;
         }
       }
@@ -264,6 +268,7 @@ export default function SetupPage() {
   return (
     <GameShell wide>
       {COINS_ENABLED ? <PricingPopup /> : null}
+      {COINS_ENABLED ? <SignupGateModal open={gateOpen} onClose={() => setGateOpen(false)} /> : null}
       <div className="mb-5">
         <h1 className="font-display text-4xl tracking-tight sm:text-5xl">
           {d.setup.heading}

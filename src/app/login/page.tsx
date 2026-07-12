@@ -2,9 +2,13 @@
 
 /**
  * Login (docs/19) — email + password (sign in / create account), magic-link
- * email, and Google / GitHub OAuth. Login is optional; it only unlocks saved
- * match history, stats and the community identity. Renders a friendly notice
- * if Supabase isn't configured on this deployment.
+ * email, and Google OAuth (GitHub removed 7/12 by owner decision). Since the
+ * coin economy went live, an account is required to RUN matches. Renders a
+ * friendly notice if Supabase isn't configured on this deployment.
+ *
+ * Consent (P0-7): the explicit 13+/terms checkbox applies to the email
+ * SIGNUP form only; Google/magic-link stay one-click with the passive
+ * "by continuing you agree" notice (owner reverted the hard gate 7/12).
  *
  * New users (no profiles row yet) are routed through /welcome to create their
  * fighter card: OAuth and email links via the /auth/callback redirect, and
@@ -17,14 +21,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
-import { GitHubIcon, GoogleIcon } from "@/components/auth/ProviderIcons";
+import { GoogleIcon } from "@/components/auth/ProviderIcons";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TERMS_VERSION } from "@/lib/constants";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { cn } from "@/lib/utils/cn";
 
 type Mode = "signin" | "signup";
-type Busy = "password" | "magic" | "reset" | "google" | "github" | null;
+type Busy = "password" | "magic" | "reset" | "google" | null;
 type Sent = { kind: "magic" | "confirm" | "reset"; email: string } | null;
 
 /** Device-remembered consent affirmation, re-asked whenever the terms change. */
@@ -233,7 +237,7 @@ function LoginForm() {
     else setSent({ kind: "reset", email: email.trim() });
   };
 
-  const signInWithOAuth = async (provider: "google" | "github") => {
+  const signInWithOAuth = async (provider: "google") => {
     setBusy(provider);
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -257,9 +261,6 @@ function LoginForm() {
     <GameShell>
       <GamePanel className="mx-auto max-w-md">
         <h1 className="font-display text-3xl tracking-tight">{d.auth.login.title}</h1>
-        <p className="mt-1 text-sm text-ink/60">
-          {d.auth.login.subtitle}
-        </p>
 
         {error ? (
           <p className="mt-4 rounded-card border-3 border-arcade-red bg-arcade-red/10 p-3 text-sm font-semibold text-ink">
@@ -363,6 +364,40 @@ function LoginForm() {
                   />
                 </div>
               ) : null}
+              {mode === "signup" ? (
+                // Explicit 13+/terms affirmation for the email SIGNUP form only
+                // (P0-7); Google/magic-link rely on the passive notice below.
+                // Remembered per device so repeat signups come pre-ticked.
+                <label className="flex items-start gap-2 text-[12px] leading-snug text-ink/70">
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={(e) => updateAgreed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-arcade-green"
+                  />
+                  <span>
+                    {d.auth.login.consentBefore}
+                    <a
+                      href="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline decoration-2 underline-offset-2"
+                    >
+                      {d.auth.login.consentTerms}
+                    </a>
+                    {d.auth.login.consentAnd}
+                    <a
+                      href="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold underline decoration-2 underline-offset-2"
+                    >
+                      {d.auth.login.consentPrivacy}
+                    </a>
+                    {d.auth.login.consentAfter}
+                  </span>
+                </label>
+              ) : null}
               <ArcadeButton
                 type="submit"
                 variant="primary-green"
@@ -384,40 +419,6 @@ function LoginForm() {
               </ArcadeButton>
             </form>
 
-            {/* Consent + 13+ age gate (P0-7, widened July 2026): one checkbox
-                governs EVERY path — the signup submit above and the passwordless
-                buttons below (magic link / OAuth create accounts on first use).
-                The affirmation is remembered per device (CONSENT_ACK_KEY). */}
-            <label className="mt-4 flex items-start gap-2 text-[12px] leading-snug text-ink/70">
-              <input
-                type="checkbox"
-                checked={agreed}
-                onChange={(e) => updateAgreed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-arcade-green"
-              />
-              <span>
-                {d.auth.login.consentBefore}
-                <a
-                  href="/terms"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold underline decoration-2 underline-offset-2"
-                >
-                  {d.auth.login.consentTerms}
-                </a>
-                {d.auth.login.consentAnd}
-                <a
-                  href="/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-semibold underline decoration-2 underline-offset-2"
-                >
-                  {d.auth.login.consentPrivacy}
-                </a>
-                {d.auth.login.consentAfter}
-              </span>
-            </label>
-
             <div className="my-4 flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-ink/40">
               <span className="h-[2px] flex-1 bg-ink/15" />
               {d.auth.login.or}
@@ -428,7 +429,7 @@ function LoginForm() {
               <ArcadeButton
                 variant="neutral-white"
                 fullWidth
-                disabled={busy !== null || email.trim() === "" || !agreed}
+                disabled={busy !== null || email.trim() === ""}
                 onClick={sendMagicLink}
               >
                 {busy === "magic" ? d.auth.login.sending : d.auth.login.magicLinkCta}
@@ -436,7 +437,7 @@ function LoginForm() {
               <ArcadeButton
                 variant="neutral-white"
                 fullWidth
-                disabled={busy !== null || !agreed}
+                disabled={busy !== null}
                 onClick={() => signInWithOAuth("google")}
               >
                 <span className="inline-flex items-center justify-center gap-2">
@@ -444,23 +445,14 @@ function LoginForm() {
                   {busy === "google" ? d.auth.login.redirecting : d.auth.login.googleCta}
                 </span>
               </ArcadeButton>
-              <ArcadeButton
-                variant="neutral-white"
-                fullWidth
-                disabled={busy !== null || !agreed}
-                onClick={() => signInWithOAuth("github")}
-              >
-                <span className="inline-flex items-center justify-center gap-2">
-                  <GitHubIcon />
-                  {busy === "github" ? d.auth.login.redirecting : d.auth.login.githubCta}
-                </span>
-              </ArcadeButton>
             </div>
 
-            {/* Data disclosure (P0-7) — the explicit checkbox above now carries
-                the consent affirmation for every path. */}
+            {/* Passive consent (P0-7) covering the passwordless paths (magic
+                link / OAuth), which create accounts on first use. The data-
+                location disclosure lives in the Privacy Policy (owner 7/12:
+                removed the duplicate note here). */}
             <p className="mt-3 text-[11px] leading-snug text-ink/45">
-              {d.auth.login.dataNote}
+              {d.auth.login.consentNote}
             </p>
           </>
         )}

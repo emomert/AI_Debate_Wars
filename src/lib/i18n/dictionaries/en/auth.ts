@@ -7,8 +7,6 @@ export const auth = {
     notSetUpTitle: "Sign-in isn't available here",
     notSetUpBody: "This deployment doesn't have accounts enabled — you can still run debates without one.",
     title: "Sign in",
-    subtitle:
-      "Save your matches, history and stats. Optional — debates work without an account.",
     modeSignIn: "Sign in",
     modeSignUp: "Create account",
     emailLabel: "Email",
@@ -45,7 +43,6 @@ export const auth = {
     or: "or",
     redirecting: "Redirecting…",
     googleCta: "Continue with Google",
-    githubCta: "Continue with GitHub",
     // Signup consent + age gate (P0-7)
     consentBefore: "I'm 13 or older and I agree to the ",
     consentTerms: "Terms",
@@ -54,8 +51,6 @@ export const auth = {
     consentAfter: ".",
     consentNote:
       "By creating an account you confirm you're 13 or older and agree to our Terms and Privacy Policy.",
-    dataNote:
-      "Some fighters run on models hosted outside your country (including DeepSeek in China); see the Privacy Policy for how data is handled.",
   },
   /** First-sign-in onboarding (src/app/welcome/page.tsx). */
   welcome: {
