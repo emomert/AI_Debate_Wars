@@ -186,9 +186,10 @@ export function ModelSelector({
           });
         }}
         className={cn(
-          // Mobile-compact (owner feedback): tighter padding/gap below sm so the
-          // provider step doesn't dominate the screen; desktop keeps its size.
-          "flex flex-col items-center gap-1 rounded-btn border-3 border-ink px-1 py-1.5 transition sm:gap-1.5 sm:px-1.5 sm:py-2.5",
+          // Compact everywhere (owner feedback 7/12): the provider step is a
+          // one-tap chooser, not a hero grid — small tiles on mobile AND desktop
+          // (6 columns at sm+ turn ~11 brands into two tight rows).
+          "flex flex-col items-center gap-1 rounded-btn border-3 border-ink px-1 py-1.5 transition sm:py-2",
           "focus-visible:outline-3 focus-visible:outline-offset-2",
           active ? "bg-night text-white shadow-hard-sm" : "bg-surface hover:bg-paper",
         )}
@@ -225,7 +226,7 @@ export function ModelSelector({
       {/* Step 1 — provider grid: one identical tile per company (logo + name),
           alphabetical. No provider is promoted above another. */}
       <div
-        className="mb-3 grid grid-cols-4 gap-1.5 sm:gap-2"
+        className="mb-3 grid grid-cols-4 gap-1.5 sm:grid-cols-6"
         role="group"
         aria-label={`${label} provider`}
       >
