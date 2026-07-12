@@ -25,16 +25,19 @@ export const openRouterProvider: Provider = {
   id: "openrouter",
   async generate(input: GenerateInput): Promise<GenerateResult> {
     const start = Date.now();
-    // Many free OpenRouter models (GLM, Nemotron, GPT-OSS, Kimi, …) reason
-    // internally before answering, which eats both time and the token budget.
-    // Models tagged with `reasoningEffort` get their hidden thinking CAPPED via
-    // OpenRouter's unified `reasoning` param (the cap floors at ~1024 tokens),
-    // so they answer in seconds instead of half a minute — and they need far
-    // less headroom. Untagged reasoners keep the generous old headroom.
+    // Many OpenRouter models (GLM, Nemotron, Kimi, Qwen, …) reason internally
+    // before answering, which eats both time and the token budget. Models
+    // tagged with `reasoningEffort` get their hidden thinking CAPPED via
+    // OpenRouter's unified `reasoning` param so they answer in seconds instead
+    // of half a minute — but the effort cap is advisory (it floors at ~1024
+    // tokens and heavy thinkers overshoot it), so they get the SAME +2500
+    // headroom as untagged reasoners. The old +1300 starved Kimi-class models
+    // on short turns: ~1024+ thinking inside a 1680 total ceiling left nothing
+    // for the visible answer (owner-reported, July 2026).
     const effort = input.model.reasoningEffort;
     const maxOutputTokens = Math.min(
       input.model.maxOutputTokens,
-      input.maxOutputTokens + (effort ? 1300 : 2500),
+      input.maxOutputTokens + 2500,
     );
     // Deep Debate: the ":online" suffix makes OpenRouter run a web search before
     // generating and return url_citation annotations — zero body changes, works

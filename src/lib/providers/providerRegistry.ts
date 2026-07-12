@@ -53,6 +53,12 @@ const TRANSIENT: AppErrorCode[] = [
  * Non-transient errors (missing key, invalid model, bad request) fail
  * immediately, and an aborted request never retries.
  *
+ * TOKEN_LIMIT_EXCEEDED gets ONE special escalation (July 2026): a reasoning
+ * model that burned its whole budget on hidden thinking is deterministic for
+ * the same budget but usually curable with a bigger one, so the call is
+ * reissued once at the model's full `maxOutputTokens` ceiling before the error
+ * reaches the user ("every round always delivers").
+ *
  * `deadlineMs` (absolute epoch ms) bounds the TOTAL time so the serverless
  * invocation returns a clean JSON error before the platform kills it
  * (Vercel maxDuration). Each attempt's timeout is clamped to the remaining
@@ -65,6 +71,7 @@ export async function generateWithRetry(
   deadlineMs?: number,
 ): Promise<GenerateResult> {
   let lastErr: unknown;
+  let ceilingEscalated = false;
   for (let i = 0; i < attempts; i++) {
     let perAttemptInput = input;
     if (deadlineMs !== undefined) {
@@ -78,8 +85,20 @@ export async function generateWithRetry(
     } catch (err) {
       lastErr = err;
       const code = err instanceof ProviderError ? err.code : "UNKNOWN_ERROR";
-      if (!TRANSIENT.includes(code)) throw err;
       if (input.signal?.aborted) throw err;
+      if (code === "TOKEN_LIMIT_EXCEEDED") {
+        const ceiling = input.model.maxOutputTokens;
+        const canEscalate =
+          !ceilingEscalated &&
+          input.maxOutputTokens < ceiling &&
+          (deadlineMs === undefined || deadlineMs - Date.now() > 1_000);
+        if (!canEscalate) throw err;
+        ceilingEscalated = true;
+        input = { ...input, maxOutputTokens: ceiling };
+        i--; // the escalation is a bonus attempt, not one of the transient ones
+        continue;
+      }
+      if (!TRANSIENT.includes(code)) throw err;
       if (deadlineMs !== undefined && deadlineMs - Date.now() <= 1_000) break;
       if (i < attempts - 1) {
         await new Promise((r) => setTimeout(r, 400 * (i + 1))); // 400ms, 800ms

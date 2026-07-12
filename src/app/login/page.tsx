@@ -27,6 +27,9 @@ type Mode = "signin" | "signup";
 type Busy = "password" | "magic" | "reset" | "google" | "github" | null;
 type Sent = { kind: "magic" | "confirm" | "reset"; email: string } | null;
 
+/** Device-remembered consent affirmation, re-asked whenever the terms change. */
+const CONSENT_ACK_KEY = `debator:consent-ack:${TERMS_VERSION}`;
+
 export default function LoginPage() {
   return (
     <Suspense fallback={<LoginFallback />}>
@@ -58,9 +61,32 @@ function LoginForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [sent, setSent] = useState<Sent>(null);
   const [busy, setBusy] = useState<Busy>(null);
-  // Signup consent + age gate (P0-7): the explicit "13+ and agree" affirmation
-  // required to CREATE an account via email + password.
+  // Consent + age gate (P0-7, widened July 2026): the explicit "13+ and agree"
+  // affirmation now gates EVERY account-creating path — email+password signup,
+  // Magic Link, and Google/GitHub (any of them creates an account on first
+  // use). Remembered per device so returning users aren't re-nagged.
   const [agreed, setAgreed] = useState(false);
+
+  // Pre-tick from this device's earlier affirmation (keyed by terms version so
+  // a terms bump re-asks). localStorage is unavailable during SSR — hydrate in
+  // an effect.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(CONSENT_ACK_KEY) === "1") setAgreed(true);
+    } catch {
+      /* storage blocked — the checkbox just starts unticked */
+    }
+  }, []);
+
+  const updateAgreed = (next: boolean) => {
+    setAgreed(next);
+    try {
+      if (next) localStorage.setItem(CONSENT_ACK_KEY, "1");
+      else localStorage.removeItem(CONSENT_ACK_KEY);
+    } catch {
+      /* storage blocked — gate still works for this visit */
+    }
+  };
   const [error, setError] = useState<string | null>(
     params.get("error") ? d.auth.login.linkError : null,
   );
@@ -337,37 +363,6 @@ function LoginForm() {
                   />
                 </div>
               ) : null}
-              {mode === "signup" ? (
-                <label className="flex items-start gap-2 text-[12px] leading-snug text-ink/70">
-                  <input
-                    type="checkbox"
-                    checked={agreed}
-                    onChange={(e) => setAgreed(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-arcade-green"
-                  />
-                  <span>
-                    {d.auth.login.consentBefore}
-                    <a
-                      href="/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold underline decoration-2 underline-offset-2"
-                    >
-                      {d.auth.login.consentTerms}
-                    </a>
-                    {d.auth.login.consentAnd}
-                    <a
-                      href="/privacy"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold underline decoration-2 underline-offset-2"
-                    >
-                      {d.auth.login.consentPrivacy}
-                    </a>
-                    {d.auth.login.consentAfter}
-                  </span>
-                </label>
-              ) : null}
               <ArcadeButton
                 type="submit"
                 variant="primary-green"
@@ -389,6 +384,40 @@ function LoginForm() {
               </ArcadeButton>
             </form>
 
+            {/* Consent + 13+ age gate (P0-7, widened July 2026): one checkbox
+                governs EVERY path — the signup submit above and the passwordless
+                buttons below (magic link / OAuth create accounts on first use).
+                The affirmation is remembered per device (CONSENT_ACK_KEY). */}
+            <label className="mt-4 flex items-start gap-2 text-[12px] leading-snug text-ink/70">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => updateAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-arcade-green"
+              />
+              <span>
+                {d.auth.login.consentBefore}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline decoration-2 underline-offset-2"
+                >
+                  {d.auth.login.consentTerms}
+                </a>
+                {d.auth.login.consentAnd}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline decoration-2 underline-offset-2"
+                >
+                  {d.auth.login.consentPrivacy}
+                </a>
+                {d.auth.login.consentAfter}
+              </span>
+            </label>
+
             <div className="my-4 flex items-center gap-3 text-xs font-bold uppercase tracking-wide text-ink/40">
               <span className="h-[2px] flex-1 bg-ink/15" />
               {d.auth.login.or}
@@ -399,7 +428,7 @@ function LoginForm() {
               <ArcadeButton
                 variant="neutral-white"
                 fullWidth
-                disabled={busy !== null || email.trim() === ""}
+                disabled={busy !== null || email.trim() === "" || !agreed}
                 onClick={sendMagicLink}
               >
                 {busy === "magic" ? d.auth.login.sending : d.auth.login.magicLinkCta}
@@ -407,7 +436,7 @@ function LoginForm() {
               <ArcadeButton
                 variant="neutral-white"
                 fullWidth
-                disabled={busy !== null}
+                disabled={busy !== null || !agreed}
                 onClick={() => signInWithOAuth("google")}
               >
                 <span className="inline-flex items-center justify-center gap-2">
@@ -418,7 +447,7 @@ function LoginForm() {
               <ArcadeButton
                 variant="neutral-white"
                 fullWidth
-                disabled={busy !== null}
+                disabled={busy !== null || !agreed}
                 onClick={() => signInWithOAuth("github")}
               >
                 <span className="inline-flex items-center justify-center gap-2">
@@ -428,10 +457,10 @@ function LoginForm() {
               </ArcadeButton>
             </div>
 
-            {/* Passive consent + data disclosure (P0-7) covering the passwordless
-                paths (magic link / OAuth), which create accounts on first use. */}
+            {/* Data disclosure (P0-7) — the explicit checkbox above now carries
+                the consent affirmation for every path. */}
             <p className="mt-3 text-[11px] leading-snug text-ink/45">
-              {d.auth.login.consentNote} {d.auth.login.dataNote}
+              {d.auth.login.dataNote}
             </p>
           </>
         )}

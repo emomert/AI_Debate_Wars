@@ -1,13 +1,16 @@
 "use client";
 
 /**
- * MatchSaver (docs/19 Phase 2). A explicit "Save to my history" button for a
- * completed match (feedback: saving should be a button, not automatic). Signed
- * out → a sign-in nudge; auth off → nothing. RLS guarantees a user only writes
- * their own rows; idempotent on the session id (a re-judge bumps updatedAt).
+ * MatchSaver (docs/19 Phase 2). AUTO-saves a completed match to the signed-in
+ * user's history (July 2026 owner decision — reverses the earlier button-only
+ * choice: the profile's "Completed matches" stat counts these rows, so relying
+ * on a manual click left it at 0). Signed out → a sign-in nudge; auth off →
+ * nothing; a failure surfaces a visible retry button. RLS guarantees a user
+ * only writes their own rows; idempotent on the session id (a re-judge bumps
+ * updatedAt and re-saves).
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import type { DebateSession } from "@/lib/debate/debateTypes";
@@ -64,10 +67,8 @@ export function MatchSaver({ session }: { session: DebateSession }) {
     return () => sub.subscription.unsubscribe();
   }, [supabase]);
 
-  if (!supabase || session.status !== "complete") return null;
-
-  const save = async () => {
-    if (!userId) return;
+  const save = useCallback(async () => {
+    if (!supabase || !userId || session.status !== "complete") return;
     setState("saving");
     const row = toMatchRow(session, userId);
     if (JSON.stringify(row).length > MAX_ROW_BYTES) {
@@ -85,7 +86,16 @@ export function MatchSaver({ session }: { session: DebateSession }) {
     }
     persisted.add(keyOf(session));
     setState("saved");
-  };
+  }, [supabase, userId, session]);
+
+  // Auto-save the moment a signed-in user + a completed, not-yet-saved session
+  // meet. Re-judges bump updatedAt → state resets to "idle" → saved again.
+  // Errors do NOT auto-loop: the user gets a visible retry button instead.
+  useEffect(() => {
+    if (state === "idle" && userId) void save();
+  }, [state, userId, save]);
+
+  if (!supabase || session.status !== "complete") return null;
 
   if (state === "saved") {
     return (
@@ -108,15 +118,20 @@ export function MatchSaver({ session }: { session: DebateSession }) {
     );
   }
 
+  if (state === "error") {
+    return (
+      <div className="flex justify-center">
+        <ArcadeButton variant="neutral-white" size="sm" onClick={save}>
+          {d.result.saver.retry}
+        </ArcadeButton>
+      </div>
+    );
+  }
+
+  // idle (for the tick before the auto-save effect fires) or actively saving.
   return (
-    <div className="flex justify-center">
-      <ArcadeButton variant="neutral-white" size="sm" onClick={save} disabled={state === "saving"}>
-        {state === "saving"
-          ? d.result.saver.saving
-          : state === "error"
-            ? d.result.saver.retry
-            : d.result.saver.save}
-      </ArcadeButton>
-    </div>
+    <p className="text-center text-xs text-ink/55" role="status">
+      {d.result.saver.saving}
+    </p>
   );
 }

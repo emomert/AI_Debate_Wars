@@ -58,9 +58,46 @@ describe("buildMatchCard", () => {
       winner: "modelA",
       score_a: 60,
       score_b: 40,
-      match_cost: 0.0123,
+      // Derived server-side (here: just this verdict's cost) — NEVER the
+      // client-submitted costSummary, which is stale-zero at verdict time.
+      match_cost: 0.002,
       verdict_cost: 0.002,
     });
+  });
+
+  it("derives match_cost from per-message + judge costs, ignoring the client summary", () => {
+    const card = buildMatchCard(
+      baseSession({
+        // The client's summary is still the zeroed initial value when the
+        // verdict request fires — it must not become the recorded total.
+        costSummary: { totalInputTokens: 0, totalOutputTokens: 0, totalTokens: 0, totalCost: 0, currency: "USD" },
+        messages: [
+          {
+            speaker: "modelA",
+            modelId: "x-ai/grok-4.5",
+            providerId: "openrouter",
+            status: "complete",
+            content: "x",
+            cost: { totalCost: 0.015, searchCost: 0.005, inputCost: 0, outputCost: 0, currency: "USD" },
+          },
+          {
+            speaker: "modelB",
+            modelId: "deepseek-v4-pro",
+            providerId: "deepseek",
+            status: "complete",
+            content: "y",
+            cost: { totalCost: 0.02, inputCost: 0, outputCost: 0, currency: "USD" },
+          },
+        ],
+        pastVerdicts: [
+          { judgeModelId: "deepseek-v4-flash", cost: { totalCost: 0.003, inputCost: 0, outputCost: 0, currency: "USD" } },
+        ],
+        verdict: undefined,
+      } as never),
+      { judgeModelId: "gpt-4.1-mini", verdictCost: 0.002, userId: null, winner: "modelA", scoreA: 60, scoreB: 40 },
+    );
+    // 0.015 (turn incl. search) + 0.02 (turn) + 0.003 (past judge) + 0.002 (this verdict)
+    expect(card.match_cost).toBeCloseTo(0.04, 6);
   });
 
   it("NEVER includes debate content (topic / transcript / custom-tone wording)", () => {

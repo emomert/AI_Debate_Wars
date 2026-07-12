@@ -102,7 +102,11 @@ export function buildMatchCard(
     winner: opts.winner,
     score_a: opts.scoreA,
     score_b: opts.scoreB,
-    match_cost: session.costSummary.totalCost,
+    // Derived from the same per-message + judge costs as the per-key buckets —
+    // NOT session.costSummary, which the client only recomputes AFTER the
+    // verdict returns (it's still the zeroed initial value in this payload, the
+    // bug behind "admin shows no total cost while judge cost exists").
+    match_cost: costs.openai + costs.deepseek + costs.openrouter + costs.search,
     verdict_cost: opts.verdictCost,
     cost_openai: costs.openai,
     cost_deepseek: costs.deepseek,
