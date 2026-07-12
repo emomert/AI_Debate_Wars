@@ -43,7 +43,6 @@ import type {
   DebateConfig,
   DebateTone,
   ResponseLength,
-  RoundCount,
 } from "@/lib/debate/debateTypes";
 import { cn } from "@/lib/utils/cn";
 
@@ -189,13 +188,13 @@ export default function ReportPage() {
   const [tone, setTone] = useState<DebateTone>("serious");
   const [customTone, setCustomTone] = useState("like an excited sports commentator");
   const [length, setLength] = useState<ResponseLength>("medium");
-  const [rounds, setRounds] = useState<RoundCount>(3);
   const [deep, setDeep] = useState(false);
   const [turnIdx, setTurnIdx] = useState(0);
   const [showJudge, setShowJudge] = useState(false);
 
   const effectiveTone = deep ? "serious" : tone;
-  const effectiveRounds = deep ? 3 : rounds;
+  // Matches are strictly 3 rounds (July 2026) — mirrored here, not configurable.
+  const effectiveRounds = 3;
 
   const session = useMemo(() => {
     const { a, b } = defaultFighters();
@@ -512,27 +511,8 @@ export default function ReportPage() {
               </div>
 
               <div className="space-y-3">
-                <Knob
-                  label={
-                    deep
-                      ? d.report.playground.knobRoundsLocked
-                      : d.report.playground.knobRounds
-                  }
-                >
-                  {([3, 5, 7] as const).map((r) => (
-                    <Chip
-                      key={r}
-                      active={effectiveRounds === r}
-                      disabled={deep}
-                      onClick={() => {
-                        setRounds(r);
-                        setTurnIdx(0);
-                      }}
-                    >
-                      {d.report.playground.roundsLabel(r)}
-                    </Chip>
-                  ))}
-                </Knob>
+                {/* Rounds knob removed — matches are strictly 3 rounds (July 2026),
+                    and this page mirrors the REAL setup rules. */}
                 <Knob
                   label={
                     deep

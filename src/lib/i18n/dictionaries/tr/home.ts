@@ -38,7 +38,7 @@ export const home = {
       },
       {
         title: "Kuralları belirleyin",
-        body: "3 / 5 / 7 tur, bir üslup, isteğe bağlı Derin Münazara ve bir yapay zekâ hakem.",
+        body: "3 tur, bir üslup, isteğe bağlı Derin Münazara ve bir yapay zekâ hakem.",
       },
       {
         title: "Maçı izleyin",

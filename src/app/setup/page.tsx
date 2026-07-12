@@ -14,7 +14,6 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { TopicInput } from "@/components/setup/TopicInput";
 import { BattleList } from "@/components/setup/BattleList";
-import { RoundSelector } from "@/components/setup/RoundSelector";
 import { ToneSelector } from "@/components/setup/ToneSelector";
 import { ResponseLengthSelector } from "@/components/setup/ResponseLengthSelector";
 import { DeepDebateToggle } from "@/components/setup/DeepDebateToggle";
@@ -112,15 +111,22 @@ export default function SetupPage() {
       modelSupportsWebSearch(p.modelB.modelId, injectedSearchReady !== false),
   );
 
-  // Deep Debate fixes the format: 3 rounds, standard serious tone (and the
-  // auto length, handled below). Normalize here too so a config persisted
-  // before these limits existed can't smuggle 5 rounds into a deep session.
+  // Matches are strictly 3 rounds (July 2026 — the 3/5/7 selector was removed).
+  // Normalize so a config persisted before the change can't smuggle 5/7 into a
+  // new match; old COMPLETED 5/7 sessions still render fine (engine unchanged).
   useEffect(() => {
-    if (config.deepDebate && (config.roundCount !== 3 || config.tone !== "serious")) {
-      setConfig({ roundCount: 3, tone: "serious" });
+    if (config.roundCount !== 3) setConfig({ roundCount: 3 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.roundCount]);
+
+  // Deep Debate fixes the format further: standard serious tone (and the auto
+  // length, handled below).
+  useEffect(() => {
+    if (config.deepDebate && config.tone !== "serious") {
+      setConfig({ tone: "serious" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.deepDebate, config.roundCount, config.tone]);
+  }, [config.deepDebate, config.tone]);
 
   const isBlitz = config.mode === "blitz";
 
@@ -342,22 +348,8 @@ export default function SetupPage() {
             </GamePanel>
           ) : (
           <GamePanel title={d.setup.sections.rules}>
+            {/* Rounds are fixed at 3 (July 2026) — the 3/5/7 selector is gone. */}
             <div className="space-y-5">
-              <div>
-                <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                  {d.setup.rules.rounds}
-                  {config.deepDebate ? (
-                    <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
-                      {d.setup.rules.lockRounds}
-                    </span>
-                  ) : null}
-                </p>
-                <RoundSelector
-                  value={config.roundCount}
-                  onChange={(roundCount) => setConfig({ roundCount })}
-                  disabled={config.deepDebate}
-                />
-              </div>
               <div>
                 <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
                   {d.setup.rules.tone}

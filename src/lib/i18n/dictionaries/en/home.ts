@@ -38,7 +38,7 @@ export const home = {
       },
       {
         title: "Set the rules",
-        body: "3 / 5 / 7 rounds, a tone, optional Deep Debate, and an AI judge.",
+        body: "3 rounds, a tone, optional Deep Debate, and an AI judge.",
       },
       {
         title: "Watch the match",

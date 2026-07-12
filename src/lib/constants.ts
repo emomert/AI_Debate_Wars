@@ -10,7 +10,6 @@ import type {
   DebateTone,
   JudgeMode,
   ResponseLength,
-  RoundCount,
 } from "@/lib/debate/debateTypes";
 
 export interface ModeOption {
@@ -51,21 +50,6 @@ export const MODE_OPTIONS: ModeOption[] = [
     modelBRole: "Against side",
     emoji: "⚡",
   },
-];
-
-export interface RoundOption {
-  count: RoundCount;
-  label: string;
-  blurb: string;
-  /** Surfaced with a "Recommended" badge in the picker. */
-  recommended?: boolean;
-}
-
-export const ROUND_OPTIONS: RoundOption[] = [
-  { count: 3, label: "Quick Match", blurb: "Fast & punchy", recommended: true },
-  { count: 5, label: "Ranked Match", blurb: "More back-and-forth" },
-  // 7 avoids the word "Deep" so it never reads as the separate Deep Debate mode.
-  { count: 7, label: "Championship", blurb: "Full tournament" },
 ];
 
 export interface ToneOption {

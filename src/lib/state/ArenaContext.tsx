@@ -94,7 +94,7 @@ export function toSelectedModel(
  */
 export function defaultFighters(): { a: ModelCatalogEntry; b: ModelCatalogEntry } {
   return {
-    a: getModelById("gpt-4o-mini") ?? MODEL_CATALOG[0],
+    a: getModelById("gpt-5.4-mini") ?? MODEL_CATALOG[0],
     b: getModelById("deepseek-v4-flash") ?? MODEL_CATALOG[1],
   };
 }
@@ -285,12 +285,15 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startMatch = useCallback(() => {
-    // Single choke point for the Deep Debate format (3 rounds, standard tone):
+    // Single choke point for the match format. Matches are strictly 3 rounds
+    // (July 2026), and Deep Debate additionally forces the standard tone —
     // Rematch buttons call startMatch without passing through the setup page's
     // normalization, so a stale persisted config must be clamped here too.
-    const effective: DebateConfig = config.deepDebate
-      ? { ...config, roundCount: 3, tone: "serious" }
-      : config;
+    const effective: DebateConfig = {
+      ...config,
+      roundCount: 3,
+      ...(config.deepDebate ? { tone: "serious" as const } : null),
+    };
     // Stamp the debate with the language it should run in — the live UI locale,
     // read straight from the cookie so it's correct even if the persisted config
     // predates the current choice. One session per battle pairing (1–3).

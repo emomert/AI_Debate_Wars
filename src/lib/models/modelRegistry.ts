@@ -157,10 +157,10 @@ export function getModelById(id: string): ModelCatalogEntry | undefined {
  * couple of models show them all anyway.
  */
 export const RECOMMENDED_MODEL_IDS: ReadonlySet<string> = new Set<string>([
-  // OpenAI — flagship · fast mid · cheap
+  // OpenAI — flagship · fast mid · mini
   "gpt-5.6-sol",
   "gpt-5.6-luna",
-  "gpt-4o-mini",
+  "gpt-5.4-mini",
   // DeepSeek (only two — both)
   "deepseek-v4-pro",
   "deepseek-v4-flash",
