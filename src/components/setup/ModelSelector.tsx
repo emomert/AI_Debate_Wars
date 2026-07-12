@@ -366,9 +366,12 @@ export function ModelSelector({
           // Coin price replaces the abstract $-tier (docs/23_COINS.md); ★ marks
           // premium fighters that need purchased coins (above the free band).
           <span title={coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? d.coins.premiumHint : undefined}>
+            {/* Full "md" badge — the price drives the pick, so it must read at
+                a glance (owner: the sm chip was too small). */}
             <Badge
               color={coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? "purple" : "yellow"}
-              size="sm"
+              size="md"
+              className="whitespace-nowrap"
             >
               {d.coins.coinChip(coinPriceForModel(m.id))}
               {coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? ` ${d.coins.premiumTag}` : ""}

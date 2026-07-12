@@ -17,6 +17,8 @@ import { GameShell } from "@/components/game/GameShell";
 import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { ProfileForm } from "@/components/profile/ProfileEditor";
+import { PromoRedeem } from "@/components/coins/PromoRedeem";
+import { COINS_ENABLED } from "@/lib/coins/config";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { TERMS_VERSION } from "@/lib/constants";
 import { useT } from "@/lib/i18n/LocaleProvider";
@@ -122,6 +124,16 @@ function WelcomeInner() {
       <GamePanel className="mx-auto max-w-lg" title={d.auth.welcome.title}>
         <p className="text-sm text-ink/65">{d.auth.welcome.subtitle}</p>
         <ProfileForm userId={userId} onSaved={() => router.replace(nextPath)} />
+        {/* Promo question at signup (docs/23_COINS.md, owner 7/12): every new
+            account passes through here already authenticated, so redeeming
+            works immediately. Optional — codes also redeem on /pricing. */}
+        {COINS_ENABLED ? (
+          <div className="mt-5 rounded-card border-3 border-dashed border-ink/40 bg-surface/60 p-3">
+            <p className="font-heading text-sm font-extrabold">{d.coins.welcomePromo.title}</p>
+            <p className="mb-2 mt-0.5 text-xs text-ink/60">{d.coins.welcomePromo.body}</p>
+            <PromoRedeem />
+          </div>
+        ) : null}
         <div className="mt-4 border-t-3 border-ink/10 pt-3">
           <ArcadeButton
             variant="neutral-white"

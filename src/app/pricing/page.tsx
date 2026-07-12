@@ -18,9 +18,8 @@ import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { Badge } from "@/components/game/Badge";
 import { COIN_PACKS } from "@/lib/coins/economy";
 import { FREE_DAILY_COINS, FREE_MAX_FIGHTER_COINS } from "@/lib/coins/config";
-import { notifyCoinsChanged } from "@/lib/coins/client";
+import { PromoRedeem } from "@/components/coins/PromoRedeem";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { playSound } from "@/lib/audio/soundManager";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 // Example match prices the pack cards translate into "what that buys".
@@ -28,18 +27,10 @@ const QUICK_MATCH_COINS = 2; // two 1-coin fighters
 const PREMIUM_BOUT_COINS = 6; // e.g. Sonnet 5 (4) + Kimi (2)
 const FLAGSHIP_FIGHT_COINS = 13; // e.g. GPT-5.5 (12) + a 1-coin sparring partner
 
-type PromoState =
-  | { kind: "idle" }
-  | { kind: "busy" }
-  | { kind: "success"; coins: number }
-  | { kind: "error"; message: string };
-
 export default function PricingPage() {
   const d = useT();
   const supabase = getSupabaseBrowserClient();
   const [signedIn, setSignedIn] = useState(false);
-  const [code, setCode] = useState("");
-  const [promo, setPromo] = useState<PromoState>({ kind: "idle" });
 
   useEffect(() => {
     if (!supabase) return;
@@ -48,32 +39,6 @@ export default function PricingPage() {
     });
     return () => sub.subscription.unsubscribe();
   }, [supabase]);
-
-  const redeem = async () => {
-    if (!supabase || code.trim() === "") return;
-    playSound("buttonClick");
-    setPromo({ kind: "busy" });
-    const { data, error } = await supabase.rpc("coin_redeem_promo", { p_code: code.trim() });
-    if (error) {
-      setPromo({ kind: "error", message: d.coins.pricing.promoErrors.UNKNOWN });
-      return;
-    }
-    const row = (Array.isArray(data) ? data[0] : data) as
-      | { ok: boolean; result: string; coins: number }
-      | undefined;
-    if (row?.ok) {
-      playSound("modelSelected");
-      notifyCoinsChanged();
-      setPromo({ kind: "success", coins: row.coins });
-      setCode("");
-      return;
-    }
-    const known = d.coins.pricing.promoErrors as Record<string, string>;
-    setPromo({
-      kind: "error",
-      message: known[row?.result ?? "UNKNOWN"] ?? d.coins.pricing.promoErrors.UNKNOWN,
-    });
-  };
 
   return (
     <GameShell>
@@ -156,34 +121,9 @@ export default function PricingPage() {
               </Link>
             </p>
           ) : (
-            <>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <input
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder={d.coins.pricing.promoPlaceholder}
-                  aria-label={d.coins.pricing.promoTitle}
-                  className="flex-1 rounded-card border-4 border-ink bg-paper px-4 py-2.5 font-mono text-sm uppercase outline-none focus-visible:outline-[3px] focus-visible:outline-offset-2"
-                />
-                <ArcadeButton
-                  variant="primary-yellow"
-                  disabled={promo.kind === "busy" || code.trim() === ""}
-                  onClick={redeem}
-                >
-                  {promo.kind === "busy" ? d.coins.pricing.promoRedeeming : d.coins.pricing.promoCta}
-                </ArcadeButton>
-              </div>
-              {promo.kind === "success" ? (
-                <p className="mt-2 text-sm font-bold text-arcade-green" role="status">
-                  {d.coins.pricing.promoSuccess(promo.coins)}
-                </p>
-              ) : null}
-              {promo.kind === "error" ? (
-                <p className="mt-2 text-sm font-bold text-arcade-red" role="alert">
-                  {promo.message}
-                </p>
-              ) : null}
-            </>
+            <div className="mt-3">
+              <PromoRedeem />
+            </div>
           )}
         </GamePanel>
       </div>

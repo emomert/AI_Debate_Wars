@@ -53,6 +53,12 @@ export const coins = {
     },
   },
 
+  /** /welcome üzerindeki isteğe bağlı promosyon sorusu (kayıttan hemen sonra). */
+  welcomePromo: {
+    title: "🎟️ Promosyon kodunuz var mı?",
+    body: "Şimdi yazın, jetonlar doğrudan bakiyenize eklensin — ya da daha sonra Fiyatlandırma sayfasından kullanın.",
+  },
+
   popup: {
     title: "🪙 Arenayı jetonlar çalıştırır",
     body: (daily: number) =>

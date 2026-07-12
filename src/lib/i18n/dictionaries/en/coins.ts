@@ -57,6 +57,12 @@ export const coins = {
     },
   },
 
+  /** The optional promo question on /welcome (right after signup). */
+  welcomePromo: {
+    title: "🎟️ Got a promo code?",
+    body: "Type it now and the coins land straight in your balance — or redeem later on the Pricing page.",
+  },
+
   popup: {
     title: "🪙 Coins power the arena",
     body: (daily: number) =>
