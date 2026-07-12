@@ -110,12 +110,6 @@ export default function HomePage() {
               {d.home.cta.seeDemo}
             </ArcadeButton>
           </div>
-          <p className="mt-3 text-center text-xs text-ink/55">
-            <strong>{d.home.cta.noteUseStrong}</strong>
-            {d.home.cta.noteMiddle}
-            <strong>{d.home.cta.noteSampleStrong}</strong>
-            {d.home.cta.noteAfter}
-          </p>
         </GamePanel>
       </motion.div>
 

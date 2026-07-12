@@ -13,7 +13,7 @@
  * ever sees the brand.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import {
@@ -88,6 +88,9 @@ export function ModelSelector({
   const allowSet =
     allowedModelIds && allowedModelIds.length > 0 ? new Set(allowedModelIds) : null;
   const [activeBrand, setActiveBrand] = useState<string>(selected?.brand ?? "");
+  // Reveal-follow anchors: the step-2 model list + the "Show all" expansion.
+  const modelListRef = useRef<HTMLDivElement>(null);
+  const restRef = useRef<HTMLDivElement>(null);
 
   // Which brands have their "show all models" list expanded (keyed by brand so
   // the choice survives tile-hopping). Seeded with the selection's brand when
@@ -173,6 +176,14 @@ export function ModelSelector({
         onClick={() => {
           playSound("buttonClick");
           setActiveBrand(b.brand);
+          // Reveal-follow (owner feedback 7/12): make sure the model rows that
+          // just changed underneath are actually on screen.
+          requestAnimationFrame(() => {
+            modelListRef.current?.scrollIntoView({
+              block: "nearest",
+              behavior: reduce ? "auto" : "smooth",
+            });
+          });
         }}
         className={cn(
           // Mobile-compact (owner feedback): tighter padding/gap below sm so the
@@ -226,7 +237,7 @@ export function ModelSelector({
           scannable instead of dumping every model at once. role="group" (not
           radiogroup): the collapsed rows unmount, and aria-pressed on each row
           keeps the selection state honest in every collapse state. */}
-      <div role="group" aria-label={`${label} model`} className="space-y-2">
+      <div ref={modelListRef} role="group" aria-label={`${label} model`} className="space-y-2">
         {recommendedModels.map((m) => renderModelRow(m))}
 
         {restModels.length > 0 ? (
@@ -239,8 +250,19 @@ export function ModelSelector({
               type="button"
               aria-expanded={showRest}
               onClick={() => {
+                const expanding = !showRest;
                 playSound(showRest ? "buttonClick" : "modeSelect");
                 toggleBrandExpand(currentBrand);
+                // Reveal-follow: pull the freshly expanded rows into view once
+                // the height animation has (mostly) settled.
+                if (expanding) {
+                  setTimeout(() => {
+                    restRef.current?.scrollIntoView({
+                      block: "nearest",
+                      behavior: reduce ? "auto" : "smooth",
+                    });
+                  }, reduce ? 0 : 220);
+                }
               }}
               className={cn(
                 "w-full rounded-btn border-3 border-dashed border-ink/40 bg-paper px-3 py-2 text-sm font-extrabold text-ink/70 transition",
@@ -262,7 +284,7 @@ export function ModelSelector({
                   transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
                   className="overflow-hidden"
                 >
-                  <div className="space-y-2 pt-1">
+                  <div ref={restRef} className="space-y-2 pt-1">
                     {restModels.map((m) => renderModelRow(m))}
                   </div>
                 </motion.div>

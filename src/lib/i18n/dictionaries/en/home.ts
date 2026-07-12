@@ -21,11 +21,6 @@ export const home = {
   cta: {
     useDebator: "🎮 Use Debator",
     seeDemo: "🎬 See a Demo",
-    // Explainer line with two <strong> spans.
-    noteUseStrong: "Use Debator",
-    noteMiddle: " sets up your own match · ",
-    noteSampleStrong: "See a Demo",
-    noteAfter: " replays a real recorded match in 30 seconds — free to watch.",
   },
 
   /** The "See a Demo" full-screen replay (src/components/demo/DemoOverlay). */

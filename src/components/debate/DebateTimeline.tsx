@@ -3,7 +3,12 @@
 /**
  * DebateTimeline — the central feed of turns. Renders completed messages, the
  * currently-streaming turn (with cursor), and the thinking/judging indicators.
+ * Auto-follows the newest text (owner feedback 7/12): the page scrolls down as
+ * a turn streams in, but only while the reader is already at the bottom —
+ * scrolling up to re-read pauses the follow until they come back down.
  */
+
+import { useEffect, useRef } from "react";
 
 import type {
   DebateMessage,
@@ -76,6 +81,32 @@ export function DebateTimeline({
 }: DebateTimelineProps) {
   const d = useT();
   const empty = messages.length === 0 && !activeTurn && phase !== "judging";
+
+  // Follow-the-text: stick to the bottom while the reader is within ~160px of
+  // it (programmatic follows keep the gap at 0, so the stick self-sustains;
+  // wheeling up breaks it, returning to the bottom re-arms it).
+  const stickRef = useRef(true);
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    const onScroll = () => {
+      const gap =
+        document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+      stickRef.current = gap < 160;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true; // never yank on first paint (reopened matches)
+      return;
+    }
+    if (!stickRef.current) return;
+    // Instant, not smooth: this fires on every reveal tick, and stacked smooth
+    // scrolls lag behind the text. Also covers the verdict/awaiting panels via
+    // the `phase` dep — they mount right below the timeline.
+    window.scrollTo({ top: document.documentElement.scrollHeight });
+  }, [streamingText, messages.length, phase]);
 
   return (
     <div className="space-y-3">

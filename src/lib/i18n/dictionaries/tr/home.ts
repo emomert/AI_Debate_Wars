@@ -21,11 +21,6 @@ export const home = {
   cta: {
     useDebator: "🎮 Debator'ı Kullanın",
     seeDemo: "🎬 Demoyu İzleyin",
-    // Explainer line with two <strong> spans.
-    noteUseStrong: "Debator'ı Kullanın",
-    noteMiddle: " kendi maçınızı kurar · ",
-    noteSampleStrong: "Demoyu İzleyin",
-    noteAfter: " ise gerçek bir maç kaydını 30 saniyede oynatır — izlemesi ücretsiz.",
   },
 
   /** "Demoyu İzleyin" tam ekran tekrarı (src/components/demo/DemoOverlay). */

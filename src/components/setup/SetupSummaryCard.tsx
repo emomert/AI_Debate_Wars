@@ -31,7 +31,6 @@ export function SetupSummaryCard({
   availability,
 }: SetupSummaryCardProps) {
   const d = useT();
-  const roundLabel = d.setup.rounds[config.roundCount]?.label;
   const pairs = getBattlePairs(config);
 
   // Name the judge in the match card: the chosen third model, or — for Auto —
@@ -136,13 +135,12 @@ export function SetupSummaryCard({
           {pairs.length > 1 ? (
             <Badge color="purple" size="sm">⚔️ {d.setup.battles.summaryCount(pairs.length)}</Badge>
           ) : null}
-          {/* Blitz ignores the round count (fixed 4 rounds / 8 turns), so show a
-              blitz-specific badge instead of the misleading "3 · Quick Match". */}
-          <Badge color="white" size="sm">
-            {config.mode === "blitz"
-              ? d.setup.summary.blitzRounds
-              : d.setup.summary.roundLine(config.roundCount, roundLabel ?? "")}
-          </Badge>
+          {/* Rounds chip removed (owner, 7/12): every match is 3 rounds now, so
+              "3 · Quick Match" was dead information. Blitz keeps its own badge
+              (fixed 4 rounds / 8 turns) since its shape differs. */}
+          {config.mode === "blitz" ? (
+            <Badge color="white" size="sm">{d.setup.summary.blitzRounds}</Badge>
+          ) : null}
           <Badge color="white" size="sm" className="max-w-[12rem] truncate">{toneLabel}</Badge>
           <Badge color="white" size="sm">
             {config.deepDebate ? d.setup.summary.deepTemplate : config.responseLength}
