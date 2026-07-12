@@ -64,6 +64,7 @@ import {
   calculateCost,
   estimateTokensFromText,
 } from "@/lib/cost/calculateCost";
+import { ensureMatchCharged } from "@/lib/coins/server";
 import {
   ProviderError,
   httpStatusForCode,
@@ -119,6 +120,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     // warm-instance cache of allowed topics keeps repeat turns free. Fails
     // OPEN, so a moderation outage never breaks a match.
     await assertTopicAllowed(session.topic, req.signal);
+
+    // Coin gate (docs/23_COINS.md; no-op while COINS_ENABLED is off): every
+    // turn asserts the match is paid — the DB charge is idempotent per
+    // (user, session, price), so only the first turn actually spends. Runs
+    // BEFORE any paid provider work, after the free validations above.
+    await ensureMatchCharged(session);
 
     const model = speakerModel(session, turn.speaker);
     errModelId = model.modelId;

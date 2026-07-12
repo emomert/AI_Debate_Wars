@@ -84,6 +84,10 @@ export const debate = {
       title: "Arena soğuma molasında",
       body: "Sağlayıcı istekleri hız sınırına takıyor. Bir an bekleyip tekrar deneyin.",
     },
+    OUT_OF_COINS: {
+      title: "Bu maç için yeterli jeton yok",
+      body: "Bakiyeniz bu yarışmacıları karşılayamıyor. Bir jeton paketi alın, promosyon kodu kullanın ya da daha uygun yarışmacılar seçin — günlük ücretsiz jetonlar yarın yenilenir.",
+    },
     INSUFFICIENT_CREDITS: {
       title: "Bu yarışmacının jetonu bitti",
       body: "Sağlayıcı hesabının bu model için kredisi kalmadı. Kredi ekleyin ya da kurulumda $0 faturalandırılan açık ağırlıklı bir model seçin.",

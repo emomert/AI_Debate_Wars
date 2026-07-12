@@ -85,8 +85,12 @@ export const debate = {
       body: "The provider is rate-limiting requests. Wait a moment and try again.",
     },
     INSUFFICIENT_CREDITS: {
-      title: "This fighter is out of coins",
-      body: "The provider account is out of credits for this model. Add credits, or pick an open-weight model in setup — they bill $0.",
+      title: "This fighter's corner ran dry",
+      body: "The provider account is out of credits for this model. Pick a different fighter, or check back in a little while.",
+    },
+    OUT_OF_COINS: {
+      title: "Not enough coins for this match",
+      body: "Your balance can't cover these fighters. Grab a coin pack, redeem a promo code, or pick cheaper fighters — daily free coins come back tomorrow.",
     },
     INVALID_MODEL: {
       title: "That fighter isn't in the roster",

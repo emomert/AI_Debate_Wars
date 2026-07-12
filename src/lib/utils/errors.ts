@@ -20,6 +20,7 @@ export type AppErrorCode =
   | "DAILY_LIMIT_REACHED" // global/per-IP daily spend cap
   | "CONTENT_BLOCKED" // topic/transcript rejected by the moderation filter
   | "INSUFFICIENT_CREDITS"
+  | "OUT_OF_COINS" // the USER's coin balance can't cover this match (coins economy)
   | "TOKEN_LIMIT_EXCEEDED"
   // Community hub routes (publish/vote/comment):
   | "AUTH_REQUIRED" // the action needs a signed-in user
@@ -58,6 +59,7 @@ export function httpStatusForCode(code: AppErrorCode): number {
     case "DAILY_LIMIT_REACHED":
       return 429;
     case "INSUFFICIENT_CREDITS":
+    case "OUT_OF_COINS":
       return 402;
     case "PROVIDER_TIMEOUT":
       return 504;
