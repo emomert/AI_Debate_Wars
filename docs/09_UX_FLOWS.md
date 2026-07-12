@@ -49,8 +49,7 @@ variant designed for share clips:
 - **Accessibility:** an always-on screen-reader transcript announces each line;
   reduce-motion collapses the stage to instant captioned text (no splash/shake).
 - **Phase 1** ships on the reusable fighter *panel*; bespoke per-model character
-  sprites + hero MP3 stings are Phase 2. Spec:
-  `docs/superpowers/specs/2026-07-08-blitz-mode-design.md`.
+  sprites + hero MP3 stings are Phase 2.
 
 ## Multi-Battle Matches
 

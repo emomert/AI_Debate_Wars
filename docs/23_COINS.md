@@ -4,9 +4,6 @@
 > distributed via promo codes + `scripts/mint-coins.mjs` until Polar lands).
 > `COINS_ENABLED` (`src/lib/coins/config.ts`) defaults ON; the kill switch is
 > `NEXT_PUBLIC_COINS_ENABLED=false` + redeploy (build-time inlined).
-> Design + analysis:
-> `docs/superpowers/specs/2026-07-12-coin-economy-design.md` and the
-> owner's `Debator-Monetization-Report.html` (untracked, repo root).
 > Payment checkout (Polar) is the NEXT step — everything up to the buy
 > button is built.
 
