@@ -23,7 +23,6 @@ export const setup = {
     addBattle: "➕ Başka bir dövüş ekle",
     removeAria: (n: number) => `Dövüş ${n}'i kaldır`,
     swapAria: (n: number) => `Dövüş ${n}'deki yarışmacıları değiştir`,
-    maxNote: "Aynı konuda aynı anda en fazla 3 dövüş — yalnızca yarışmacılar değişir.",
     summaryCount: (n: number) => `${n} dövüş`,
   },
 

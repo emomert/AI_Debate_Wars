@@ -23,7 +23,6 @@ export const setup = {
     addBattle: "➕ Add another battle",
     removeAria: (n: number) => `Remove battle ${n}`,
     swapAria: (n: number) => `Swap fighters in battle ${n}`,
-    maxNote: "Run up to 3 battles on the same topic at once — only the fighters change.",
     summaryCount: (n: number) => `${n} battles`,
   },
 

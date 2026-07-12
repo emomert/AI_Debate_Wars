@@ -142,6 +142,8 @@ interface ArenaContextValue {
 
   soundEnabled: boolean;
   toggleSound: () => void;
+  /** One switch for the whole soundscape (owner 7/12): SFX + music together. */
+  toggleAudio: () => void;
 
   musicEnabled: boolean;
   toggleMusic: () => void;
@@ -311,6 +313,16 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     setMusicEnabled(soundManager.toggleMusic());
   }, []);
 
+  // One button for the whole soundscape (owner 7/12): if ANYTHING is audible,
+  // silence everything; otherwise turn both SFX and music on together.
+  const toggleAudio = useCallback(() => {
+    const on = !(soundEnabled || musicEnabled);
+    soundManager.setEnabled(on);
+    soundManager.setMusicEnabled(on);
+    setSoundEnabled(on);
+    setMusicEnabled(on);
+  }, [soundEnabled, musicEnabled]);
+
   // Derived active session — back-compat for consumers that still read a single
   // session (re-judge panels, share/publish, history saver, reopen).
   const session = sessions[activeBattleIndex] ?? null;
@@ -329,6 +341,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       startMatch,
       soundEnabled,
       toggleSound,
+      toggleAudio,
       musicEnabled,
       toggleMusic,
       availability,
@@ -347,6 +360,7 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
       startMatch,
       soundEnabled,
       toggleSound,
+      toggleAudio,
       musicEnabled,
       toggleMusic,
       availability,

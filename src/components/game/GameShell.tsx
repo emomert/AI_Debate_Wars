@@ -14,8 +14,7 @@ import { cn } from "@/lib/utils/cn";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { MULTILOCALE_ENABLED } from "@/lib/i18n/config";
 import { DottedBackground } from "@/components/game/DottedBackground";
-import { SoundToggle } from "@/components/game/SoundToggle";
-import { MusicToggle } from "@/components/game/MusicToggle";
+import { AudioToggle } from "@/components/game/AudioToggle";
 import { MotionToggle } from "@/components/game/MotionToggle";
 import { HelpButton } from "@/components/game/HelpButton";
 import { LanguageToggle } from "@/components/game/LanguageToggle";
@@ -132,8 +131,7 @@ export function GameShell({
             {authEnabled ? <AuthButton /> : null}
             {MULTILOCALE_ENABLED ? <LanguageToggle /> : null}
             <MotionToggle />
-            <MusicToggle />
-            <SoundToggle />
+            <AudioToggle />
             <HelpButton />
           </div>
         </div>

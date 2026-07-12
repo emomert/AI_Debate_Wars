@@ -104,9 +104,6 @@ export function BattleList({
           {d.setup.battles.addBattle}
         </ArcadeButton>
       ) : null}
-      {allowAddBattle ? (
-        <p className="text-center text-[11px] text-ink/50">{d.setup.battles.maxNote}</p>
-      ) : null}
     </div>
   );
 }
