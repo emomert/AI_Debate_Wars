@@ -242,7 +242,7 @@ export const report = {
     note2: (search: string) =>
       `· Derin Münazara aramaları uygulamanın arama motorunda çalışır (sorgu ücreti arena tarafından karşılanır); hibrit modda OpenRouter yerel araması tur başına ~$${search} ekler.`,
     note3:
-      "· Standart, önbellekli ve çıktı oranları sağlayıcıların resmi sayfaları ve OpenRouter'ın canlı model listesine karşı doğrulanmıştır (Temmuz 2026). OpenRouter modelleri önbellek oranı listelemez (üst sağlayıcı önbellek faturalandırması değişkendir), bu yüzden maliyetleri hafifçe yüksek tahmin edilir. gpt-5.3-chat-latest'in yayınlanmış bir oranı yoktur ve en yakın doğrulanmış komşusunun fiyatıyla fiyatlandırılır (önbellek indirimi varsayılmaz).",
+      "· Standart, önbellekli ve çıktı oranları sağlayıcıların resmi sayfaları ve OpenRouter'ın canlı model listesine karşı doğrulanmıştır (Temmuz 2026). OpenRouter modelleri önbellek oranı listelemez (üst sağlayıcı önbellek faturalandırması değişkendir), bu yüzden maliyetleri hafifçe yüksek tahmin edilir.",
     note4:
       "· Önbellek farkında: sağlayıcı önbellek isabetli girdi tokenları bildirdiğinde (maliyet rozetinde bir ♻️), bunlar yukarıdaki önbellekli oranla faturalandırılır — yani maliyet, abartılı bir tahmin değil, gerçek faturadır.",
     note5: (price: string) =>

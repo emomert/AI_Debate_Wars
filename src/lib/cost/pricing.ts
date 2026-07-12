@@ -40,12 +40,7 @@ export const modelPricing: Record<string, ModelPrice> = {
   "openai:gpt-5.4": { inputCostPer1M: 2.5, cachedInputCostPer1M: 0.25, outputCostPer1M: 15.0 },
   "openai:gpt-5.4-mini": { inputCostPer1M: 0.75, cachedInputCostPer1M: 0.075, outputCostPer1M: 4.5 },
   "openai:gpt-5.4-nano": { inputCostPer1M: 0.2, cachedInputCostPer1M: 0.02, outputCostPer1M: 1.25 },
-  // gpt-5.3-chat-latest: no separate published rate; priced at its nearest
-  // confirmed neighbor (gpt-5.2 / gpt-5.3-codex tier). ESTIMATE — and we do NOT
-  // assume a cached discount for it (cached = standard) since the base is itself
-  // an estimate.
-  "openai:gpt-5.3-chat-latest": { inputCostPer1M: 1.75, outputCostPer1M: 14.0 },
-  "openai:gpt-5.2-chat-latest": { inputCostPer1M: 1.75, cachedInputCostPer1M: 0.175, outputCostPer1M: 14.0 },
+  // (gpt-5.2/5.3-chat-latest removed 2026-07-12 — Aug 10 sunset.)
   "openai:gpt-5-mini": { inputCostPer1M: 0.25, cachedInputCostPer1M: 0.025, outputCostPer1M: 2.0 },
   "openai:gpt-5-nano": { inputCostPer1M: 0.05, cachedInputCostPer1M: 0.005, outputCostPer1M: 0.4 },
   "openai:gpt-4.1": { inputCostPer1M: 2.0, cachedInputCostPer1M: 0.5, outputCostPer1M: 8.0 },
@@ -92,6 +87,20 @@ export const modelPricing: Record<string, ModelPrice> = {
   // MiniMax
   "openrouter:minimax/minimax-m3": { inputCostPer1M: 0.3, outputCostPer1M: 1.2 },
   "openrouter:minimax/minimax-m2.7": { inputCostPer1M: 0.24, outputCostPer1M: 0.96 },
+  "openrouter:minimax/minimax-m2.5": { inputCostPer1M: 0.15, outputCostPer1M: 0.9 },
+  // July 2026 expansion — rates from OpenRouter /api/v1/models (2026-07-12).
+  "openrouter:meta-llama/llama-4-maverick": { inputCostPer1M: 0.2, outputCostPer1M: 0.8 },
+  "openrouter:meta-llama/llama-4-scout": { inputCostPer1M: 0.1, outputCostPer1M: 0.3 },
+  "openrouter:mistralai/mistral-medium-3-5": { inputCostPer1M: 1.5, outputCostPer1M: 7.5 },
+  "openrouter:mistralai/mistral-small-2603": { inputCostPer1M: 0.15, outputCostPer1M: 0.6 },
+  "openrouter:amazon/nova-pro-v1": { inputCostPer1M: 0.8, outputCostPer1M: 3.2 },
+  "openrouter:amazon/nova-lite-v1": { inputCostPer1M: 0.06, outputCostPer1M: 0.24 },
+  "openrouter:tencent/hy3": { inputCostPer1M: 0.14, outputCostPer1M: 0.58 },
+  "openrouter:anthropic/claude-haiku-4.5": { inputCostPer1M: 1.0, outputCostPer1M: 5.0 },
+  "openrouter:google/gemma-4-26b-a4b-it": { inputCostPer1M: 0.06, outputCostPer1M: 0.33 },
+  "openrouter:moonshotai/kimi-k2.5": { inputCostPer1M: 0.375, outputCostPer1M: 2.025 },
+  "openrouter:z-ai/glm-4.7-flash": { inputCostPer1M: 0.06, outputCostPer1M: 0.4 },
+  "openrouter:nvidia/nemotron-3-nano-30b-a3b": { inputCostPer1M: 0.05, outputCostPer1M: 0.2 },
 };
 
 /**

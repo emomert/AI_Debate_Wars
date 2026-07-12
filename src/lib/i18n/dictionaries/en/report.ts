@@ -242,7 +242,7 @@ export const report = {
     note2: (search: string) =>
       `· Deep Debate searches run on the app's search engine (per-query fee absorbed by the arena); in hybrid mode OpenRouter native search adds ~$${search}/turn.`,
     note3:
-      "· Standard, cached and output rates verified against the providers' official pages and OpenRouter's live model list (July 2026). OpenRouter models list no cached rate (upstream cache billing varies), so their costs err slightly high. gpt-5.3-chat-latest has no published rate and is priced at its nearest confirmed neighbor (no cache discount assumed).",
+      "· Standard, cached and output rates verified against the providers' official pages and OpenRouter's live model list (July 2026). OpenRouter models list no cached rate (upstream cache billing varies), so their costs err slightly high.",
     note4:
       "· Cache-aware: when the provider reports cache-hit input tokens (a ♻️ on the cost badge), they bill at the cached rate above — so the cost is the real bill, not an over-estimate.",
     note5: (price: string) =>

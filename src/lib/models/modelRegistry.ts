@@ -77,9 +77,7 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "gpt-5.4", providerId: "openai", brand: "OpenAI", family: "GPT-5.4", displayName: "GPT-5.4", color: "blue", costTier: "high", debateRating: 95, avatar: "🎙️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "gpt-5.4-mini", providerId: "openai", brand: "OpenAI", family: "GPT-5.4", displayName: "GPT-5.4 Mini", color: "blue", costTier: "medium", debateRating: 89, avatar: "⚡", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "gpt-5.4-nano", providerId: "openai", brand: "OpenAI", family: "GPT-5.4", displayName: "GPT-5.4 Nano", color: "blue", costTier: "low", debateRating: 82, avatar: "🐇", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
-  // Sunset 2026-08-10 (→ gpt-5.5):
-  { id: "gpt-5.3-chat-latest", providerId: "openai", brand: "OpenAI", family: "GPT-5.3", displayName: "GPT-5.3", color: "blue", costTier: "high", debateRating: 94, avatar: "🎤", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
-  { id: "gpt-5.2-chat-latest", providerId: "openai", brand: "OpenAI", family: "GPT-5.2", displayName: "GPT-5.2", color: "blue", costTier: "high", debateRating: 93, avatar: "🏅", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  // (gpt-5.2/5.3-chat-latest removed 2026-07-12 ahead of their Aug 10 sunset.)
   // Sunset 2026-12-11 (→ gpt-5.4-mini / gpt-5.4-nano):
   { id: "gpt-5-mini", providerId: "openai", brand: "OpenAI", family: "GPT-5", displayName: "GPT-5 Mini", color: "blue", costTier: "medium", debateRating: 87, avatar: "🔷", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "gpt-5-nano", providerId: "openai", brand: "OpenAI", family: "GPT-5", displayName: "GPT-5 Nano", color: "blue", costTier: "low", debateRating: 80, avatar: "🚀", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
@@ -143,6 +141,39 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   // MiniMax
   { id: "minimax/minimax-m3", providerId: "openrouter", brand: "MiniMax", family: "MiniMax M3", displayName: "MiniMax M3", color: "purple", costTier: "low", debateRating: 87, avatar: "🧿", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "minimax/minimax-m2.7", providerId: "openrouter", brand: "MiniMax", family: "MiniMax M2", displayName: "MiniMax M2.7", color: "purple", costTier: "low", debateRating: 84, avatar: "🧿", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "minimax/minimax-m2.5", providerId: "openrouter", brand: "MiniMax", family: "MiniMax M2", displayName: "MiniMax M2.5", color: "purple", costTier: "low", debateRating: 85, avatar: "🧿", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // ── July 2026 expansion (all OpenRouter; live-verified ids + pricing) ──────
+
+  // Meta — Llama 4
+  { id: "meta-llama/llama-4-maverick", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Maverick", color: "purple", costTier: "low", debateRating: 88, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "meta-llama/llama-4-scout", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Scout", color: "purple", costTier: "low", debateRating: 82, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // Mistral
+  { id: "mistralai/mistral-medium-3-5", providerId: "openrouter", brand: "Mistral", family: "Mistral Medium", displayName: "Mistral Medium 3.5", color: "purple", costTier: "high", debateRating: 90, avatar: "🌪️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "mistralai/mistral-small-2603", providerId: "openrouter", brand: "Mistral", family: "Mistral Small", displayName: "Mistral Small", color: "purple", costTier: "low", debateRating: 82, avatar: "🌪️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // Amazon — Nova
+  { id: "amazon/nova-pro-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Pro", color: "purple", costTier: "medium", debateRating: 86, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "amazon/nova-lite-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Lite", color: "purple", costTier: "low", debateRating: 78, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // Tencent — Hunyuan
+  { id: "tencent/hy3", providerId: "openrouter", brand: "Tencent", family: "Hunyuan 3", displayName: "Hunyuan 3", color: "purple", costTier: "low", debateRating: 84, avatar: "🐧", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // Anthropic — the affordable Claude tier
+  { id: "anthropic/claude-haiku-4.5", providerId: "openrouter", brand: "Claude", family: "Haiku", displayName: "Haiku 4.5", color: "purple", costTier: "medium", debateRating: 89, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // Google — budget Gemma under the Gemini tile
+  { id: "google/gemma-4-26b-a4b-it", providerId: "openrouter", brand: "Gemini", family: "Gemma 4", displayName: "Gemma 4 26B", color: "purple", costTier: "low", debateRating: 79, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // Moonshot — cheaper Kimi tier
+  { id: "moonshotai/kimi-k2.5", providerId: "openrouter", brand: "Kimi", family: "Kimi K2", displayName: "Kimi K2.5", color: "purple", costTier: "low", debateRating: 85, avatar: "🌙", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // Z.AI — budget GLM
+  { id: "z-ai/glm-4.7-flash", providerId: "openrouter", brand: "GLM", family: "GLM 4.7", displayName: "GLM 4.7 Flash", color: "purple", costTier: "low", debateRating: 81, avatar: "🌀", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+
+  // NVIDIA — nano tier
+  { id: "nvidia/nemotron-3-nano-30b-a3b", providerId: "openrouter", brand: "Nemotron", family: "Nemotron 3", displayName: "Nemotron 3 Nano", color: "purple", costTier: "low", debateRating: 78, avatar: "🟩", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 ];
 
 export function getModelById(id: string): ModelCatalogEntry | undefined {
@@ -168,6 +199,7 @@ export const RECOMMENDED_MODEL_IDS: ReadonlySet<string> = new Set<string>([
   "x-ai/grok-4.5",
   "anthropic/claude-sonnet-5",
   "anthropic/claude-opus-4.8",
+  "anthropic/claude-haiku-4.5",
   "google/gemini-3.5-flash",
   "google/gemini-2.5-pro",
   "xiaomi/mimo-v2.5-pro",
@@ -176,6 +208,14 @@ export const RECOMMENDED_MODEL_IDS: ReadonlySet<string> = new Set<string>([
   "nvidia/nemotron-3-ultra-550b-a55b",
   "qwen/qwen3.7-max",
   "minimax/minimax-m3",
+  // July 2026 expansion brands (small rosters — show them up front)
+  "meta-llama/llama-4-maverick",
+  "meta-llama/llama-4-scout",
+  "mistralai/mistral-medium-3-5",
+  "mistralai/mistral-small-2603",
+  "amazon/nova-pro-v1",
+  "amazon/nova-lite-v1",
+  "tencent/hy3",
 ]);
 
 /** A selectable brand tab + the backend that runs its models. */
