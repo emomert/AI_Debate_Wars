@@ -354,7 +354,9 @@ export function BattleController({
   );
 
   return (
-    <div>
+    // flex-1 column + flex-1 on the arena grid below: pads the battle out to
+    // the viewport bottom so DebateControls never floats above empty space.
+    <div className="flex flex-1 flex-col">
       <p className="sr-only" role="status" aria-live="polite">
         {announcement}
       </p>
@@ -417,7 +419,7 @@ export function BattleController({
       </div>
 
       {/* Desktop 3-column arena */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_240px]">
+      <div className="mt-4 flex-1 grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_240px]">
         <aside className="hidden lg:block">
           <div className="sticky top-[112px]">{cardA}</div>
         </aside>

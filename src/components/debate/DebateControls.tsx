@@ -38,11 +38,13 @@ function DebateControlsComponent({
   const running = phase === "thinking" || phase === "streaming" || phase === "judging";
 
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t-4 border-ink bg-paper/90 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-card sm:border-4">
+    // py-2 + sm Stop buttons: the bar is a safety control, not a hero — keep it
+    // shallow so it steals as little arena space as possible (owner feedback).
+    <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t-4 border-ink bg-paper/90 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-card sm:border-4">
       <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
         {phase === "awaiting" ? (
           <>
-            <ArcadeButton variant="danger-red" onClick={onStop} leftIcon={<span aria-hidden>⏹</span>}>
+            <ArcadeButton variant="danger-red" size="sm" onClick={onStop} leftIcon={<span aria-hidden>⏹</span>}>
               {d.debate.controls.stop}
             </ArcadeButton>
             <ArcadeButton variant="primary-green" size="lg" onClick={onNext}>
@@ -50,7 +52,7 @@ function DebateControlsComponent({
             </ArcadeButton>
           </>
         ) : running ? (
-          <ArcadeButton variant="danger-red" onClick={onStop} leftIcon={<span aria-hidden>⏹</span>}>
+          <ArcadeButton variant="danger-red" size="sm" onClick={onStop} leftIcon={<span aria-hidden>⏹</span>}>
             {d.debate.controls.stopMatch}
           </ArcadeButton>
         ) : phase === "error" ? (

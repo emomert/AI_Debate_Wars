@@ -202,7 +202,9 @@ function MatchArena({
   const allBattlesCost = snapshots.reduce((sum, s) => sum + (s?.costUsd ?? 0), 0);
 
   return (
-    <div>
+    // flex-1 column: fills the flex main (debate page) so the active battle —
+    // and with it the sticky DebateControls bar — can reach the viewport bottom.
+    <div className="flex flex-1 flex-col">
       {multi ? (
         <BattleTabs
           sessions={sessions}

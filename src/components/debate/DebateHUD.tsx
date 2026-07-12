@@ -34,7 +34,7 @@ interface DebateHUDProps {
   costSummary: SessionCostSummary;
   phase: RunnerPhase;
   messageCount: number;
-  /** Pre-formatted "Tone: …" chip text (session tone, custom-aware). */
+  /** Pre-formatted tone chip text (session tone, custom-aware, no prefix). */
   toneText: string;
   /** Pre-formatted length chip text ("short" / "🌐 Deep Debate" / …). */
   formatText: string;
@@ -96,7 +96,29 @@ function DebateHUDComponent({
                 "bg-surface transition hover:bg-arcade-yellow hover:text-night focus-visible:outline-3 focus-visible:outline-offset-2",
               )}
             >
-              {pace === "auto" ? d.debate.hud.paceSwitchNormal : d.debate.hud.paceSwitchFast}
+              {/* Both labels are stacked in one grid cell and the inactive one is
+                  invisible — the chip permanently reserves the longer label's
+                  width, so toggling can't resize it or rewrap the HUD row. */}
+              <span className="grid justify-items-center">
+                <span
+                  aria-hidden={pace !== "auto"}
+                  className={cn(
+                    "col-start-1 row-start-1 whitespace-nowrap",
+                    pace === "auto" ? "" : "invisible",
+                  )}
+                >
+                  {d.debate.hud.paceSwitchNormal}
+                </span>
+                <span
+                  aria-hidden={pace === "auto"}
+                  className={cn(
+                    "col-start-1 row-start-1 whitespace-nowrap",
+                    pace === "auto" ? "invisible" : "",
+                  )}
+                >
+                  {d.debate.hud.paceSwitchFast}
+                </span>
+              </span>
             </button>
           ) : null}
           {VOICE_ENABLED ? (

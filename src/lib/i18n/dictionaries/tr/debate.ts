@@ -30,9 +30,9 @@ export const debate = {
   // The big "ROUND N" transition flash
   roundFlash: (n: number) => `TUR ${n}`,
 
-  // Topic bar / HUD chips
+  // Konu çubuğu / HUD çipleri — yalın değer, "Üslup:" öneki yok (7/12 geri bildirimi)
   topic: {
-    tone: (value: string) => `Üslup: ${value}`,
+    tone: (value: string) => value,
     customTone: "özel",
     deepDebate: "🌐 Derin Münazara",
   },

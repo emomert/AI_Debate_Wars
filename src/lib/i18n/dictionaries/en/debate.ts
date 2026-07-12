@@ -30,9 +30,9 @@ export const debate = {
   // The big "ROUND N" transition flash
   roundFlash: (n: number) => `ROUND ${n}`,
 
-  // Topic bar / HUD chips
+  // Topic bar / HUD chips — bare value, no "Tone:" prefix (owner feedback 7/12)
   topic: {
-    tone: (value: string) => `Tone: ${value}`,
+    tone: (value: string) => value,
     customTone: "custom",
     deepDebate: "🌐 Deep Debate",
   },

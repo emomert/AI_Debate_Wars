@@ -175,13 +175,15 @@ export function ModelSelector({
           setActiveBrand(b.brand);
         }}
         className={cn(
-          "flex flex-col items-center gap-1.5 rounded-btn border-3 border-ink px-1.5 py-2.5 transition",
+          // Mobile-compact (owner feedback): tighter padding/gap below sm so the
+          // provider step doesn't dominate the screen; desktop keeps its size.
+          "flex flex-col items-center gap-1 rounded-btn border-3 border-ink px-1 py-1.5 transition sm:gap-1.5 sm:px-1.5 sm:py-2.5",
           "focus-visible:outline-3 focus-visible:outline-offset-2",
           active ? "bg-night text-white shadow-hard-sm" : "bg-surface hover:bg-paper",
         )}
       >
         <BrandLogo brand={b.brand} size={18} />
-        <span className="flex min-w-0 max-w-full items-center gap-1 text-[11px] font-extrabold leading-none">
+        <span className="flex min-w-0 max-w-full items-center gap-1 text-[10px] font-extrabold leading-none sm:text-[11px]">
           <span className="truncate">{b.brand}</span>
           {ready === null ? null : ready ? (
             <span
@@ -212,7 +214,7 @@ export function ModelSelector({
       {/* Step 1 — provider grid: one identical tile per company (logo + name),
           alphabetical. No provider is promoted above another. */}
       <div
-        className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-4"
+        className="mb-3 grid grid-cols-4 gap-1.5 sm:gap-2"
         role="group"
         aria-label={`${label} provider`}
       >
@@ -300,7 +302,8 @@ export function ModelSelector({
           onSelect(m);
         }}
         className={cn(
-          "flex w-full items-center gap-3 rounded-card border-4 p-3 text-left transition",
+          // Mobile-compact: p-2/gap-2 below sm (owner feedback), desktop as-is.
+          "flex w-full items-center gap-2 rounded-card border-4 p-2 text-left transition sm:gap-3 sm:p-3",
           "focus-visible:outline-3 focus-visible:outline-offset-2",
           blocked && "cursor-not-allowed opacity-45",
           isSelected
@@ -312,7 +315,7 @@ export function ModelSelector({
 
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
-            <span className="font-heading text-base font-extrabold leading-tight">
+            <span className="font-heading text-sm font-extrabold leading-tight sm:text-base">
               {m.displayName}
             </span>
             {isSelected ? <Badge color="green" size="sm">{d.setup.models.picked}</Badge> : null}

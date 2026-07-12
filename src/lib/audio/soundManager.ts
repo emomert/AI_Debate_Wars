@@ -248,8 +248,17 @@ class SoundManager {
     return () => this.listeners.delete(fn);
   }
 
+  /**
+   * True while the tab is hidden/minimized. Music already stops via the
+   * visibilitychange handler; SFX must observe the same rule (a synth blip or
+   * typewriter tick from a background tab reads as another app making noise).
+   */
+  private hiddenTab(): boolean {
+    return typeof document !== "undefined" && document.hidden;
+  }
+
   play(key: SoundKey): void {
-    if (!this.enabled) return;
+    if (!this.enabled || this.hiddenTab()) return;
     if (this.playFileSfx(key)) return; // real file handles this key
     this.playSynth(key);
   }
@@ -324,7 +333,7 @@ class SoundManager {
    * a metronome. Throttled by the caller (~15/sec).
    */
   keystroke(): void {
-    if (!this.enabled) return;
+    if (!this.enabled || this.hiddenTab()) return;
     const ctx = this.ensureContext();
     if (!ctx || !this.master) return;
     try {
@@ -356,7 +365,7 @@ class SoundManager {
    */
   playVerdictRoll(signal?: AbortSignal): Promise<void> {
     return new Promise<void>((resolve) => {
-      if (typeof window === "undefined" || !this.enabled) {
+      if (typeof window === "undefined" || !this.enabled || this.hiddenTab()) {
         resolve();
         return;
       }

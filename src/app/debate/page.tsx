@@ -11,8 +11,10 @@ import { DebateArena } from "@/components/debate/DebateArena";
 export default function DebatePage() {
   // hideFooter: the sticky bottom controls own the page end here.
   // flushTop: the sticky DebateHUD bar docks directly under the header.
+  // flex flex-col: lets the arena column stretch to the viewport bottom, so the
+  // sticky DebateControls bar rests at the page end even with little content.
   return (
-    <GameShell wide hideFooter flushTop>
+    <GameShell wide hideFooter flushTop className="flex flex-col">
       <DebateArena />
     </GameShell>
   );
