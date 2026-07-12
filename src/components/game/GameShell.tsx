@@ -69,8 +69,10 @@ function Logo() {
       className="group inline-flex items-center gap-2 rounded-btn focus-visible:outline-3 focus-visible:outline-offset-2"
       aria-label={d.shell.homeAria}
     >
-      <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow text-base">
-        ⚔️
+      {/* leading-none: the emoji's line box otherwise sits below optical
+          center inside the tile (owner 7/12). */}
+      <span className="grid h-8 w-8 place-items-center rounded-btn border-3 border-ink bg-arcade-yellow text-base leading-none">
+        <span aria-hidden className="translate-y-[0.5px]">⚔️</span>
       </span>
       <span className="hidden font-display text-lg leading-none tracking-tight sm:inline sm:text-xl">
         {d.common.brand}

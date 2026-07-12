@@ -328,64 +328,70 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
             </div>
           ) : null}
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => openShare("x")}
-              aria-label={t.post}
-              title={t.post}
-              className={cn(BRAND_TILE, "bg-night")}
-            >
-              <XIcon className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => void openInstagram()}
-              aria-label={t.instagram}
-              title={t.instagram}
-              className={BRAND_TILE}
-              style={{ background: INSTAGRAM_GRADIENT }}
-            >
-              <InstagramIcon className="h-5 w-5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => openShare("reddit")}
-              aria-label={t.reddit}
-              title={t.reddit}
-              className={BRAND_TILE}
-              style={{ background: "#FF4500" }}
-            >
-              <RedditIcon className="h-5 w-5" />
-            </button>
-            {supportsCopyImage ? (
-              <ArcadeButton variant="neutral-white" size="sm" onClick={copyImage}>
+          {/* Social tiles left; Copy image + Share match on the RIGHT so they
+              stack under the Change-the-judge button (owner 7/12). */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => openShare("x")}
+                aria-label={t.post}
+                title={t.post}
+                className={cn(BRAND_TILE, "bg-night")}
+              >
+                <XIcon className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => void openInstagram()}
+                aria-label={t.instagram}
+                title={t.instagram}
+                className={BRAND_TILE}
+                style={{ background: INSTAGRAM_GRADIENT }}
+              >
+                <InstagramIcon className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => openShare("reddit")}
+                aria-label={t.reddit}
+                title={t.reddit}
+                className={BRAND_TILE}
+                style={{ background: "#FF4500" }}
+              >
+                <RedditIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {supportsCopyImage ? (
+                <ArcadeButton variant="neutral-white" size="sm" onClick={copyImage}>
+                  <ReservedLabel
+                    active={flash === "image" ? t.copied : t.copyImage}
+                    labels={[t.copyImage, t.copied]}
+                  />
+                </ArcadeButton>
+              ) : null}
+              <ArcadeButton
+                variant="neutral-white"
+                size="sm"
+                onClick={shareMatch}
+                disabled={sharingMatch}
+                title={t.shareMatchTitle}
+              >
                 <ReservedLabel
-                  active={flash === "image" ? t.copied : t.copyImage}
-                  labels={[t.copyImage, t.copied]}
+                  active={
+                    flash === "matchLink"
+                      ? t.linkCopied
+                      : flash === "matchText"
+                        ? t.matchCopied
+                        : sharingMatch
+                          ? t.sharing
+                          : t.shareMatch
+                  }
+                  labels={[t.shareMatch, t.sharing, t.linkCopied, t.matchCopied]}
                 />
               </ArcadeButton>
-            ) : null}
-            <ArcadeButton
-              variant="neutral-white"
-              size="sm"
-              onClick={shareMatch}
-              disabled={sharingMatch}
-              title={t.shareMatchTitle}
-            >
-              <ReservedLabel
-                active={
-                  flash === "matchLink"
-                    ? t.linkCopied
-                    : flash === "matchText"
-                      ? t.matchCopied
-                      : sharingMatch
-                        ? t.sharing
-                        : t.shareMatch
-                }
-                labels={[t.shareMatch, t.sharing, t.linkCopied, t.matchCopied]}
-              />
-            </ArcadeButton>
+            </div>
           </div>
         </div>
       </div>
