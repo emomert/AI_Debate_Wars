@@ -37,3 +37,6 @@ next-env.d.ts.bak
 # agent session scratch (subagent-run ledgers, memory buffers)
 .superpowers/
 .remember/
+
+# Raw demo footage (regenerate with scripts/record-demo.mjs)
+demo-recording/

@@ -5,9 +5,13 @@
 ## Primary Flow
 
 1. User lands on the home page (arcade pitch, sample topics). A **"See a Demo"**
-   CTA opens a full-screen ~30s cinematic replay of a REAL recorded match
-   (`src/components/demo/DemoOverlay.tsx` + `src/lib/demo/demoMatch.ts`) —
-   skippable, reduce-motion aware, costs nothing to watch. It replaced the old
+   CTA opens a full-screen ~30s VIDEO of the real product — an actual screen
+   recording of one genuine match (typed topic → fighter picks → live rounds
+   fast-forwarded → verdict), played by `src/components/demo/DemoOverlay.tsx`
+   from `/public/demo/demo-match.mp4`. Regenerate it with
+   `node scripts/record-demo.mjs` (drives the real app, runs a real match,
+   costs cents) then `node scripts/edit-demo.mjs` (ffmpeg speed-cut to ≤30s).
+   Skippable, silent, costs nothing to watch. It replaced the old
    "Try a Sample" randomized live match.
 2. User enters a topic — optionally runs the AI topic check to sharpen it.
 3. User picks two fighters (brand → family → model; swap A/B available).
