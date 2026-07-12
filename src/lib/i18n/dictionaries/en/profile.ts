@@ -13,11 +13,10 @@ export const profile = {
   stats: {
     completed: "Completed",
     totalSpent: "Total spent",
-    roundsFought: "Rounds fought",
-    fightersTried: "Fighters tried",
+    coinBalance: "Coin balance",
+    dailyCoins: "Free coins today",
     mostUsedFighter: "Most used fighter",
   },
-  winsByFighter: "🏆 Wins by fighter",
   history: {
     recentTitle: (shown: number, total: number) => `📜 Recent matches (${shown} of ${total})`,
     historyTitle: (total: number) => `📜 Match history (${total})`,

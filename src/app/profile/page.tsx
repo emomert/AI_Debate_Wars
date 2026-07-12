@@ -28,6 +28,7 @@ import {
   type SharedMatchSummary,
 } from "@/lib/community/types";
 import { VOTING_ENABLED } from "@/lib/community/config";
+import { COINS_ENABLED, FREE_DAILY_COINS } from "@/lib/coins/config";
 import { COST_UI_ENABLED } from "@/lib/cost/uiConfig";
 import { formatCost, formatRelativeDate } from "@/lib/utils/format";
 import { getServerDictionary } from "@/lib/i18n/server";
@@ -79,7 +80,7 @@ export default async function ProfilePage() {
     );
   }
 
-  const [{ data, error }, sharedRes] = await Promise.all([
+  const [{ data, error }, sharedRes, coinRes] = await Promise.all([
     supabase
       .from("matches")
       .select(MATCH_SUMMARY_COLUMNS)
@@ -91,6 +92,7 @@ export default async function ProfilePage() {
       .eq("owner_id", user.id)
       .order("created_at", { ascending: false })
       .limit(100),
+    COINS_ENABLED ? supabase.rpc("coin_status") : Promise.resolve({ data: null, error: null }),
   ]);
   // Distinguish a real load failure (e.g. the migration hasn't been run) from a
   // genuinely empty history, so a misconfigured setup isn't shown as "all good".
@@ -112,7 +114,10 @@ export default async function ProfilePage() {
   const shared = (sharedRes.data ?? []) as SharedMatchSummary[];
   const stats = computeStats(matches);
   const recent = matches.slice(0, 40);
-  const topWins = Object.entries(stats.winsByModel).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  // Coin status for the stat tiles (null when coins are off or the RPC fails).
+  const coinRow = (Array.isArray(coinRes.data) ? coinRes.data[0] : coinRes.data) as
+    | { purchased_balance: number; daily_spent: number }
+    | null;
 
   return (
     <GameShell>
@@ -121,15 +126,26 @@ export default async function ProfilePage() {
         <p className="mt-1 text-sm text-ink/60">{user.email}</p>
       </div>
 
-      {/* Stats — only completed matches are ever saved, so `total` is the
-          completed count. */}
+      {/* Stats — matches auto-save on completion, so `total` is the completed
+          count. Rounds-fought/fighters-tried tiles were replaced with the coin
+          numbers (owner 7/12: show what matters). */}
       <div className={COST_UI_ENABLED ? "grid grid-cols-2 gap-2 sm:grid-cols-4" : "grid grid-cols-3 gap-2"}>
         <Stat label={d.profile.stats.completed} value={String(stats.total)} accent />
         {COST_UI_ENABLED ? (
           <Stat label={d.profile.stats.totalSpent} value={formatCost(stats.totalCost)} />
         ) : null}
-        <Stat label={d.profile.stats.roundsFought} value={String(stats.totalRounds)} />
-        <Stat label={d.profile.stats.fightersTried} value={String(stats.uniqueFighters)} />
+        <Stat
+          label={d.profile.stats.coinBalance}
+          value={coinRow ? `🪙 ${coinRow.purchased_balance}` : "—"}
+        />
+        <Stat
+          label={d.profile.stats.dailyCoins}
+          value={
+            coinRow
+              ? `${Math.max(0, FREE_DAILY_COINS - coinRow.daily_spent)} / ${FREE_DAILY_COINS}`
+              : "—"
+          }
+        />
       </div>
       <div className="mt-2">
         <Stat label={d.profile.stats.mostUsedFighter} value={stats.topFighter ?? "—"} />
@@ -180,17 +196,7 @@ export default async function ProfilePage() {
         )}
       </GamePanel>
 
-      {topWins.length > 0 ? (
-        <GamePanel title={d.profile.winsByFighter} className="mt-5">
-          <ul className="flex flex-wrap gap-2">
-            {topWins.map(([name, wins]) => (
-              <li key={name}>
-                <Badge color="purple">{name} · {wins}</Badge>
-              </li>
-            ))}
-          </ul>
-        </GamePanel>
-      ) : null}
+      {/* (The "Wins by fighter" panel was removed 7/12 — owner request.) */}
 
       {/* History */}
       <GamePanel

@@ -13,11 +13,10 @@ export const profile = {
   stats: {
     completed: "Tamamlanan",
     totalSpent: "Toplam harcama",
-    roundsFought: "Dövüşülen tur",
-    fightersTried: "Denenen yarışmacı",
+    coinBalance: "Jeton bakiyesi",
+    dailyCoins: "Bugünkü ücretsiz jetonlar",
     mostUsedFighter: "En çok kullanılan yarışmacı",
   },
-  winsByFighter: "🏆 Yarışmacıya göre galibiyetler",
   history: {
     recentTitle: (shown: number, total: number) => `📜 Son maçlar (${total} maçtan ${shown} tanesi)`,
     historyTitle: (total: number) => `📜 Maç geçmişi (${total})`,
