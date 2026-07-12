@@ -58,7 +58,7 @@ export function CoinBalance() {
       href="/pricing"
       aria-label={d.coins.balanceLabel}
       title={d.coins.balanceLabel}
-      className="shrink-0 rounded-btn border-3 border-ink bg-arcade-yellow px-2 py-1 font-heading text-[11px] font-extrabold uppercase tracking-wide text-night transition hover:bg-arcade-orange focus-visible:outline-3 focus-visible:outline-offset-2 sm:text-xs"
+      className="shrink-0 rounded-btn border-3 border-ink bg-arcade-yellow/30 px-2 py-1 font-heading text-[11px] font-extrabold uppercase tracking-wide text-ink transition hover:bg-arcade-yellow/60 focus-visible:outline-3 focus-visible:outline-offset-2 sm:text-xs"
     >
       {d.coins.balance(total)}
     </Link>

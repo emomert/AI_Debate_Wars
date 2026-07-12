@@ -25,7 +25,6 @@ import { SetupSummaryCard } from "@/components/setup/SetupSummaryCard";
 import { useArena, toSelectedModel, defaultFighters } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
 import { COINS_ENABLED } from "@/lib/coins/config";
-import { PricingPopup } from "@/components/coins/PricingPopup";
 import { SignupGateModal } from "@/components/coins/SignupGateModal";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { validateSetup } from "@/lib/debate/validators";
@@ -267,7 +266,8 @@ export default function SetupPage() {
 
   return (
     <GameShell wide>
-      {COINS_ENABLED ? <PricingPopup /> : null}
+      {/* (The "coins power the arena" intro popup was removed 7/12 — owner
+          found it intrusive on every setup visit; /pricing carries the tiers.) */}
       {COINS_ENABLED ? <SignupGateModal open={gateOpen} onClose={() => setGateOpen(false)} /> : null}
       <div className="mb-5">
         <h1 className="font-display text-4xl tracking-tight sm:text-5xl">

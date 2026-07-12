@@ -369,7 +369,7 @@ export function ModelSelector({
             {/* Full "md" badge — the price drives the pick, so it must read at
                 a glance (owner: the sm chip was too small). */}
             <Badge
-              color={coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? "purple" : "yellow"}
+              color={coinPriceForModel(m.id) > FREE_MAX_FIGHTER_COINS ? "purple" : "coin"}
               size="md"
               className="whitespace-nowrap"
             >

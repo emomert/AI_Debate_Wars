@@ -15,7 +15,8 @@ export type BadgeColor =
   | "purple"
   | "orange"
   | "white"
-  | "ink";
+  | "ink"
+  | "coin";
 
 export type BadgeSize = "sm" | "md";
 
@@ -32,6 +33,9 @@ const COLOR_CLASSES: Record<BadgeColor, string> = {
   orange: "bg-arcade-orange text-night",
   white: "bg-surface text-ink",
   ink: "bg-night text-white",
+  // Coin chips: a light yellow WASH (not the full arcade yellow) so the 🪙
+  // emoji stays visible (owner 7/12); adaptive ink keeps dark mode readable.
+  coin: "bg-arcade-yellow/30 text-ink",
 };
 
 interface BadgeProps {

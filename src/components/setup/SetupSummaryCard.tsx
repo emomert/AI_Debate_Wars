@@ -94,7 +94,9 @@ export function SetupSummaryCard({
               <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
                 {d.setup.summary.fighterA}
               </p>
-              <p className="truncate text-sm font-bold text-arcade-blue">
+              {/* break-words, not truncate: the whole name must be readable
+                  (owner 7/12 — "DeepSeek V4 …" hid which fighter was picked). */}
+              <p className="break-words text-sm font-bold leading-tight text-arcade-blue">
                 {config.modelA.displayName}
               </p>
             </div>
@@ -102,7 +104,7 @@ export function SetupSummaryCard({
               <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
                 {d.setup.summary.fighterB}
               </p>
-              <p className="truncate text-sm font-bold text-arcade-red">
+              <p className="break-words text-sm font-bold leading-tight text-arcade-red">
                 {config.modelB.displayName}
               </p>
             </div>
@@ -117,7 +119,7 @@ export function SetupSummaryCard({
                 <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
                   {d.setup.battles.battleLabel(i + 1)}
                 </p>
-                <p className="mt-0.5 truncate text-sm font-bold">
+                <p className="mt-0.5 break-words text-sm font-bold leading-tight">
                   <span className="text-arcade-blue">{p.modelA.displayName}</span>
                   <span className="text-night/40"> vs </span>
                   <span className="text-arcade-red">{p.modelB.displayName}</span>
@@ -147,7 +149,7 @@ export function SetupSummaryCard({
           {COINS_ENABLED ? (
             // Total match price (multi-battle: each battle is priced + charged
             // on its own, so the card shows the sum across all pairs).
-            <Badge color="yellow" size="sm">
+            <Badge color="coin" size="sm">
               {d.coins.matchCost(
                 pairs.reduce(
                   (sum, p) =>

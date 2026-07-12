@@ -96,8 +96,6 @@ export default function PricingPage() {
             </GamePanel>
           ))}
         </div>
-        <p className="mt-2 text-center text-xs text-ink/50">{d.coins.pricing.notifyNote}</p>
-
         {/* Rules */}
         <GamePanel className="mt-8">
           <p className="font-heading text-lg font-extrabold">{d.coins.pricing.rulesTitle}</p>

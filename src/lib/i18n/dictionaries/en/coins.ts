@@ -29,7 +29,6 @@ export const coins = {
       `Signed-in players get ${daily} coins a day, free. They work on every fighter priced up to ${maxBand} coins — that covers most of the roster. Unused daily coins don't roll over; they refresh at midnight UTC.`,
     packsTitle: "Coin packs",
     comingSoon: "Payments launching soon",
-    notifyNote: "Packs are locked in — checkout goes live shortly.",
     popular: "Most popular",
     bestValue: "Best value",
     perCoin: (cents: string) => `${cents}¢ / coin`,
@@ -70,11 +69,4 @@ export const coins = {
     body: "Type it now and the coins land straight in your balance — or redeem later on the Pricing page.",
   },
 
-  popup: {
-    title: "🪙 Coins power the arena",
-    body: (daily: number) =>
-      `You get ${daily} free coins every day — enough for several matches. Bigger fighters cost more coins; packs unlock the heavyweights.`,
-    seePricing: "See coins & pricing",
-    dismiss: "Let's fight ▶",
-  },
 };

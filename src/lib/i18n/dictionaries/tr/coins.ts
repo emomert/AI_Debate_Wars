@@ -25,7 +25,6 @@ export const coins = {
       `Giriş yapan oyuncular her gün ${daily} ücretsiz jeton alır. Bu jetonlar ${maxBand} jetona kadar fiyatlanan her yarışmacıda geçer — kadronun çoğunu kapsar. Kullanılmayan günlük jetonlar devretmez; UTC gece yarısında yenilenir.`,
     packsTitle: "Jeton paketleri",
     comingSoon: "Ödemeler çok yakında",
-    notifyNote: "Paketler belirlendi — ödeme sayfası kısa süre içinde açılıyor.",
     popular: "En popüler",
     bestValue: "En avantajlı",
     perCoin: (cents: string) => `${cents}¢ / jeton`,
@@ -66,11 +65,4 @@ export const coins = {
     body: "Şimdi yazın, jetonlar doğrudan bakiyenize eklensin — ya da daha sonra Fiyatlandırma sayfasından kullanın.",
   },
 
-  popup: {
-    title: "🪙 Arenayı jetonlar çalıştırır",
-    body: (daily: number) =>
-      `Her gün ${daily} ücretsiz jeton alırsınız — birkaç maça yeter. Büyük yarışmacılar daha çok jetona mal olur; paketler ağır topların kilidini açar.`,
-    seePricing: "Jetonları ve fiyatları gör",
-    dismiss: "Dövüşelim ▶",
-  },
 };
