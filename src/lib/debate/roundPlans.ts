@@ -24,8 +24,12 @@ const DEBATE_3: RoundPlanEntry[] = [
   {
     round: 2,
     label: "Rebuttals",
-    modelATask: "Directly respond to Model B's opening.",
-    modelBTask: "Directly respond to Model A's opening.",
+    // Opponent-relative wording: fighters are identity-blind (never told they
+    // are "Model A/B"), so tasks must use the You/Opponent vocabulary their
+    // transcript uses — the old "Model B's opening" was unmappable and made
+    // some fighters answer from the WRONG side (owner-reported, deep debates).
+    modelATask: "Directly respond to your opponent's opening.",
+    modelBTask: "Directly respond to your opponent's opening.",
   },
   {
     round: 3,
@@ -45,8 +49,8 @@ const DEBATE_5: RoundPlanEntry[] = [
   {
     round: 2,
     label: "Rebuttals",
-    modelATask: "Challenge Model B's core claim.",
-    modelBTask: "Challenge Model A's core claim.",
+    modelATask: "Challenge your opponent's core claim.",
+    modelBTask: "Challenge your opponent's core claim.",
   },
   {
     round: 3,
@@ -78,8 +82,8 @@ const DEBATE_7: RoundPlanEntry[] = [
   {
     round: 2,
     label: "Rebuttals",
-    modelATask: "Challenge Model B's core claim.",
-    modelBTask: "Challenge Model A's core claim.",
+    modelATask: "Challenge your opponent's core claim.",
+    modelBTask: "Challenge your opponent's core claim.",
   },
   {
     round: 3,
@@ -226,8 +230,8 @@ const DEBATE_3_TR: RoundPlanEntry[] = [
   {
     round: 2,
     label: "Çürütmeler",
-    modelATask: "Model B'nin açılışına doğrudan yanıt ver.",
-    modelBTask: "Model A'nın açılışına doğrudan yanıt ver.",
+    modelATask: "Rakibinin açılışına doğrudan yanıt ver.",
+    modelBTask: "Rakibinin açılışına doğrudan yanıt ver.",
   },
   {
     round: 3,
@@ -247,8 +251,8 @@ const DEBATE_5_TR: RoundPlanEntry[] = [
   {
     round: 2,
     label: "Çürütmeler",
-    modelATask: "Model B'nin temel iddiasına meydan oku.",
-    modelBTask: "Model A'nın temel iddiasına meydan oku.",
+    modelATask: "Rakibinin temel iddiasına meydan oku.",
+    modelBTask: "Rakibinin temel iddiasına meydan oku.",
   },
   {
     round: 3,
@@ -280,8 +284,8 @@ const DEBATE_7_TR: RoundPlanEntry[] = [
   {
     round: 2,
     label: "Çürütmeler",
-    modelATask: "Model B'nin temel iddiasına meydan oku.",
-    modelBTask: "Model A'nın temel iddiasına meydan oku.",
+    modelATask: "Rakibinin temel iddiasına meydan oku.",
+    modelBTask: "Rakibinin temel iddiasına meydan oku.",
   },
   {
     round: 3,
