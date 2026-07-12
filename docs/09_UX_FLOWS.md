@@ -1,19 +1,23 @@
 # 09 — UX Flows
 
-> Updated 2026-07-08 (added Blitz Mode).
+> Updated 2026-07-12 (fixed 3 rounds, "See a Demo" replay, auto-saved history).
 
 ## Primary Flow
 
-1. User lands on the home page (arcade pitch, sample topics).
+1. User lands on the home page (arcade pitch, sample topics). A **"See a Demo"**
+   CTA opens a full-screen ~30s cinematic replay of a REAL recorded match
+   (`src/components/demo/DemoOverlay.tsx` + `src/lib/demo/demoMatch.ts`) —
+   skippable, reduce-motion aware, costs nothing to watch. It replaced the old
+   "Try a Sample" randomized live match.
 2. User enters a topic — optionally runs the AI topic check to sharpen it.
 3. User picks two fighters (brand → family → model; swap A/B available).
-4. User sets the rules: rounds (3/5/7), tone per fighter, response length, pace (manual/auto), Deep Debate on/off.
-5. User configures the judge: none, auto (preview of the pick shown), or a chosen third model.
+4. User sets the rules: tone per fighter, response length, pace (manual/auto), Deep Debate on/off. **Matches are strictly 3 rounds (July 2026)** — the 3/5/7 selector was removed; old shared/published 5/7 matches still render.
+5. User configures the judge: auto (preview of the pick shown) or a chosen third model (mandatory since July 2026).
 6. Start Match → live arena.
 7. The app generates one turn at a time (auto-advances or waits for clicks per pace); typewriter reveal, playful thinking messages, SFX.
 8. Citations appear as chips in Deep Debate. (Cost displays are hidden as of July 2026 — `COST_UI_ENABLED` in `src/lib/cost/uiConfig.ts`; tracking still runs for the spend caps.)
 9. After the final round, the judge deliberates (drum roll) and the verdict reveals.
-10. Result screen: verdict, scores, summary — with **share** (auto-unfurling link + image), **save to profile** (signed-in), **change judge & re-judge**, and rematch options.
+10. Result screen: verdict, scores, summary — with **share** (auto-unfurling link + image), **history auto-save** (signed-in users; visible retry on failure — July 2026, replaced the manual save button), **change judge & re-judge**, and rematch options.
 
 ## Blitz Mode
 

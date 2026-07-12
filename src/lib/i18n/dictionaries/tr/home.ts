@@ -20,13 +20,24 @@ export const home = {
 
   cta: {
     useDebator: "🎮 Debator'ı Kullanın",
-    trySample: "🎲 Örnek Deneyin",
+    seeDemo: "🎬 Demoyu İzleyin",
     // Explainer line with two <strong> spans.
     noteUseStrong: "Debator'ı Kullanın",
     noteMiddle: " kendi maçınızı kurar · ",
-    noteSampleStrong: "Örnek Deneyin",
-    noteAfter:
-      " ise rastgele bir demo maç başlatır — her seferinde yeni konu, yeni yarışmacılar ve yeni kurallar.",
+    noteSampleStrong: "Demoyu İzleyin",
+    noteAfter: " ise gerçek bir maç kaydını 30 saniyede oynatır — izlemesi ücretsiz.",
+  },
+
+  /** "Demoyu İzleyin" tam ekran tekrarı (src/components/demo/DemoOverlay). */
+  demo: {
+    aria: "Debator demosu — gerçek, 30 saniyelik bir maç kaydı",
+    watching: "🎬 Gerçek maç · canlı kaydedildi",
+    close: "Demoyu kapat",
+    skip: "Atla ⏭",
+    replay: "↺ Tekrar oynat",
+    yourTurn: "Sıra sizde.",
+    yourTurnSub: "Kendi maçınızı kurun — istediğiniz konu, istediğiniz iki yapay zekâ, karar dâhil.",
+    cta: "Debator'ı Kullanın",
   },
 
   howItWorks: {

@@ -4,10 +4,12 @@
  * Home — the game start screen (docs/02, docs/09). Focused pitch: what Debator
  * is, how a match works, example topics (display only — the actual topic is
  * written on the Setup screen) and two CTAs: "Use Debator" (→ setup) or
- * "Try a Sample" (→ straight into a ready-made arena match).
+ * "See a Demo" (→ a full-screen ~30s replay of a real recorded match; costs
+ * nothing to watch — it replaced the old randomized "Try a Sample" live match).
  */
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -16,68 +18,15 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { FloatingBadge } from "@/components/game/FloatingBadge";
 import { useReduceMotion } from "@/lib/motion/useReduceMotion";
-import { getSampleTopics, pickSampleTopics, TONE_OPTIONS } from "@/lib/constants";
-import {
-  useArena,
-  toSelectedModel,
-  defaultFighters,
-  type ProviderAvailability,
-} from "@/lib/state/ArenaContext";
+import { getSampleTopics, pickSampleTopics } from "@/lib/constants";
 import { playSound } from "@/lib/audio/soundManager";
-import { createDebateSession } from "@/lib/debate/orchestrator";
-import { readClientLocale, type Locale } from "@/lib/i18n/config";
 import { useT, useLocale } from "@/lib/i18n/LocaleProvider";
-import {
-  MODEL_CATALOG,
-  type ModelCatalogEntry,
-} from "@/lib/models/modelRegistry";
-import type { DebateConfig } from "@/lib/debate/debateTypes";
 
-function randomItem<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
-}
-
-/**
- * Candidate fighters for the demo: low-cost models only (a sample should burn
- * as little as possible), filtered to backends that actually have keys.
- * Until /api/health resolves, OpenRouter models are excluded to stay safe.
- */
-function samplePool(availability: ProviderAvailability | null): ModelCatalogEntry[] {
-  return MODEL_CATALOG.filter(
-    (m) =>
-      m.costTier === "low" &&
-      (availability ? availability[m.providerId] : m.providerId !== "openrouter"),
-  );
-}
-
-/** A fresh randomized matchup every click — topic, tone and fighters. */
-function sampleConfig(
-  availability: ProviderAvailability | null,
-  locale: Locale,
-): DebateConfig {
-  const pool = samplePool(availability);
-  const fallback = defaultFighters(); // shared default pair (no duplicated ids)
-
-  const a = pool.length >= 2 ? randomItem(pool) : fallback.a;
-  const rest = pool.filter((m) => m.id !== a.id);
-  const b = rest.length > 0 ? randomItem(rest) : fallback.b;
-
-  // Avoid the "custom" tone in samples — it needs user-typed text.
-  const presetTones = TONE_OPTIONS.filter((t) => t.id !== "custom");
-  return {
-    topic: randomItem(getSampleTopics(locale)),
-    mode: "debate",
-    modelA: toSelectedModel(a, "blue"),
-    modelB: toSelectedModel(b, "red"),
-    roundCount: 3, // demos stay quick & cheap
-    tone: randomItem(presetTones).id,
-    customTone: "",
-    deepDebate: false, // a sample never spends web-search credits
-    responseLength: randomItem(["short", "medium"] as const),
-    pace: "auto",
-    judge: { enabled: true, mode: "auto" },
-  };
-}
+// The demo overlay only loads when someone actually presses "See a Demo".
+const DemoOverlay = dynamic(
+  () => import("@/components/demo/DemoOverlay").then((m) => m.DemoOverlay),
+  { ssr: false },
+);
 
 /** Emojis for the "How it works" steps; titles/bodies come from the dictionary. */
 const HOW_IT_WORKS_EMOJI = ["📝", "🎚️", "🍿"] as const;
@@ -85,9 +34,9 @@ const HOW_IT_WORKS_EMOJI = ["📝", "🎚️", "🍿"] as const;
 export default function HomePage() {
   const router = useRouter();
   const reduce = useReduceMotion();
-  const { setConfig, setSession, availability } = useArena();
   const d = useT();
   const { locale } = useLocale();
+  const [demoOpen, setDemoOpen] = useState(false);
   // Home shows a bigger, freshly-shuffled spread of examples each visit
   // (SSR-stable initial slice, reshuffled on mount to avoid a hydration mismatch).
   const [sampleTopics, setSampleTopics] = useState<string[]>(() =>
@@ -109,16 +58,14 @@ export default function HomePage() {
     router.push("/setup");
   };
 
-  const trySample = () => {
-    const sample = sampleConfig(availability, locale);
-    setConfig(sample);
-    setSession(createDebateSession({ ...sample, language: readClientLocale() }));
-    playSound("debateStart");
-    router.push("/debate");
+  const seeDemo = () => {
+    playSound("buttonClick");
+    setDemoOpen(true);
   };
 
   return (
     <GameShell>
+      {demoOpen ? <DemoOverlay onClose={() => setDemoOpen(false)} /> : null}
       {/* Hero */}
       <section className="relative pt-2 text-center">
         <motion.div {...fade(0)} className="mb-4 flex justify-center">
@@ -159,14 +106,8 @@ export default function HomePage() {
             >
               {d.home.cta.useDebator}
             </ArcadeButton>
-            <ArcadeButton
-              variant="neutral-white"
-              size="lg"
-              fullWidth
-              disabled={availability === null}
-              onClick={trySample}
-            >
-              {d.home.cta.trySample}
+            <ArcadeButton variant="neutral-white" size="lg" fullWidth onClick={seeDemo}>
+              {d.home.cta.seeDemo}
             </ArcadeButton>
           </div>
           <p className="mt-3 text-center text-xs text-ink/55">

@@ -20,13 +20,24 @@ export const home = {
 
   cta: {
     useDebator: "🎮 Use Debator",
-    trySample: "🎲 Try a Sample",
+    seeDemo: "🎬 See a Demo",
     // Explainer line with two <strong> spans.
     noteUseStrong: "Use Debator",
     noteMiddle: " sets up your own match · ",
-    noteSampleStrong: "Try a Sample",
-    noteAfter:
-      " rolls a random demo match — new topic, fighters and rules every time.",
+    noteSampleStrong: "See a Demo",
+    noteAfter: " replays a real recorded match in 30 seconds — free to watch.",
+  },
+
+  /** The "See a Demo" full-screen replay (src/components/demo/DemoOverlay). */
+  demo: {
+    aria: "Debator demo — a real 30-second recorded match",
+    watching: "🎬 Real match · recorded live",
+    close: "Close the demo",
+    skip: "Skip ⏭",
+    replay: "↺ Replay",
+    yourTurn: "Your turn.",
+    yourTurnSub: "Set up your own match — any topic, any two AI fighters, verdict included.",
+    cta: "Use Debator",
   },
 
   howItWorks: {
