@@ -6,7 +6,8 @@ export const coins = {
   coinChip: (n: number) => `🪙 ${n}`,
   premiumTag: "★",
   premiumHint: "Premium yarışmacı — satın alınmış jeton kullanır",
-  matchCost: (n: number) => `🪙 Bu maç: ${n} jeton`,
+  totalCostLabel: "Toplam maliyet",
+  totalCostValue: (n: number) => `🪙 ${n} jeton`,
 
   gate: {
     title: "Önce kaydolun",
@@ -24,6 +25,11 @@ export const coins = {
       `Giriş yapan oyuncular her gün ${daily} ücretsiz jeton alır. Bu jetonlar ${maxBand} jetona kadar fiyatlanan her yarışmacıda geçer — kadronun çoğunu kapsar. Kullanılmayan günlük jetonlar devretmez; UTC gece yarısında yenilenir.`,
     packsTitle: "Jeton paketleri",
     comingSoon: "Ödemeler çok yakında",
+    buy: "Hemen satın al",
+    checkoutSuccess:
+      "Ödeme alındı! Jetonlarınız yolda — bakiye birkaç saniye içinde güncellenir.",
+    checkoutError: "Ödeme tamamlanmadı ve sizden ücret alınmadı. Lütfen tekrar deneyin.",
+    checkoutUnavailable: "Ödemeler şu anda kullanılamıyor — lütfen kısa süre sonra tekrar deneyin.",
     popular: "En popüler",
     bestValue: "En avantajlı",
     perCoin: (cents: string) => `${cents}¢ / jeton`,
@@ -35,7 +41,7 @@ export const coins = {
     rulesTitle: "Jetonlar nasıl çalışır?",
     rules: [
       "Bir maç, Yarışmacı A + Yarışmacı B jetonlarına mal olur — fiyat her yarışmacı kartında yazar.",
-      "Uzun yanıt uzunluğu yarışmacı toplamını ikiye katlar; Derin Münazara sabit 2 jeton ekler.",
+      "Derin Münazara sabit 2 jeton ekler.",
       "Otomatik hakem ücretsiz dahildir. Kendi hakeminizi seçmek o modelin jeton fiyatını ekler.",
       "Farklı bir hakeme geçmek o hakemin jeton fiyatına mal olur; aynı hakemi (veya Otomatik hakemi) yeniden çalıştırmak ücretsizdir.",
       "Premium yarışmacılar (8 jeton ve üzeri) satın alınmış ya da promosyon jetonu kullanır — günlük ücretsiz jetonlar 4 jetona kadar her şeyi kapsar.",

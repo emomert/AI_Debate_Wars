@@ -9,7 +9,9 @@ export const coins = {
   coinChip: (n: number) => `🪙 ${n}`,
   premiumTag: "★",
   premiumHint: "Premium fighter — uses purchased coins",
-  matchCost: (n: number) => `🪙 This match: ${n} ${n === 1 ? "coin" : "coins"}`,
+  // Match Card dedicated total row (owner 7/16 — the old chip was easy to miss)
+  totalCostLabel: "Total cost",
+  totalCostValue: (n: number) => `🪙 ${n} ${n === 1 ? "coin" : "coins"}`,
 
   // Signed-out START gate (warning modal — owner 7/12: warn, don't redirect)
   gate: {
@@ -28,6 +30,12 @@ export const coins = {
       `Signed-in players get ${daily} coins a day, free. They work on every fighter priced up to ${maxBand} coins — that covers most of the roster. Unused daily coins don't roll over; they refresh at midnight UTC.`,
     packsTitle: "Coin packs",
     comingSoon: "Payments launching soon",
+    buy: "Buy now",
+    // ?checkout= status banners (set by /api/checkout redirects)
+    checkoutSuccess:
+      "Payment received! Your coins are on the way — the balance updates within a few seconds.",
+    checkoutError: "Checkout didn't complete and you weren't charged. Please try again.",
+    checkoutUnavailable: "Payments aren't available right now — please try again shortly.",
     popular: "Most popular",
     bestValue: "Best value",
     perCoin: (cents: string) => `${cents}¢ / coin`,
@@ -39,7 +47,7 @@ export const coins = {
     rulesTitle: "How coins work",
     rules: [
       "A match costs fighter A + fighter B coins — the price is on every fighter card.",
-      "Long response length doubles the fighter total; Deep Debate adds 2 coins flat.",
+      "Deep Debate adds 2 coins flat.",
       "The Auto judge is included free. Picking your own judge adds that model's coin price.",
       "Switching to a different judge costs that judge's coin price; re-running the same judge (or the Auto judge) is free.",
       "Premium fighters (8 coins and up) use purchased or promo coins — daily free coins cover everything up to 4 coins.",

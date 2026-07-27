@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debator — Real Payments Today (Polar Walkthrough)</title>
+<style>
+  :root {
+    --paper:#F7F7F2; --ink:#141412; --muted:rgb(20 20 18/.58); --hair:rgb(20 20 18/.14);
+    --card:#FFFFFF; --yellow:#FFD91A; --green:#4CAF50; --red:#DC2626; --blue:#2563EB;
+    --night:#050505; --code-bg:#14140F; --code-ink:#F3EFD9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#2E261F; --ink:#EBDAC6; --muted:rgb(235 218 198/.6); --hair:rgb(235 218 198/.16);
+            --card:#3A3025; --code-bg:#1B160F; --code-ink:#EFE6CE; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font:15px/1.6 system-ui,"Segoe UI",sans-serif; }
+  .wrap { max-width:780px; margin:0 auto; padding:44px 22px 90px; }
+  .heading { font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",system-ui,sans-serif; font-weight:800; }
+  .mono { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; }
+  .eyebrow { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  h1 { font-size:clamp(26px,5vw,36px); line-height:1.1; margin:10px 0 12px; text-wrap:balance; }
+  h2 { font-size:20px; margin:0; }
+  h3 { font-size:15px; margin:20px 0 6px; }
+  p  { max-width:68ch; }
+  .lede { color:var(--muted); max-width:62ch; }
+
+  .timeline { display:flex; flex-wrap:wrap; gap:10px; margin:20px 0 8px; }
+  .tslot { flex:1 1 200px; border:2px solid var(--night); border-radius:12px; background:var(--card);
+           padding:10px 14px; box-shadow:3px 3px 0 var(--night); }
+  .tslot .k { font-size:10px; letter-spacing:.12em; text-transform:uppercase; font-weight:800; color:var(--muted); }
+  .tslot .v { font-weight:700; font-size:13.5px; }
+
+  section.part { margin:42px 0; }
+  .part-head { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  .stepno { flex:none; width:34px; height:34px; border-radius:10px; border:2.5px solid var(--night);
+            background:var(--yellow); color:var(--night); display:grid; place-items:center;
+            font-weight:800; font-size:16px; box-shadow:3px 3px 0 var(--night); }
+  ol.steps { padding-left:20px; margin:8px 0; } ol.steps li { margin:7px 0; max-width:64ch; }
+  ul.tight { padding-left:20px; margin:8px 0; } ul.tight li { margin:5px 0; max-width:64ch; }
+
+  pre { background:var(--code-bg); color:var(--code-ink); border-radius:12px; padding:14px 16px;
+        overflow-x:auto; font-size:12.5px; line-height:1.55; border:2px solid var(--night); }
+  code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; }
+  p code, li code { background:rgb(127 127 127/.14); padding:1px 5px; border-radius:5px; font-size:12.5px; }
+  pre code { background:none; padding:0; }
+  .filetag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.05em;
+             background:var(--blue); color:#fff; border:2px solid var(--night); border-radius:8px 8px 0 0;
+             padding:3px 10px; margin:14px 0 0; position:relative; top:2px; }
+  .filetag + pre { margin-top:0; border-top-left-radius:0; }
+
+  .callout { border:2.5px solid var(--night); border-radius:14px; padding:12px 16px; margin:16px 0;
+             background:var(--card); box-shadow:4px 4px 0 var(--night); max-width:660px; }
+  .callout .t { font-weight:800; font-size:12px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }
+  .callout.warn .t { color:var(--red); } .callout.ok .t { color:var(--green); }
+  .callout p { margin:4px 0; font-size:14px; }
+  .callout ul { margin:4px 0; padding-left:18px; } .callout li { margin:4px 0; font-size:14px; }
+
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin:10px 0; }
+  th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--hair); vertical-align:top; }
+  th { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  td:first-child { white-space:nowrap; }
+
+  .check { display:flex; gap:10px; align-items:flex-start; padding:8px 10px; border-radius:10px; }
+  .check:hover { background:rgb(127 127 127/.08); }
+  .check input { margin-top:3px; width:16px; height:16px; accent-color:var(--green); }
+  .check label { cursor:pointer; max-width:62ch; }
+  .done label { text-decoration:line-through; color:var(--muted); }
+
+  hr { border:0; border-top:1px solid var(--hair); margin:36px 0; }
+  footer { color:var(--muted); font-size:12.5px; max-width:64ch; }
+  a { color:inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow mono">Debator · Operator guide · July 16, 2026 · docs/24</div>
+  <h1 class="heading">Real payments today — the Polar walkthrough</h1>
+  <p class="lede">Polar is your Merchant of Record (owner decision, July 12 — Stripe direct is unavailable
+     from Türkiye, but <strong>Polar pays out to Türkiye via Stripe Connect Express</strong>, verified against
+     Polar's supported-countries list). This guide takes the coin economy from "buy buttons disabled" to a
+     real checkout: sandbox this afternoon, production as soon as your account verification clears.</p>
+
+  <div class="timeline">
+    <div class="tslot"><div class="k">Today · ~30 min</div><div class="v">Polar sandbox org, products, keys</div></div>
+    <div class="tslot"><div class="k">Today · ~2–3 h</div><div class="v">Two API routes + button wiring, tested with a fake card</div></div>
+    <div class="tslot"><div class="k">Today → 1–2 days</div><div class="v">Production org + Stripe Express verification (ID + IBAN), then flip to live</div></div>
+  </div>
+</header>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">?</span><h2 class="heading">Is Polar the right pick for a global audience?</h2></div>
+  <p>Re-validated 2026-07-16 against live docs, specifically for “TR-based seller, worldwide buyers,
+     AI-credit packs under $20”:</p>
+  <table>
+    <tr><th></th><th>Polar</th><th>Paddle (fallback)</th></tr>
+    <tr><td>Sell from Türkiye</td><td>✔ payouts via Stripe Connect Express (TR on the list)</td><td>✔ “payouts anywhere except sanctioned countries”</td></tr>
+    <tr><td>Your packs ($4.99/$9.99)</td><td>✔ self-serve at any price</td><td>✖ sub-$10 products require a sales-team conversation</td></tr>
+    <tr><td>Global buyers</td><td>✔ 90+ presentment currencies (local prices at checkout), Apple Pay + Google Pay auto</td><td>✔ local currencies + <strong>PayPal</strong> (their one real edge)</td></tr>
+    <tr><td>“Credits” product fit</td><td>✔ AI/dev-native; credits are a first-class concept</td><td>△ stricter review of credit/virtual-currency listings</td></tr>
+    <tr><td>Fees on a $4.99 intl. sale</td><td>~16% (5% + 50¢ starter, +1.5% non-US card)</td><td>~15% (5% + 50¢ all-inclusive)</td></tr>
+    <tr><td>Fees on the $19.99 pack</td><td>~9% (drops further on paid plans: 3.8% + 40¢ →)</td><td>~7.5%</td></tr>
+  </table>
+  <p><strong>Verdict: Polar stands.</strong> Fees are a wash at your scale; Paddle's sub-$10 friction and
+     credits-review strictness hit exactly your product, while Polar's old weakness for global audiences
+     (USD-only checkout) was fixed with multi-currency presentment. One economics note either way:
+     fixed fees make the small pack expensive (~13–17% total on $4.99 vs ~9% on $19.99) — the /pricing
+     "Best value" nudge toward bigger packs is doing real margin work.</p>
+</section>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">0</span><h2 class="heading">What you already have (don't rebuild it)</h2></div>
+  <p>Migration 0012 was designed for this day. The only missing pieces are two API routes, four env vars, and the button wiring.</p>
+  <table>
+    <tr><th>Already built</th><th>Where</th></tr>
+    <tr><td>Pack definitions</td><td><code>COIN_PACKS</code> in <code>src/lib/coins/economy.ts</code> — 100/$4.99 · 250/$9.99 · 700/$19.99</td></tr>
+    <tr><td>Idempotent credit slot</td><td><code>coin_ledger.order_id</code> + unique index <code>coin_ledger_order_uidx</code> — a retried webhook can't double-credit, the DB refuses the second row</td></tr>
+    <tr><td>Purchased bucket</td><td><code>bucket = 'purchased'</code> — spendable on any fighter, never expires; balance already read by <code>coin_status()</code> and shown in the header chip</td></tr>
+    <tr><td>Admin clients</td><td><code>getSupabaseServiceRoleClient()</code> (<code>src/lib/supabase/admin.ts</code>) for the webhook; <code>getSupabaseServerClient()</code> for user auth in routes</td></tr>
+    <tr><td>Buy buttons</td><td><code>/pricing</code> renders the three packs with disabled "Payments launching soon" buttons</td></tr>
+    <tr><td>Refund lever</td><td><code>scripts/mint-coins.mjs --coins -100</code> claws back a grant (manual refund policy for v1)</td></tr>
+  </table>
+</section>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">1</span><h2 class="heading">Polar sandbox — dashboard work (~30 min)</h2></div>
+  <ol class="steps">
+    <li>Create an account + organization at <strong>sandbox.polar.sh</strong> (fully isolated from production — you'll redo these clicks on polar.sh later, so keep notes).</li>
+    <li><strong>Products →</strong> create three <em>one-time purchase</em> products:
+      <ul class="tight">
+        <li>“100 Coins” — $4.99</li>
+        <li>“250 Coins” — $9.99</li>
+        <li>“700 Coins” — $19.99</li>
+      </ul>
+      Describe them plainly (e.g. “100 coins for Debator — in-app credits used to run AI debate matches. Coins never expire.”). A clear description matters at review time — MoRs look for vague “credits” listings.</li>
+    <li>Copy the three <strong>product IDs</strong>.</li>
+    <li><strong>Settings → API →</strong> create an <em>Organization Access Token</em> → this is <code>POLAR_ACCESS_TOKEN</code>.</li>
+    <li><strong>Settings → Webhooks →</strong> add endpoint <code>https://&lt;public-url&gt;/api/webhooks/polar</code>, format <em>Raw</em>, subscribe to <code>order.paid</code> → copy the signing secret → <code>POLAR_WEBHOOK_SECRET</code>.</li>
+  </ol>
+  <div class="callout">
+    <div class="t">Local dev needs a public URL for the webhook</div>
+    <p>Either tunnel your dev server (<code>npx cloudflared tunnel --url http://localhost:3000</code>, or ngrok) and use that URL in the webhook endpoint — or skip local and test on a Vercel preview deployment, which is closer to production anyway.</p>
+  </div>
+</section>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">2</span><h2 class="heading">Environment variables</h2></div>
+  <p>All <strong>server-only</strong> — none of these get a <code>NEXT_PUBLIC_</code> prefix. Add to <code>.env.local</code> now and to Vercel (Preview scope first) when you deploy.</p>
+<pre><code># Polar (sandbox values today; swap all four for production later)
+POLAR_ACCESS_TOKEN=polar_oat_…
+POLAR_WEBHOOK_SECRET=polar_whs_…
+POLAR_SERVER=sandbox            # literally "sandbox" | "production"
+POLAR_PRODUCT_100=&lt;product id&gt;
+POLAR_PRODUCT_250=&lt;product id&gt;
+POLAR_PRODUCT_700=&lt;product id&gt;</code></pre>
+</section>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">3</span><h2 class="heading">Code — two routes, one RouteKind, one button change</h2></div>
+  <p>Install the SDKs:</p>
+  <pre><code>npm i @polar-sh/sdk @polar-sh/nextjs</code></pre>
+
+  <h3 class="heading">3a · Checkout route (server-resolved, client picks only a pack name)</h3>
+  <p>Don't use the query-param adapter that trusts client-supplied product IDs — accept only
+     <code>?pack=100|250|700</code> and resolve the product server-side. Attach the Supabase user as
+     <code>externalCustomerId</code> so the webhook can credit the right account without trusting metadata alone.</p>
+  <span class="filetag mono">src/app/api/checkout/route.ts</span>
+<pre><code>import { NextResponse } from "next/server";
+import { Polar } from "@polar-sh/sdk";
+import { enforceLimits } from "@/lib/security/rateLimit";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+
+const PACKS: Record&lt;string, string | undefined&gt; = {
+  "100": process.env.POLAR_PRODUCT_100,
+  "250": process.env.POLAR_PRODUCT_250,
+  "700": process.env.POLAR_PRODUCT_700,
+};
+
+export async function GET(req: Request): Promise&lt;NextResponse&gt; {
+  await enforceLimits(req, "checkout"); // add "checkout" to RouteKind — see 3c
+
+  const token = process.env.POLAR_ACCESS_TOKEN;
+  const productId = PACKS[new URL(req.url).searchParams.get("pack") ?? ""];
+  if (!token || !productId) {
+    return NextResponse.json({ error: "PAYMENTS_UNCONFIGURED" }, { status: 503 });
+  }
+
+  const supabase = await getSupabaseServerClient();
+  const { data: { user } = { user: null } } = (await supabase?.auth.getUser()) ?? {};
+  if (!user) return NextResponse.redirect(new URL("/login?next=/pricing", req.url));
+
+  const polar = new Polar({
+    accessToken: token,
+    server: process.env.POLAR_SERVER === "production" ? "production" : "sandbox",
+  });
+  const checkout = await polar.checkouts.create({
+    products: [productId],
+    externalCustomerId: user.id,          // ← how the webhook finds the user
+    customerEmail: user.email ?? undefined,
+    successUrl: new URL("/pricing?checkout=success", req.url).toString(),
+    metadata: { userId: user.id },        // belt-and-braces fallback
+  });
+  return NextResponse.redirect(checkout.url);
+}</code></pre>
+
+  <h3 class="heading">3b · Webhook route (the only place coins are credited)</h3>
+  <p>The <code>Webhooks</code> helper verifies the signature before your handler runs, and it needs the
+     <em>raw</em> body — so don't wrap this route in anything that parses JSON first. Credit <em>only</em> on
+     <code>order.paid</code>; the DB's unique index on <code>order_id</code> makes retries a no-op.</p>
+  <span class="filetag mono">src/app/api/webhooks/polar/route.ts</span>
+<pre><code>import { Webhooks } from "@polar-sh/nextjs";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase/admin";
+
+const COINS_BY_PRODUCT: Record&lt;string, number&gt; = {
+  [process.env.POLAR_PRODUCT_100 ?? "?100"]: 100,
+  [process.env.POLAR_PRODUCT_250 ?? "?250"]: 250,
+  [process.env.POLAR_PRODUCT_700 ?? "?700"]: 700,
+};
+
+export const POST = Webhooks({
+  webhookSecret: process.env.POLAR_WEBHOOK_SECRET ?? "",
+  onOrderPaid: async ({ data: order }) =&gt; {
+    // Field names: log the payload ONCE in sandbox and pin them against the
+    // SDK types — expected: order.id, order.productId (or order.items[n]),
+    // order.customer.externalId, order.metadata.
+    const userId =
+      order.customer?.externalId ?? (order.metadata?.userId as string | undefined);
+    const coins = COINS_BY_PRODUCT[order.productId ?? ""];
+    if (!userId || !coins) {
+      console.error("[polar] unmapped order", order.id, order.productId, userId);
+      return; // 200 anyway — never make Polar retry an unfixable payload
+    }
+    const admin = getSupabaseServiceRoleClient();
+    if (!admin) throw new Error("service role missing"); // 500 → Polar retries
+    const { error } = await admin.from("coin_ledger").insert({
+      user_id: userId,
+      delta: coins,
+      bucket: "purchased",
+      reason: "order",
+      order_id: order.id,
+    });
+    // 23505 = unique violation on coin_ledger_order_uidx → retried delivery,
+    // the coins are already credited. Anything else should 500 so Polar retries.
+    if (error &amp;&amp; error.code !== "23505") throw new Error(error.message);
+  },
+});</code></pre>
+
+  <h3 class="heading">3c · Small supporting edits</h3>
+  <ul class="tight">
+    <li><strong>Rate limiter:</strong> add <code>"checkout"</code> to <code>RouteKind</code> in
+        <code>src/lib/security/rateLimit.ts</code> with a modest per-minute cap (it's a DB-only route —
+        follow the <code>publish</code> entry's pattern; env knob <code>RL_CHECKOUT_PER_MIN</code>).
+        The webhook route gets <em>no</em> rate limit — Polar retries on failures and signature
+        verification is the gate.</li>
+    <li><strong>/pricing buttons:</strong> in <code>src/app/pricing/page.tsx</code>, swap the disabled
+        button for a link to <code>/api/checkout?pack=100|250|700</code>. Gate on auth the same way START
+        does (signed-out → the existing "Sign up first" modal). Keep rendering the disabled
+        "coming soon" state when payments aren't configured — add
+        <code>NEXT_PUBLIC_PAYMENTS_ENABLED=true</code> (build-time, same pattern as
+        <code>NEXT_PUBLIC_COINS_ENABLED</code>) so you can deploy the code before flipping it on.</li>
+    <li><strong>Success state:</strong> on <code>/pricing</code>, read <code>?checkout=success</code> →
+        show a toast and fire <code>window.dispatchEvent(new Event("ada:coins-changed"))</code> so the
+        header chip refetches. The webhook usually lands within a couple of seconds of the redirect;
+        refetch once more after ~3 s to cover the race.</li>
+  </ul>
+</section>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">4</span><h2 class="heading">Sandbox test script</h2></div>
+  <ol class="steps">
+    <li>Sign in to Debator, hit <strong>Buy</strong> on the 100-coin pack → Polar checkout opens.</li>
+    <li>Pay with Stripe's test card <code>4242 4242 4242 4242</code>, any future expiry, any CVC.</li>
+    <li>Land back on <code>/pricing?checkout=success</code> → header chip +100 within seconds.</li>
+    <li>Verify the ledger row:
+<pre><code>psql "$SUPABASE_DB_URL" -c "select user_id, delta, bucket, reason, order_id
+  from coin_ledger where reason = 'order' order by created_at desc limit 5;"</code></pre></li>
+    <li><strong>Idempotency:</strong> in the Polar dashboard, redeliver the same <code>order.paid</code>
+        event → the balance must NOT change (the insert dies on <code>coin_ledger_order_uidx</code>).</li>
+    <li><strong>Signature:</strong> <code>curl -X POST …/api/webhooks/polar -d '{}'</code> → must be rejected, no credit.</li>
+    <li>Spend the purchased coins on a premium fighter (8+ coins) — confirms the purchased bucket flows through <code>coin_spend_match</code>.</li>
+  </ol>
+  <div class="callout warn">
+    <div class="t">Sandbox quirk</div>
+    <p>Customer-facing emails (receipts) only reach members of your sandbox org — use
+       <code>you+test@yourdomain</code> aliases if you want to see them.</p>
+  </div>
+</section>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">5</span><h2 class="heading">Go live</h2></div>
+  <ol class="steps">
+    <li>Repeat Part 1 on <strong>polar.sh</strong> (production org, same three products, new token + webhook secret pointing at <code>https://debator.xyz/api/webhooks/polar</code>).</li>
+    <li><strong>Payouts:</strong> connect Stripe Connect Express from the Polar dashboard — Türkiye is on the
+        supported list; individual sellers are fine where Express supports them. Have your ID and an IBAN
+        ready. Verification is typically same-day to a couple of business days; <em>selling can start
+        while payout verification completes</em> — the money queues in your Polar balance.</li>
+    <li><strong>Review-readiness:</strong> Polar (as MoR) reviews organizations around their first sales.
+        Make it easy: /pricing already explains exactly what coins buy, and /terms + /contact are live.
+        Add one refund sentence to /terms if it's not there ("coin purchases are refundable within 14 days
+        if unspent — contact us"), because as MoR Polar surfaces your policy to buyers.</li>
+    <li>Swap the four env values on Vercel (Production scope), set <code>POLAR_SERVER=production</code> and
+        <code>NEXT_PUBLIC_PAYMENTS_ENABLED=true</code>, and <strong>redeploy</strong> (the public flag is
+        build-time inlined, same as the coins kill switch).</li>
+    <li>Make one real purchase with your own card end-to-end, then refund it from the Polar dashboard and
+        claw back the coins: <code>node scripts/mint-coins.mjs --user &lt;email&gt; --coins -100 --note "refund order &lt;id&gt;"</code>.
+        (v1 refund policy is manual; wire <code>order.refunded</code> → automatic clawback later.)</li>
+    <li>Update <code>docs/23_COINS.md</code> ("buy buttons live") and the CLAUDE.md status line.</li>
+  </ol>
+</section>
+
+<hr>
+
+<section class="part">
+  <div class="part-head"><span class="stepno heading">!</span><h2 class="heading">Pitfalls — read before writing code</h2></div>
+  <div class="callout warn">
+    <div class="t">The five ways this goes wrong</div>
+    <ul>
+      <li><strong>Trusting the client:</strong> the browser only ever sends a pack <em>name</em>. Product IDs, prices, and coin amounts live server-side. Never read a coin amount from checkout metadata that the client could have set.</li>
+      <li><strong>Crediting on the wrong event:</strong> only <code>order.paid</code> credits coins. <code>checkout.updated</code> fires for states that never get paid.</li>
+      <li><strong>Breaking idempotency:</strong> keep <code>order_id</code> on the insert and treat 23505 as success — Polar redelivers webhooks on any non-2xx.</li>
+      <li><strong>Slow webhook:</strong> answer fast, no provider calls, no heavy work — insert one row and return. Timeouts look like failures and cause retries.</li>
+      <li><strong>Forgetting the redeploy:</strong> <code>NEXT_PUBLIC_*</code> flags are inlined at build time. Changing them in Vercel without a redeploy does nothing (you learned this with the coins flag).</li>
+    </ul>
+  </div>
+</section>
+
+<section class="part" id="checklist">
+  <div class="part-head"><span class="stepno heading">✓</span><h2 class="heading">Today's checklist</h2></div>
+  <div id="checks">
+    <div class="check"><input type="checkbox" id="c1"><label for="c1">Sandbox org + 3 products created; product IDs, access token, webhook secret in .env.local</label></div>
+    <div class="check"><input type="checkbox" id="c2"><label for="c2">/api/checkout route (pack → server-side product map, Supabase user attached)</label></div>
+    <div class="check"><input type="checkbox" id="c3"><label for="c3">/api/webhooks/polar route (order.paid → ledger insert, 23505 = already credited)</label></div>
+    <div class="check"><input type="checkbox" id="c4"><label for="c4">"checkout" RouteKind added to the rate limiter</label></div>
+    <div class="check"><input type="checkbox" id="c5"><label for="c5">/pricing buy buttons wired behind NEXT_PUBLIC_PAYMENTS_ENABLED + signup gate</label></div>
+    <div class="check"><input type="checkbox" id="c6"><label for="c6">Sandbox purchase with 4242 card → chip +100, ledger row present</label></div>
+    <div class="check"><input type="checkbox" id="c7"><label for="c7">Webhook redelivery → no double credit; unsigned POST → rejected</label></div>
+    <div class="check"><input type="checkbox" id="c8"><label for="c8">npx tsc --noEmit + vitest green; docs updated</label></div>
+    <div class="check"><input type="checkbox" id="c9"><label for="c9">Production org created + Stripe Express (TR) verification submitted</label></div>
+  </div>
+</section>
+
+<footer>
+  Verified against polar.sh/docs on 2026-07-16: Next.js adapter (<code>Checkout</code>/<code>Webhooks</code>
+  from <code>@polar-sh/nextjs</code>), sandbox at sandbox.polar.sh (<code>server: "sandbox"</code>, test card
+  4242…), Türkiye on the payout-supported list via Stripe Connect Express. Exact webhook payload field names
+  should be pinned from one logged sandbox event — SDK types are the source of truth. Fallback if Polar
+  review ever blocks: Paddle (same MoR model, same two-route shape).
+</footer>
+</div>
+
+<script>
+  // Checklist persistence — survives reopening the file; safe under file:// too.
+  try {
+    const KEY = "debator-polar-checklist";
+    const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+    document.querySelectorAll("#checks input").forEach((box) => {
+      box.checked = !!saved[box.id];
+      box.parentElement.classList.toggle("done", box.checked);
+      box.addEventListener("change", () => {
+        saved[box.id] = box.checked;
+        box.parentElement.classList.toggle("done", box.checked);
+        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch {}
+      });
+    });
+  } catch {}
+</script>
+</body>
+</html>

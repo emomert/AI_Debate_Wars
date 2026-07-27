@@ -24,7 +24,7 @@ export interface ApiErrorRow {
 }
 
 export async function recordApiError(
-  route: "turn" | "verdict" | "topic" | "tts",
+  route: "turn" | "verdict" | "topic" | "tts" | "checkout" | "polar-webhook",
   err: unknown,
   ctx: { modelId?: string } = {},
 ): Promise<void> {

@@ -12,6 +12,15 @@
 
 export const COINS_ENABLED = process.env.NEXT_PUBLIC_COINS_ENABLED !== "false";
 
+/**
+ * Pack purchases (Polar checkout — docs/24_PAYMENTS_POLAR_WALKTHROUGH.html).
+ * OFF by default so the code can ship before the Polar env exists; set
+ * NEXT_PUBLIC_PAYMENTS_ENABLED=true (build-time inlined → needs a redeploy)
+ * once products, the access token, and the webhook are configured. While off,
+ * /pricing keeps the disabled "coming soon" buy buttons.
+ */
+export const PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true";
+
 /** Daily free allowance for signed-in users. NON-ROLLOVER by design: the
  *  remaining amount is computed as (allowance − today's daily-bucket spend),
  *  so unused coins simply cease to matter at midnight UTC — nothing to expire. */

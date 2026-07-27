@@ -41,7 +41,8 @@ type RouteKind =
   | "vote"
   | "comment"
   | "report"
-  | "og";
+  | "og"
+  | "checkout";
 
 // Spend caps only make sense for routes that call a paid provider; community
 // writes (publish/vote/comment) are DB-only and skip the spend check — a maxed
@@ -81,6 +82,10 @@ const PER_MIN: Record<RouteKind, number> = {
   // shared widely, and the CDN cache absorbs repeats of the same payload; this
   // only stops one IP from iterating unbounded DISTINCT payloads.
   og: num(process.env.RL_OG_PER_MIN, 30),
+  // Pack checkout (Polar): no provider spend of ours, but every hit creates a
+  // checkout session on Polar's side — a modest cap stops one IP from minting
+  // sessions in a loop. Payment webhooks are NOT limited (signature-gated).
+  checkout: num(process.env.RL_CHECKOUT_PER_MIN, 6),
 };
 // Daily spend caps: a 3-battle match can cost ~3× a single debate, so the per-IP
 // cap is raised so one multi-battle match can't trip it mid-way.

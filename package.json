@@ -12,6 +12,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@polar-sh/nextjs": "^0.9.6",
+    "@polar-sh/sdk": "^0.48.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
     "framer-motion": "^11.15.0",

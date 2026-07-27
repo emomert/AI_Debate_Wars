@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * /pricing — coins & packs (docs/23_COINS.md). Ships BEFORE payment wiring:
- * the three owner-set packs render with disabled "coming soon" buy buttons
- * (Polar checkout is the next step), while the free-tier explainer, the
- * how-coins-work rules and PROMO CODE redemption are fully live. Promo
- * redemption calls the coin_redeem_promo RPC directly (SECURITY DEFINER —
- * per-account uniqueness, expiry, caps and attempt limits enforced in the DB).
+ * /pricing — coins & packs (docs/23_COINS.md). Pack buys go through Polar
+ * (docs/24_PAYMENTS_POLAR_WALKTHROUGH.html): the buy buttons link to
+ * /api/checkout?pack=N when PAYMENTS_ENABLED (signed-out gets the signup gate,
+ * matching START), and /api/checkout redirects back here with a ?checkout=
+ * status this page toasts. While PAYMENTS_ENABLED is off the packs render the
+ * old disabled "coming soon" buttons. Promo redemption calls the
+ * coin_redeem_promo RPC directly (SECURITY DEFINER — per-account uniqueness,
+ * expiry, caps and attempt limits enforced in the DB).
  */
 
 import { useEffect, useState } from "react";
@@ -17,8 +19,10 @@ import { GamePanel } from "@/components/game/GamePanel";
 import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { Badge } from "@/components/game/Badge";
 import { COIN_PACKS } from "@/lib/coins/economy";
-import { FREE_DAILY_COINS, FREE_MAX_FIGHTER_COINS } from "@/lib/coins/config";
+import { FREE_DAILY_COINS, FREE_MAX_FIGHTER_COINS, PAYMENTS_ENABLED } from "@/lib/coins/config";
+import { COINS_CHANGED_EVENT } from "@/lib/coins/client";
 import { PromoRedeem } from "@/components/coins/PromoRedeem";
+import { SignupGateModal } from "@/components/coins/SignupGateModal";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
@@ -31,6 +35,10 @@ export default function PricingPage() {
   const d = useT();
   const supabase = getSupabaseBrowserClient();
   const [signedIn, setSignedIn] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
+  const [checkoutStatus, setCheckoutStatus] = useState<
+    "success" | "error" | "unavailable" | null
+  >(null);
 
   useEffect(() => {
     if (!supabase) return;
@@ -40,6 +48,24 @@ export default function PricingPage() {
     return () => sub.subscription.unsubscribe();
   }, [supabase]);
 
+  // /api/checkout redirects back here with ?checkout=success|error|unavailable.
+  // On success the coins land via webhook, which can trail the redirect by a
+  // few seconds — poke the balance chip now and again shortly after.
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get("checkout");
+    if (status !== "success" && status !== "error" && status !== "unavailable") return;
+    setCheckoutStatus(status);
+    window.history.replaceState(null, "", "/pricing"); // don't re-toast on refresh
+    if (status === "success") {
+      window.dispatchEvent(new Event(COINS_CHANGED_EVENT));
+      const late = setTimeout(
+        () => window.dispatchEvent(new Event(COINS_CHANGED_EVENT)),
+        4000,
+      );
+      return () => clearTimeout(late);
+    }
+  }, []);
+
   return (
     <GameShell>
       <div className="mx-auto max-w-3xl">
@@ -47,6 +73,21 @@ export default function PricingPage() {
           {d.coins.pricing.title}
         </h1>
         <p className="mt-1 max-w-2xl text-ink/65">{d.coins.pricing.subtitle}</p>
+
+        {checkoutStatus ? (
+          <div
+            role="status"
+            className={`mt-4 rounded-card border-3 border-ink p-3 text-sm font-bold ${
+              checkoutStatus === "success" ? "bg-arcade-green/20" : "bg-arcade-red/15"
+            }`}
+          >
+            {checkoutStatus === "success"
+              ? d.coins.pricing.checkoutSuccess
+              : checkoutStatus === "error"
+                ? d.coins.pricing.checkoutError
+                : d.coins.pricing.checkoutUnavailable}
+          </div>
+        ) : null}
 
         {/* Free tier */}
         <GamePanel className="mt-6">
@@ -89,9 +130,28 @@ export default function PricingPage() {
                 <li>{d.coins.pricing.exampleFlagship(Math.floor(p.coins / FLAGSHIP_FIGHT_COINS))}</li>
               </ul>
               <div className="mt-auto pt-4">
-                <ArcadeButton variant="primary-green" fullWidth disabled>
-                  {d.coins.pricing.comingSoon}
-                </ArcadeButton>
+                {PAYMENTS_ENABLED ? (
+                  <ArcadeButton
+                    variant="primary-green"
+                    fullWidth
+                    onClick={() => {
+                      // Signed-out: warn, don't yank to login (owner 7/12 rule,
+                      // same gate START uses). Signed-in: the checkout route
+                      // resolves the product server-side from the pack name.
+                      if (!signedIn) {
+                        setGateOpen(true);
+                        return;
+                      }
+                      window.location.assign(`/api/checkout?pack=${p.coins}`);
+                    }}
+                  >
+                    {d.coins.pricing.buy}
+                  </ArcadeButton>
+                ) : (
+                  <ArcadeButton variant="primary-green" fullWidth disabled>
+                    {d.coins.pricing.comingSoon}
+                  </ArcadeButton>
+                )}
               </div>
             </GamePanel>
           ))}
@@ -125,6 +185,8 @@ export default function PricingPage() {
           )}
         </GamePanel>
       </div>
+
+      <SignupGateModal open={gateOpen} onClose={() => setGateOpen(false)} />
     </GameShell>
   );
 }

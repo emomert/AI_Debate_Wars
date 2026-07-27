@@ -4,13 +4,15 @@
 > distributed via promo codes + `scripts/mint-coins.mjs` until Polar lands).
 > `COINS_ENABLED` (`src/lib/coins/config.ts`) defaults ON; the kill switch is
 > `NEXT_PUBLIC_COINS_ENABLED=false` + redeploy (build-time inlined).
-> Payment checkout (Polar) is the NEXT step — everything up to the buy
-> button is built.
+> Payment checkout (Polar) is BUILT (2026-07-17) and ships dark behind
+> `NEXT_PUBLIC_PAYMENTS_ENABLED` — see "Polar checkout" below and the operator
+> walkthrough `docs/24_PAYMENTS_POLAR_WALKTHROUGH.html`.
 
 ## The user-facing rule
 
-A match costs **fighter A + fighter B coins**. Long response length ×2 (on the
-fighter total), Deep Debate +2 flat. The judge is priced **separately, at the
+A match costs **fighter A + fighter B coins**. Deep Debate +2 flat. (The old
+"long length ×2" multiplier survives in `economy.ts` for legacy sessions, but
+the UI is strictly short-length since July 2026, so new matches never hit it.) The judge is priced **separately, at the
 verdict route** (decoupled from the match charge 2026-07-13 — see below): the
 **Auto judge (and a fighter-as-judge) is free**; a PICKED third-model judge adds
 its coin price (flat). Judge charges are keyed on **(session, judge, transcript)**,
@@ -44,8 +46,10 @@ When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
   allowance − today's daily-bucket spend → **no rollover by construction**.
 - Daily coins cover fighters **up to 4 coins** (`FREE_MAX_FIGHTER_COINS`);
   premium fighters (8/12/20 — purple ★ chip) need purchased/promo coins.
-- Packs (owner-set): **100/$4.99 · 250/$9.99 · 700/$19.99** — `/pricing`
-  renders them with disabled "coming soon" buys until Polar is wired.
+- Packs (owner-set): **100/$4.99 · 250/$9.99 · 700/$19.99** — `/pricing` buy
+  buttons go to `/api/checkout?pack=N` when `NEXT_PUBLIC_PAYMENTS_ENABLED=true`
+  (signed-out → the START signup gate); otherwise the disabled "coming soon"
+  buttons render.
 - Signed-out: everything browsable; START routes to `/login?next=/setup`.
 
 ## Data & enforcement (migrations 0012 + 0013)
@@ -88,7 +92,9 @@ bucket = spendable on any fighter, never expire.
 - Header: `CoinBalance` chip (purchased + daily remaining → links `/pricing`),
   refreshes on focus/auth/`ada:coins-changed`.
 - Picker rows: coin chip replaces the $-tier badge; purple ★ = premium.
-- Match Card: "This match: N coins" total across battles.
+- Match Card: a dedicated "Total cost — 🪙 N coins" row (across battles, judge
+  included) at the bottom of the card; replaced the easy-to-miss badge chip
+  (owner 7/16).
 - `/pricing`: free-tier explainer, packs + match-count examples, rules,
   promo redemption. Footer link (flag-gated).
 - `PricingPopup`: once-per-device tier intro for signed-in users on setup.
@@ -103,8 +109,24 @@ bucket = spendable on any fighter, never expire.
   split, promo normalize + re-redeem block) was verified against the live DB
   on 2026-07-12 in a rolled-back transaction.
 
-## Remaining: Polar checkout
+## Polar checkout (built 2026-07-17, dark until env + flag are set)
 
-Wire checkout per pack + webhook (`order.paid` → `coin_ledger` credit via
-service role, idempotent on the UNIQUE `order_id` index) and replace the
-disabled "coming soon" buttons on /pricing.
+- `GET /api/checkout?pack=100|250|700` — rate-limited (`checkout` kind,
+  `RL_CHECKOUT_PER_MIN`), auth-required, resolves the pack → Polar product id
+  SERVER-side (`POLAR_PRODUCT_*` env; the client never names products or
+  amounts), attaches the Supabase user as Polar's `externalCustomerId`, and
+  redirects to the checkout. Failures bounce back to
+  `/pricing?checkout=error|unavailable` (the page toasts them).
+- `POST /api/webhooks/polar` — the ONLY place purchased coins are created.
+  Signature-verified by `@polar-sh/nextjs` before the handler runs; on
+  `order.paid` inserts the `coin_ledger` credit (bucket `purchased`, reason
+  `order`) via the service role. Idempotent on the UNIQUE `order_id` index
+  (23505 = redelivery = success). Unfixable payloads log to the /admin error
+  panel and return 200 (no retry storm); infrastructure failures 500 so Polar
+  redelivers.
+- Env: `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_SERVER`
+  (`sandbox`|`production`), `POLAR_PRODUCT_100/250/700`, plus the build-time
+  UI flag `NEXT_PUBLIC_PAYMENTS_ENABLED`. Setup + test + go-live steps:
+  `docs/24_PAYMENTS_POLAR_WALKTHROUGH.html`.
+- Refunds are manual for v1: refund in the Polar dashboard, then claw back via
+  `scripts/mint-coins.mjs --coins -N --note "refund order <id>"`.
