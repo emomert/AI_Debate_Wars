@@ -30,7 +30,6 @@ import {
   buildJudgePrompt,
   buildSystemPrompt,
   buildTurnPrompt,
-  lengthPreset,
 } from "@/lib/debate/promptBuilder";
 import { createDebateSession } from "@/lib/debate/orchestrator";
 import { FALLBACK_PRICE, TTS_COST_USD_PER_1M_CHARS } from "@/lib/cost/pricing";
@@ -187,7 +186,10 @@ export default function ReportPage() {
   const [topic, setTopic] = useState("Should social media platforms verify user age?");
   const [tone, setTone] = useState<DebateTone>("serious");
   const [customTone, setCustomTone] = useState("like an excited sports commentator");
-  const [length, setLength] = useState<ResponseLength>("medium");
+  // Response length is strictly "short" (July 2026 — the setup picker was
+  // removed, persisted configs coerce). Fixed here too so this page mirrors the
+  // REAL setup rules, exactly like the 3-round lock below.
+  const length: ResponseLength = "short";
   const [deep, setDeep] = useState(false);
   const [turnIdx, setTurnIdx] = useState(0);
   const [showJudge, setShowJudge] = useState(false);
@@ -219,11 +221,6 @@ export default function ReportPage() {
   const systemPrompt = buildSystemPrompt("debate", deep);
   const turnPrompt = buildTurnPrompt(session, turn, deep ? SAMPLE_SOURCES : undefined);
   const judgePrompt = buildJudgePrompt(session);
-
-  const presets = (["short", "medium", "long"] as const).map((l) => ({
-    id: l,
-    ...lengthPreset(l),
-  }));
 
   const sections = [
     { id: "offer", label: d.report.nav.offer },
@@ -511,26 +508,9 @@ export default function ReportPage() {
               </div>
 
               <div className="space-y-3">
-                {/* Rounds knob removed — matches are strictly 3 rounds (July 2026),
-                    and this page mirrors the REAL setup rules. */}
-                <Knob
-                  label={
-                    deep
-                      ? d.report.playground.knobLengthLocked
-                      : d.report.playground.knobLength
-                  }
-                >
-                  {presets.map((p) => (
-                    <Chip
-                      key={p.id}
-                      active={!deep && length === p.id}
-                      disabled={deep}
-                      onClick={() => setLength(p.id)}
-                    >
-                      {d.report.playground.lengthLabel(p.id, p.maxTokens)}
-                    </Chip>
-                  ))}
-                </Knob>
+                {/* Rounds + length knobs removed — matches are strictly 3 rounds
+                    and short length (July 2026); this page mirrors the REAL setup
+                    rules, so only the still-configurable knobs are shown. */}
                 <Knob label={d.report.playground.knobDeep}>
                   <Chip active={!deep} onClick={() => setDeep(false)}>{d.report.playground.deepOff}</Chip>
                   <Chip active={deep} onClick={() => { setDeep(true); setTurnIdx(0); }}>
