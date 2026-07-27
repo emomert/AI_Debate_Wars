@@ -27,18 +27,15 @@ export const setup = {
   },
 
   // Match Rules sub-section labels + lock badges
+  // (maxLength/lockAuto/deepLengthNote/recommended removed July 2026 — response
+  // length is strictly "short" and the picker is gone.)
   rules: {
     rounds: "Rounds",
     tone: "Tone",
-    maxLength: "Max response length",
     pacing: "Pacing",
     voice: "Fighter voices",
-    recommended: "Recommended",
     lockRounds: "🔒 3 in Deep Debate",
     lockStandard: "🔒 Standard",
-    lockAuto: "🔒 Auto",
-    deepLengthNote:
-      "Deep Debate uses a structured, longer format — length is set for you, and turns take longer.",
   },
 
   // Start CTA (mobile + summary card)
@@ -91,13 +88,6 @@ export const setup = {
     fighterTone: (name: string) => `${name}'s tone`,
     perFighterShort: "Custom (per fighter)",
   },
-
-  // ResponseLengthSelector option labels/blurbs (keyed by id)
-  lengths: {
-    short: { label: "Short", blurb: "100–160 words" },
-    medium: { label: "Medium", blurb: "180–300 words" },
-    long: { label: "Long", blurb: "350–600 words" },
-  } as Record<string, { label: string; blurb: string }>,
 
   // PaceSelector option labels/blurbs (keyed by id)
   paces: {
@@ -171,7 +161,6 @@ export const setup = {
     badgeBlitz: "⚡ Blitz",
     blitzRounds: "⚡ 8 turns",
     roundLine: (count: number, label: string) => `${count} · ${label}`,
-    deepTemplate: "🔒 Deep template",
     deepDebate: "🌐 Deep Debate",
     fast: "⚡ Fast",
     normal: "🚶 Normal",

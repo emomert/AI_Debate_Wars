@@ -9,7 +9,6 @@ import type {
   DebatePace,
   DebateTone,
   JudgeMode,
-  ResponseLength,
 } from "@/lib/debate/debateTypes";
 
 export interface ModeOption {
@@ -93,19 +92,9 @@ export const PACE_OPTIONS: PaceOption[] = [
   { id: "auto", label: "Fast", blurb: "Auto-plays every turn", emoji: "⚡" },
 ];
 
-export interface LengthOption {
-  id: ResponseLength;
-  label: string;
-  blurb: string;
-  /** Surfaced with a "Recommended" badge in the picker. */
-  recommended?: boolean;
-}
-
-export const LENGTH_OPTIONS: LengthOption[] = [
-  { id: "short", label: "Short", blurb: "100–160 words", recommended: true },
-  { id: "medium", label: "Medium", blurb: "180–300 words" },
-  { id: "long", label: "Long", blurb: "350–600 words" },
-];
+// LENGTH_OPTIONS removed (July 2026): response length is strictly "short" —
+// the setup picker is gone. The ResponseLength type keeps medium/long so
+// legacy shared/persisted sessions still validate and render.
 
 export interface JudgeModeOption {
   id: JudgeMode;

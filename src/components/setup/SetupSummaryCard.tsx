@@ -34,7 +34,24 @@ export function SetupSummaryCard({
 }: SetupSummaryCardProps) {
   const d = useT();
   const pairs = getBattlePairs(config);
-  // (matchCoinCost renders below only when COINS_ENABLED.)
+  // Total match price in coins (multi-battle: each battle is priced + charged
+  // on its own, so the card shows the sum across all pairs; the judge is priced
+  // per battle — Auto is free, a picked third-model judge adds its coin price).
+  const totalCoins = pairs.reduce(
+    (sum, p) =>
+      sum +
+      matchCoinCost({
+        modelAId: p.modelA.modelId,
+        modelBId: p.modelB.modelId,
+        deepDebate: config.deepDebate,
+        responseLength: config.responseLength,
+      }) +
+      judgeCoinCost({
+        mode: config.judge.mode,
+        modelId: config.judge.model?.modelId,
+      }),
+    0,
+  );
 
   // Name the judge in the match card: the chosen third model, or — for Auto —
   // the same neutral model the server will pick (previewAutoJudge). Falls back
@@ -146,35 +163,9 @@ export function SetupSummaryCard({
           {config.mode === "blitz" ? (
             <Badge color="white" size="sm">{d.setup.summary.blitzRounds}</Badge>
           ) : null}
-          {COINS_ENABLED ? (
-            // Total match price (multi-battle: each battle is priced + charged
-            // on its own, so the card shows the sum across all pairs).
-            <Badge color="coin" size="sm">
-              {d.coins.matchCost(
-                pairs.reduce(
-                  (sum, p) =>
-                    sum +
-                    matchCoinCost({
-                      modelAId: p.modelA.modelId,
-                      modelBId: p.modelB.modelId,
-                      deepDebate: config.deepDebate,
-                      responseLength: config.responseLength,
-                    }) +
-                    // The judge is priced per battle (each pair renders its own
-                    // verdict) — Auto is free, a picked third-model judge adds its coin price.
-                    judgeCoinCost({
-                      mode: config.judge.mode,
-                      modelId: config.judge.model?.modelId,
-                    }),
-                  0,
-                ),
-              )}
-            </Badge>
-          ) : null}
           <Badge color="white" size="sm" className="max-w-[12rem] truncate">{toneLabel}</Badge>
-          <Badge color="white" size="sm">
-            {config.deepDebate ? d.setup.summary.deepTemplate : config.responseLength}
-          </Badge>
+          {/* Length chip removed (owner 7/16): every match is "short" now, so
+              the chip was dead information — same call as the rounds chip. */}
           {config.deepDebate ? (
             <Badge color="purple" size="sm">{d.setup.summary.deepDebate}</Badge>
           ) : null}
@@ -189,6 +180,19 @@ export function SetupSummaryCard({
             {judgeBadge}
           </Badge>
         </div>
+
+        {COINS_ENABLED ? (
+          // The ticket's total line (owner 7/16): the price used to hide as one
+          // chip in the badge cloud — a dedicated row makes the total unmissable.
+          <div className="flex items-center justify-between gap-2 rounded-card border-3 border-night bg-white px-3 py-2.5 text-night">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
+              {d.coins.totalCostLabel}
+            </p>
+            <p className="font-heading text-base font-extrabold leading-none">
+              {d.coins.totalCostValue(totalCoins)}
+            </p>
+          </div>
+        ) : null}
       </div>
 
       {errorList.length > 0 ? (

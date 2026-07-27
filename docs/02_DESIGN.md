@@ -404,7 +404,6 @@ Fields:
 - model A / model B (swappable fighters)
 - round count
 - tone (per fighter, incl. custom)
-- max response length
 - pace (manual / auto)
 - Deep Debate toggle
 - judge mode + judge model if needed

@@ -15,7 +15,7 @@
    "Try a Sample" randomized live match.
 2. User enters a topic — optionally runs the AI topic check to sharpen it.
 3. User picks two fighters (brand → family → model; swap A/B available).
-4. User sets the rules: tone per fighter, response length, pace (manual/auto), Deep Debate on/off. **Matches are strictly 3 rounds (July 2026)** — the 3/5/7 selector was removed; old shared/published 5/7 matches still render.
+4. User sets the rules: tone per fighter, pace (manual/auto), Deep Debate on/off. **Matches are strictly 3 rounds and short response length (July 2026)** — the 3/5/7 selector and the short/medium/long picker were removed; old shared/published 5/7 or medium/long matches still render.
 5. User configures the judge: auto (preview of the pick shown) or a chosen third model (mandatory since July 2026).
 6. Start Match → live arena.
 7. The app generates one turn at a time (auto-advances or waits for clicks per pace); typewriter reveal, playful thinking messages, SFX.

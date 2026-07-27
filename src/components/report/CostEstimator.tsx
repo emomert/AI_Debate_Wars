@@ -102,7 +102,10 @@ export function CostEstimator() {
   const [aId, setAId] = useState(defaults.a.id);
   const [bId, setBId] = useState(defaults.b.id);
   const [rounds, setRounds] = useState<RoundCount>(3);
-  const [length, setLength] = useState<ResponseLength>("medium");
+  // Default mirrors the product: matches are strictly "short" (July 2026).
+  // medium/long chips stay — the report documents the ENGINE, which still
+  // renders legacy medium/long sessions (same call as the 3/5/7 rounds chips).
+  const [length, setLength] = useState<ResponseLength>("short");
   const [deep, setDeep] = useState(false);
   const [judgeOn, setJudgeOn] = useState(true);
 

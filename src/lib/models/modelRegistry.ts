@@ -54,9 +54,12 @@ export interface ModelCatalogEntry {
   maxOutputTokens: number;
   /**
    * Caps the hidden thinking of reasoning models so turns arrive fast
-   * (OpenRouter `reasoning.effort`). Verified against OpenRouter's live
-   * `supported_parameters` (July 2026 snapshot) — only set where the model
-   * accepts it.
+   * (OpenRouter `reasoning.effort`). ONLY set this on models that think BY
+   * DEFAULT — on opt-in reasoners (Mistral, Claude, Gemini Flash, Gemma,
+   * Hunyuan, …) the param SWITCHES THINKING ON instead of capping it, making
+   * turns 5–30× slower and burning paid tokens (measured live 2026-07-16:
+   * Mistral Medium went 0 → 3,577 thinking tokens; Gemma 4 went 5.8s → 183s).
+   * Every tag below was probed bare vs `effort: "low"` before being kept.
    */
   reasoningEffort?: "low" | "medium";
 }
@@ -101,22 +104,22 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "x-ai/grok-4.5", providerId: "openrouter", brand: "Grok", family: "Grok 4.5", displayName: "Grok 4.5", color: "purple", costTier: "medium", debateRating: 95, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "x-ai/grok-4.3", providerId: "openrouter", brand: "Grok", family: "Grok 4.3", displayName: "Grok 4.3", color: "purple", costTier: "medium", debateRating: 92, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   // NOTE: xAI's public lineup jumps 4.3 → 4.20 ("4.2" doesn't exist).
-  { id: "x-ai/grok-4.20", providerId: "openrouter", brand: "Grok", family: "Grok 4.20", displayName: "Grok 4.20", color: "purple", costTier: "medium", debateRating: 90, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "x-ai/grok-4.20", providerId: "openrouter", brand: "Grok", family: "Grok 4.20", displayName: "Grok 4.20", color: "purple", costTier: "medium", debateRating: 90, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Anthropic — Claude
-  { id: "anthropic/claude-fable-5", providerId: "openrouter", brand: "Claude", family: "Fable", displayName: "Fable 5", color: "purple", costTier: "high", debateRating: 98, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "anthropic/claude-opus-4.8", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.8", color: "purple", costTier: "high", debateRating: 96, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "anthropic/claude-opus-4.7", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.7", color: "purple", costTier: "high", debateRating: 95, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "anthropic/claude-sonnet-5", providerId: "openrouter", brand: "Claude", family: "Sonnet", displayName: "Sonnet 5", color: "purple", costTier: "medium", debateRating: 94, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "anthropic/claude-opus-4.6", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.6", color: "purple", costTier: "high", debateRating: 93, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "anthropic/claude-sonnet-4.6", providerId: "openrouter", brand: "Claude", family: "Sonnet", displayName: "Sonnet 4.6", color: "purple", costTier: "high", debateRating: 91, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "anthropic/claude-opus-4.5", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.5", color: "purple", costTier: "high", debateRating: 90, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "anthropic/claude-fable-5", providerId: "openrouter", brand: "Claude", family: "Fable", displayName: "Fable 5", color: "purple", costTier: "high", debateRating: 98, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "anthropic/claude-opus-4.8", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.8", color: "purple", costTier: "high", debateRating: 96, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "anthropic/claude-opus-4.7", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.7", color: "purple", costTier: "high", debateRating: 95, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "anthropic/claude-sonnet-5", providerId: "openrouter", brand: "Claude", family: "Sonnet", displayName: "Sonnet 5", color: "purple", costTier: "medium", debateRating: 94, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "anthropic/claude-opus-4.6", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.6", color: "purple", costTier: "high", debateRating: 93, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "anthropic/claude-sonnet-4.6", providerId: "openrouter", brand: "Claude", family: "Sonnet", displayName: "Sonnet 4.6", color: "purple", costTier: "high", debateRating: 91, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "anthropic/claude-opus-4.5", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.5", color: "purple", costTier: "high", debateRating: 90, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Google — Gemini
-  { id: "google/gemini-3.5-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.5", displayName: "Gemini 3.5 Flash", color: "purple", costTier: "medium", debateRating: 92, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "google/gemini-3.1-flash-lite", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.1", displayName: "Gemini 3.1 Flash Lite", color: "purple", costTier: "low", debateRating: 84, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "google/gemini-3.5-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.5", displayName: "Gemini 3.5 Flash", color: "purple", costTier: "medium", debateRating: 92, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "google/gemini-3.1-flash-lite", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.1", displayName: "Gemini 3.1 Flash Lite", color: "purple", costTier: "low", debateRating: 84, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "google/gemini-2.5-pro", providerId: "openrouter", brand: "Gemini", family: "Gemini 2.5", displayName: "Gemini 2.5 Pro", color: "purple", costTier: "medium", debateRating: 90, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "google/gemini-2.5-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 2.5", displayName: "Gemini 2.5 Flash", color: "purple", costTier: "low", debateRating: 85, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "google/gemini-2.5-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 2.5", displayName: "Gemini 2.5 Flash", color: "purple", costTier: "low", debateRating: 85, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Xiaomi — MiMo
   { id: "xiaomi/mimo-v2.5-pro", providerId: "openrouter", brand: "Xiaomi", family: "MiMo V2.5", displayName: "MiMo V2.5 Pro", color: "purple", costTier: "low", debateRating: 86, avatar: "🟠", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
@@ -131,7 +134,7 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "moonshotai/kimi-k2.7-code", providerId: "openrouter", brand: "Kimi", family: "Kimi K2", displayName: "Kimi K2.7 Code", color: "purple", costTier: "medium", debateRating: 84, avatar: "🌙", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // NVIDIA — Nemotron
-  { id: "nvidia/nemotron-3-ultra-550b-a55b", providerId: "openrouter", brand: "Nemotron", family: "Nemotron 3", displayName: "Nemotron 3 Ultra", color: "purple", costTier: "medium", debateRating: 86, avatar: "🟩", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "nvidia/nemotron-3-ultra-550b-a55b", providerId: "openrouter", brand: "Nemotron", family: "Nemotron 3", displayName: "Nemotron 3 Ultra", color: "purple", costTier: "medium", debateRating: 86, avatar: "🟩", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192 },
   { id: "nvidia/nemotron-3-super-120b-a12b", providerId: "openrouter", brand: "Nemotron", family: "Nemotron 3", displayName: "Nemotron 3 Super", color: "purple", costTier: "low", debateRating: 83, avatar: "🟩", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // Alibaba — Qwen
@@ -146,25 +149,25 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   // ── July 2026 expansion (all OpenRouter; live-verified ids + pricing) ──────
 
   // Meta — Llama 4
-  { id: "meta-llama/llama-4-maverick", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Maverick", color: "purple", costTier: "low", debateRating: 88, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "meta-llama/llama-4-scout", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Scout", color: "purple", costTier: "low", debateRating: 82, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "meta-llama/llama-4-maverick", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Maverick", color: "purple", costTier: "low", debateRating: 88, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "meta-llama/llama-4-scout", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Scout", color: "purple", costTier: "low", debateRating: 82, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Mistral
-  { id: "mistralai/mistral-medium-3-5", providerId: "openrouter", brand: "Mistral", family: "Mistral Medium", displayName: "Mistral Medium 3.5", color: "purple", costTier: "high", debateRating: 90, avatar: "🌪️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "mistralai/mistral-small-2603", providerId: "openrouter", brand: "Mistral", family: "Mistral Small", displayName: "Mistral Small", color: "purple", costTier: "low", debateRating: 82, avatar: "🌪️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "mistralai/mistral-medium-3-5", providerId: "openrouter", brand: "Mistral", family: "Mistral Medium", displayName: "Mistral Medium 3.5", color: "purple", costTier: "high", debateRating: 90, avatar: "🌪️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "mistralai/mistral-small-2603", providerId: "openrouter", brand: "Mistral", family: "Mistral Small", displayName: "Mistral Small", color: "purple", costTier: "low", debateRating: 82, avatar: "🌪️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Amazon — Nova
-  { id: "amazon/nova-pro-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Pro", color: "purple", costTier: "medium", debateRating: 86, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
-  { id: "amazon/nova-lite-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Lite", color: "purple", costTier: "low", debateRating: 78, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "amazon/nova-pro-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Pro", color: "purple", costTier: "medium", debateRating: 86, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  { id: "amazon/nova-lite-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Lite", color: "purple", costTier: "low", debateRating: 78, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Tencent — Hunyuan
-  { id: "tencent/hy3", providerId: "openrouter", brand: "Tencent", family: "Hunyuan 3", displayName: "Hunyuan 3", color: "purple", costTier: "low", debateRating: 84, avatar: "🐧", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "tencent/hy3", providerId: "openrouter", brand: "Tencent", family: "Hunyuan 3", displayName: "Hunyuan 3", color: "purple", costTier: "low", debateRating: 84, avatar: "🐧", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192 },
 
   // Anthropic — the affordable Claude tier
-  { id: "anthropic/claude-haiku-4.5", providerId: "openrouter", brand: "Claude", family: "Haiku", displayName: "Haiku 4.5", color: "purple", costTier: "medium", debateRating: 89, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "anthropic/claude-haiku-4.5", providerId: "openrouter", brand: "Claude", family: "Haiku", displayName: "Haiku 4.5", color: "purple", costTier: "medium", debateRating: 89, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Google — budget Gemma under the Gemini tile
-  { id: "google/gemma-4-26b-a4b-it", providerId: "openrouter", brand: "Gemini", family: "Gemma 4", displayName: "Gemma 4 26B", color: "purple", costTier: "low", debateRating: 79, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "google/gemma-4-26b-a4b-it", providerId: "openrouter", brand: "Gemini", family: "Gemma 4", displayName: "Gemma 4 26B", color: "purple", costTier: "low", debateRating: 79, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Moonshot — cheaper Kimi tier
   { id: "moonshotai/kimi-k2.5", providerId: "openrouter", brand: "Kimi", family: "Kimi K2", displayName: "Kimi K2.5", color: "purple", costTier: "low", debateRating: 85, avatar: "🌙", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
@@ -173,7 +176,7 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "z-ai/glm-4.7-flash", providerId: "openrouter", brand: "GLM", family: "GLM 4.7", displayName: "GLM 4.7 Flash", color: "purple", costTier: "low", debateRating: 81, avatar: "🌀", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // NVIDIA — nano tier
-  { id: "nvidia/nemotron-3-nano-30b-a3b", providerId: "openrouter", brand: "Nemotron", family: "Nemotron 3", displayName: "Nemotron 3 Nano", color: "purple", costTier: "low", debateRating: 78, avatar: "🟩", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "nvidia/nemotron-3-nano-30b-a3b", providerId: "openrouter", brand: "Nemotron", family: "Nemotron 3", displayName: "Nemotron 3 Nano", color: "purple", costTier: "low", debateRating: 78, avatar: "🟩", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192 },
 ];
 
 export function getModelById(id: string): ModelCatalogEntry | undefined {

@@ -10,7 +10,7 @@ The user sets up an "arena":
 
 1. enters a topic (optionally AI-checked and sharpened)
 2. selects two AI fighters from a large model catalog
-3. chooses 3, 5, or 7 rounds, tone, response length, and pace
+3. chooses the tone and pace (matches are strictly 3 rounds with short responses since July 2026)
 4. optionally enables Deep Debate (web search + citations)
 5. optionally enables a neutral AI judge
 6. starts the match and watches the models argue in a lively arcade interface

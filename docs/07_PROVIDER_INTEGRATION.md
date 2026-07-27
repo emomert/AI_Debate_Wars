@@ -37,7 +37,9 @@ There is **no mock provider** anymore — it was removed after real integration.
 
 ## Model Registry (`modelRegistry.ts`)
 
-The catalog (56+ models) carries display info (name, nickname, brand, family, color), `costTier` (`free | low | medium | high` → FREE/$/$$/$$$), a 0–100 debate-suitability rating, max output tokens, reasoning-effort caps, Turkish-fluency flag, and web-search capability. Helper functions group models by brand/family per locale and preview the auto-judge pick client-side.
+The catalog (56+ models) carries display info (name, nickname, brand, family, color), `costTier` (`free | low | medium | high` → FREE/$/$$/$$$), a 0–100 debate-suitability rating, max output tokens, reasoning-effort caps, Turkish-fluency flag, and web-search capability.
+
+**Reasoning-effort caps (`reasoningEffort`) are for default-on thinkers ONLY.** OpenRouter's `reasoning: { effort }` param caps the hidden thinking of models that reason by default (Kimi, GLM, Qwen, MiniMax, Xiaomi MiMo, Grok 4.3/4.5, Gemini 2.5 Pro, Nemotron Super) — but on opt-in reasoners it *switches thinking on* instead. A July 2026 blanket tag made Mistral Medium burn 3,577 thinking tokens per turn (0 without the param) and Gemma 4 take 183s instead of 5.8s — the "Mistral is slow" bug, fixed 2026-07-16 by probing every OpenRouter model bare vs `effort: "low"` and keeping the tag only where it measurably reduces thinking. When adding a model, probe before tagging. Helper functions group models by brand/family per locale and preview the auto-judge pick client-side.
 
 ## Error Normalization
 

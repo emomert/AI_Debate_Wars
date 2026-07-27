@@ -62,7 +62,7 @@ For each round: Model A speaks, then Model B. The judge speaks only after all ro
 ## Match Options (DebateConfig)
 
 - **Tone:** `serious | aggressive | casual | custom` (custom = free text), configurable per fighter.
-- **Response length:** `short | medium | long` (word targets enforced in the prompt).
+- **Response length:** strictly `short` in the UI since July 2026 (the picker was removed; setup coerces persisted configs). The engine still accepts `short | medium | long` (word targets enforced in the prompt) so legacy shared/persisted matches render unchanged.
 - **Pace:** `manual` (user advances each turn) or `auto`.
 - **Deep Debate:** boolean; turns receive web-search results and must cite sources. Only allowed for fighters that support web search (`assertDeepTurnAllowed`).
 

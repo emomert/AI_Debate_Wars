@@ -31,7 +31,7 @@ Users want to evaluate ideas, compare AI models, or explore both sides of an arg
 
 - **Rounds:** 3 (Quick Match), 5 (Ranked Match), or 7 (Championship). Each maps to a deterministic round plan; no infinite mode exists.
 - **Tone:** serious, aggressive, casual, or custom free text — configurable per fighter.
-- **Response length:** short (100–160 words), medium (180–300), long (350–600).
+- **Response length:** strictly **short** (100–160 words) since July 2026 — the medium/long options were removed from setup for simplicity and cost. The engine keeps the medium (180–300) and long (350–600) presets so legacy shared/persisted matches still render.
 - **Pace:** manual (user clicks each turn) or auto-play.
 
 ### Deep Debate (web search)

@@ -30,15 +30,10 @@ export const setup = {
   rules: {
     rounds: "Tur",
     tone: "Üslup",
-    maxLength: "En fazla yanıt uzunluğu",
     pacing: "Tempo",
     voice: "Yarışmacı sesleri",
-    recommended: "Önerilen",
     lockRounds: "🔒 Derin Münazara'da 3",
     lockStandard: "🔒 Standart",
-    lockAuto: "🔒 Otomatik",
-    deepLengthNote:
-      "Derin Münazara yapılandırılmış, daha uzun bir format kullanır — uzunluk sizin için ayarlanır ve turlar daha uzun sürer.",
   },
 
   // Start CTA (mobile + summary card)
@@ -91,13 +86,6 @@ export const setup = {
     fighterTone: (name: string) => `${name} üslubu`,
     perFighterShort: "Özel (yarışmacıya göre)",
   },
-
-  // ResponseLengthSelector option labels/blurbs (keyed by id)
-  lengths: {
-    short: { label: "Kısa", blurb: "100–160 kelime" },
-    medium: { label: "Orta", blurb: "180–300 kelime" },
-    long: { label: "Uzun", blurb: "350–600 kelime" },
-  } as Record<string, { label: string; blurb: string }>,
 
   // PaceSelector option labels/blurbs (keyed by id)
   paces: {
@@ -169,7 +157,6 @@ export const setup = {
     badgeBlitz: "⚡ Blitz",
     blitzRounds: "⚡ 8 raunt",
     roundLine: (count: number, label: string) => `${count} · ${label}`,
-    deepTemplate: "🔒 Derin şablon",
     deepDebate: "🌐 Derin Münazara",
     fast: "⚡ Hızlı",
     normal: "🚶 Normal",

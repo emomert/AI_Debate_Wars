@@ -25,15 +25,19 @@ export const openRouterProvider: Provider = {
   id: "openrouter",
   async generate(input: GenerateInput): Promise<GenerateResult> {
     const start = Date.now();
-    // Many OpenRouter models (GLM, Nemotron, Kimi, Qwen, …) reason internally
-    // before answering, which eats both time and the token budget. Models
-    // tagged with `reasoningEffort` get their hidden thinking CAPPED via
-    // OpenRouter's unified `reasoning` param so they answer in seconds instead
-    // of half a minute — but the effort cap is advisory (it floors at ~1024
-    // tokens and heavy thinkers overshoot it), so they get the SAME +2500
-    // headroom as untagged reasoners. The old +1300 starved Kimi-class models
-    // on short turns: ~1024+ thinking inside a 1680 total ceiling left nothing
-    // for the visible answer (owner-reported, July 2026).
+    // Some OpenRouter models (GLM, Kimi, Qwen, Grok 4.3+, …) reason internally
+    // BY DEFAULT before answering, which eats both time and the token budget.
+    // Only those carry `reasoningEffort` in the registry: the tag CAPS their
+    // hidden thinking via OpenRouter's unified `reasoning` param so they answer
+    // in seconds instead of half a minute. Never tag opt-in reasoners (Mistral,
+    // Claude, Gemini Flash, Gemma, Hunyuan, …): for them the same param
+    // SWITCHES THINKING ON — measured 2026-07-16, Mistral Medium went
+    // 0 → 3,577 thinking tokens per turn and Gemma 4 went 5.8s → 183s (the
+    // "Mistral takes forever" owner report). The effort cap is advisory (it
+    // floors at ~1024 tokens and heavy thinkers overshoot it), so tagged models
+    // get the SAME +2500 headroom as untagged reasoners. The old +1300 starved
+    // Kimi-class models on short turns: ~1024+ thinking inside a 1680 total
+    // ceiling left nothing for the visible answer (owner-reported, July 2026).
     const effort = input.model.reasoningEffort;
     const maxOutputTokens = Math.min(
       input.model.maxOutputTokens,

@@ -15,7 +15,6 @@ import { ArcadeButton } from "@/components/game/ArcadeButton";
 import { TopicInput } from "@/components/setup/TopicInput";
 import { BattleList } from "@/components/setup/BattleList";
 import { ToneSelector } from "@/components/setup/ToneSelector";
-import { ResponseLengthSelector } from "@/components/setup/ResponseLengthSelector";
 import { DeepDebateToggle } from "@/components/setup/DeepDebateToggle";
 import { PaceSelector } from "@/components/setup/PaceSelector";
 import { VoiceToggle } from "@/components/setup/VoiceToggle";
@@ -169,6 +168,17 @@ export default function SetupPage() {
     if (Object.keys(patch).length > 0) setConfig(patch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBlitz, config.pace, config.responseLength, config.deepDebate, config.tone, config.battles, config.modelA.modelId, config.modelB.modelId]);
+
+  // Response length is strictly "short" (July 2026 — the medium/long chips were
+  // removed for simplicity + cost). Normalize persisted configs; Blitz keeps its
+  // internal "punchy" length (the effect above), and old COMPLETED medium/long
+  // sessions still render fine (engine unchanged).
+  useEffect(() => {
+    if (!isBlitz && config.responseLength !== "short") {
+      setConfig({ responseLength: "short" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBlitz, config.responseLength]);
 
   // The judge is MANDATORY (July 2026) and only neutral judges exist. Coerce
   // any persisted judge-off / "none" / "Model A/B judges" config to an enabled
@@ -399,26 +409,10 @@ export default function SetupPage() {
                   disabled={config.deepDebate}
                 />
               </div>
-              <div>
-                <p className="mb-2 flex items-center gap-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
-                  {d.setup.rules.maxLength}
-                  {config.deepDebate ? (
-                    <span className="rounded-badge border-2 border-ink bg-arcade-purple px-1.5 py-0.5 text-[10px] text-white">
-                      {d.setup.rules.lockAuto}
-                    </span>
-                  ) : null}
-                </p>
-                <ResponseLengthSelector
-                  value={config.responseLength}
-                  onChange={(responseLength) => setConfig({ responseLength })}
-                  disabled={config.deepDebate}
-                />
-                {config.deepDebate ? (
-                  <p className="mt-2 text-xs text-ink/55">
-                    {d.setup.rules.deepLengthNote}
-                  </p>
-                ) : null}
-              </div>
+              {/* Max response length section removed (owner 7/16): every match
+                  is "short" now — medium/long were dropped for simplicity and
+                  cost. Legacy medium/long sessions still render (engine
+                  unchanged); a persisted config is coerced by the effect above. */}
               <div>
                 <p className="mb-2 font-heading text-sm font-extrabold uppercase tracking-wide text-ink/60">
                   {d.setup.rules.pacing}
