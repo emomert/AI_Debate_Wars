@@ -284,6 +284,8 @@ export const report = {
     badgeCore: "çekirdek",
     badgeOptional: "isteğe bağlı",
     configBackends: "model arka uçları",
+    configCoins: "jeton ekonomisi açık/kapalı; ödeme anahtarları HMAC ile imzalanır, sunucu anahtarı yoksa kapalı kalır",
+    configPayments: "Polar ödeme — kuruluş jetonu, webhook imza sırrı, paket→ürün kimlikleri, satın-al düğmesi bayrağı",
     configBraveSearch: "Derin Münazara web araması",
     configSearchProvider: "arama motoru kimliği (varsayılan: brave)",
     configSearchCost: "HUD'da gösterilen sorgu başına ücret (varsayılan 0)",

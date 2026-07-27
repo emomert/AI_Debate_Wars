@@ -38,18 +38,18 @@ export const report = {
     title: "1 · What we offer",
     debate: {
       heading: "🥊 Debate Mode",
-      body: "Two AI models argue opposite sides of your topic across 3–7 fixed rounds — openings, rebuttals, closings. You pick the fighters, the tone, the pace and the length.",
+      body: "Two AI models argue opposite sides of your topic across 3 fixed rounds — opening, rebuttal, closing. You pick the two fighters, the tone and the pace, and can run up to 3 battles on the same topic at once.",
     },
     judge: {
       heading: "⚖️ AI Judge",
-      body: "An optional third model judges the finished match blind — summary, strongest and weakest arguments, scores per fighter, and a decisive winner. The app picks a neutral judge automatically, or you choose one.",
+      body: "A neutral third model judges every finished match blind — a reasoned verdict, the single most decisive argument, a 0–100 score for each fighter, and a winner. The app picks the judge automatically, or you choose one.",
     },
     deep: {
       heading: "🌐 Deep Debate",
       body: "Every turn is grounded in a live web search. Fighters quote and cite real sources with [n] markers, shown in a collapsible source list. Fixed format: 3 rounds, standard tone, auto length.",
     },
     footer:
-      "Per-turn token usage, latency and an honest running cost are always on screen — the arcade look is the interface, cost transparency is the contract.",
+      "Matches run on a coin economy — your balance sits in the header and each match shows its coin cost before it starts, while under the hood we track real per-token cost and cap daily spend. The arcade look is the interface, honest economics are the contract.",
   },
 
   // 2 · Who controls the match (interactive flow diagram)
@@ -64,7 +64,7 @@ export const report = {
     gate: {
       node: "Limits",
       title: "Rate limits & spend caps run before any model is called",
-      body: "Every paid route first checks per-IP rate limits and the global and per-IP daily spend caps. Only a request that passes the gate reaches a provider — and if the limit backend is unreachable, the check fails open so the product keeps working.",
+      body: "Every paid route first checks per-IP rate limits and the global and per-IP daily spend caps. Only a request that passes the gate reaches a provider — and if the shared limit backend is unreachable, it falls back to an in-process per-instance backstop rather than failing fully open.",
     },
     step2: {
       node: "Plan",
@@ -91,7 +91,7 @@ export const report = {
       title: "The judge runs once, at the end",
       bodyPre: "When every round is complete, ",
       bodyPost:
-        " asks the judge model for strict JSON — summary, strongest/weakest arguments, scores, winner. The app picks the judge (never one of the fighters when on auto).",
+        " asks the judge model for strict JSON — winner, the decisive argument, a reasoned verdict, and a 0–100 score for each side. The app picks the judge (never one of the fighters when on auto).",
     },
   },
 
@@ -102,12 +102,12 @@ export const report = {
     colUsedFor: "Used for",
     colKey: "Server-side key",
     colNotes: "Notes",
-    openaiUsed: "GPT-4o → GPT-5.5 fighters & judges",
+    openaiUsed: "GPT-4o → GPT-5.6 fighters & judges",
     openaiNotes: "Chat Completions API, streaming-capable",
     deepseekUsed: "DeepSeek V4 fighters & judges",
     deepseekNotes: "OpenAI-compatible endpoint",
     openrouterUsed: "Open-weight fighters under their own brands (Qwen, Llama, Kimi, …)",
-    openrouterNotes: "$0 token cost; hidden reasoning capped for fast turns",
+    openrouterNotes: "Paid account (no free tier); hidden reasoning capped only on models that think by default",
     braveUsed: "Deep Debate web research (all fighters)",
     braveNotes: "Only the debate topic is sent as the query — never the transcript",
     securityNote:
@@ -211,7 +211,7 @@ export const report = {
   turnDemo: {
     title: "7 · A real Deep Debate turn (rendered by the real component)",
     intro:
-      "This is the live message card component with the data of an actual development test turn (GPT-4o Mini, Deep Debate on, 4 of 5 sources cited — note the cost breakdown and the citation chips):",
+      "This is the live message card component with the data of an actual development test turn (GPT-5.4 Mini, Deep Debate on, 4 of 5 sources cited — note the cost breakdown and the citation chips):",
     cardSubtitle: "The Quick Wit · Pro",
     cardRoundLabel: "Round 1 · Opening Arguments",
     cardContent:
@@ -284,6 +284,8 @@ export const report = {
     badgeCore: "core",
     badgeOptional: "optional",
     configBackends: "model backends",
+    configCoins: "coin economy on/off; charge keys are HMAC-signed and fail closed without a server key",
+    configPayments: "Polar checkout — org token, webhook signing secret, pack→product ids, buy-button flag",
     configBraveSearch: "Deep Debate web search",
     configSearchProvider: "search engine id (default: brave)",
     configSearchCost: "per-query fee shown in the HUD (default 0)",

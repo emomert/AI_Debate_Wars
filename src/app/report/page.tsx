@@ -267,6 +267,12 @@ export default function ReportPage() {
       desc: d.report.stack.configBackends,
       core: true,
     },
+    { name: "NEXT_PUBLIC_COINS_ENABLED", desc: d.report.stack.configCoins, core: true },
+    {
+      name: "POLAR_ACCESS_TOKEN / POLAR_WEBHOOK_SECRET / POLAR_PRODUCT_* / NEXT_PUBLIC_PAYMENTS_ENABLED",
+      desc: d.report.stack.configPayments,
+      core: false,
+    },
     { name: "BRAVE_SEARCH_API_KEY", desc: d.report.stack.configBraveSearch, core: false },
     { name: "SEARCH_PROVIDER", desc: d.report.stack.configSearchProvider, core: false },
     { name: "SEARCH_COST_USD", desc: d.report.stack.configSearchCost, core: false },
@@ -628,7 +634,7 @@ export default function ReportPage() {
             <p className="mb-3 text-sm text-ink/70">{d.report.turnDemo.intro}</p>
             <DebateMessageCard
               speaker="modelA"
-              title="GPT-4o Mini"
+              title="GPT-5.4 Mini"
               subtitle={d.report.turnDemo.cardSubtitle}
               avatar="💨"
               color="blue"
