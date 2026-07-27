@@ -1,0 +1,45 @@
+{
+  "duration": 28.6,
+  "chapters": [
+    {
+      "start": 0,
+      "end": 1.4,
+      "caption": "Set up your match"
+    },
+    {
+      "start": 1.4,
+      "end": 4.4,
+      "caption": "① Drop in any topic"
+    },
+    {
+      "start": 4.4,
+      "end": 9.2,
+      "caption": "② Pick your two fighters"
+    },
+    {
+      "start": 9.2,
+      "end": 11.6,
+      "caption": "③ Set the rules"
+    },
+    {
+      "start": 11.6,
+      "end": 13.6,
+      "caption": "Every match has a coin price"
+    },
+    {
+      "start": 13.6,
+      "end": 16.6,
+      "caption": "④ They argue — for real"
+    },
+    {
+      "start": 16.6,
+      "end": 23.1,
+      "caption": "Three rounds, back and forth"
+    },
+    {
+      "start": 23.1,
+      "end": 28.6,
+      "caption": "⑤ A neutral AI judge decides"
+    }
+  ]
+}

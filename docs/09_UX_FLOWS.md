@@ -6,13 +6,34 @@
 
 1. User lands on the home page (arcade pitch, sample topics). A **"See a Demo"**
    CTA opens a full-screen ~30s VIDEO of the real product — an actual screen
-   recording of one genuine match (typed topic → fighter picks → live rounds
-   fast-forwarded → verdict), played by `src/components/demo/DemoOverlay.tsx`
-   from `/public/demo/demo-match.mp4`. Regenerate it with
-   `node scripts/record-demo.mjs` (drives the real app, runs a real match,
-   costs cents) then `node scripts/edit-demo.mjs` (ffmpeg speed-cut to ≤30s).
+   recording of one genuine match (typed topic → fighter picks → coin price →
+   live rounds fast-forwarded → verdict), played by
+   `src/components/demo/DemoOverlay.tsx` from `/public/demo/demo-match.mp4`.
    Skippable, silent, costs nothing to watch. It replaced the old
    "Try a Sample" randomized live match.
+
+   Regenerate with `node scripts/record-demo.mjs` (drives the real app and runs
+   a real Claude Haiku 4.5 vs GPT-5.4 Mini match — 3 coins + cents of tokens)
+   then `node scripts/edit-demo.mjs` (ffmpeg speed-cut to ≤30s). Notes for
+   whoever re-shoots it:
+   - **The recorder signs itself in.** Coins gate START, so a signed-out run
+     would hit the signup modal. It mints a one-time magic-link token with the
+     service role, spends it in a throwaway context, and records with the
+     resulting session — so no login screen is on camera and the coin chip is
+     visible throughout. Needs `SUPABASE_SERVICE_ROLE_KEY` + a `DEMO_USER_ID`
+     (defaults to the first `ADMIN_USER_IDS` entry, whose balance appears in
+     the header).
+   - **Fighter pick ORDER matters.** Defaults are A=GPT-5.4 Mini /
+     B=DeepSeek V4 Flash. Picking a fighter that the other slot already holds
+     leaves both cards reading the same name on camera — it looks like a bug.
+     Every pick must move to a brand neither slot currently holds.
+   - **Framing is done in camera**, not by cropping in the edit: the recorder
+     scrolls each finished turn to center so the arena never shows half a
+     screen of empty background.
+   - The clip is silent and narrates itself with captions. `edit-demo.mjs`
+     emits `/public/demo/demo-chapters.json` (cut boundaries + the line for
+     each stretch) and the overlay renders them, so a re-cut can't desync the
+     words from the picture. Missing JSON just means no captions.
 2. User enters a topic — optionally runs the AI topic check to sharpen it.
 3. User picks two fighters (brand → family → model; swap A/B available).
 4. User sets the rules: tone per fighter, pace (manual/auto), Deep Debate on/off. **Matches are strictly 3 rounds and short response length (July 2026)** — the 3/5/7 selector and the short/medium/long picker were removed; old shared/published 5/7 or medium/long matches still render.

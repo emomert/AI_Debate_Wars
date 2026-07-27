@@ -7,8 +7,17 @@
  * /public/demo/demo-match.mp4): typing the topic, picking the fighters,
  * starting the match, the rounds fast-forwarded, and the judge's verdict.
  *
+ * The clip is SILENT, so it narrates itself with captions: edit-demo.mjs emits
+ * /public/demo/demo-chapters.json (the real cut boundaries + the line for each
+ * stretch) and we render the active line here. Keeping the text in the DOM
+ * rather than burned into the pixels means it stays crisp at any size, is
+ * styled by the design system, and a re-cut updates the words with the picture
+ * instead of drifting from it. Captions describe English product UI, so they
+ * intentionally ship with the footage rather than the locale dictionaries.
+ * Missing/failed JSON just means no captions — the video still plays.
+ *
  * Skippable at any moment (✕ / Skip / Esc); ends on a "Your turn." card with
- * a Use Debator CTA + Replay. The clip is silent, so no sound settings apply.
+ * a Use Debator CTA + Replay.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,6 +28,13 @@ import { playSound } from "@/lib/audio/soundManager";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
 const DEMO_SRC = "/demo/demo-match.mp4";
+const CHAPTERS_SRC = "/demo/demo-chapters.json";
+
+interface Chapter {
+  start: number;
+  end: number;
+  caption: string;
+}
 
 export function DemoOverlay({ onClose }: { onClose: () => void }) {
   const d = useT();
@@ -27,6 +43,24 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [ended, setEnded] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [caption, setCaption] = useState("");
+
+  // Caption track ships next to the video; absent/broken = silent playback.
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(CHAPTERS_SRC)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data?.chapters)) setChapters(data.chapters);
+      })
+      .catch(() => {
+        /* no captions — the demo still plays */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Esc closes; lock body scroll while open; focus lands on Close.
   useEffect(() => {
@@ -51,6 +85,7 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
   const replay = useCallback(() => {
     setEnded(false);
     setProgress(0);
+    setCaption("");
     const v = videoRef.current;
     if (v) {
       v.currentTime = 0;
@@ -104,8 +139,22 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
             onTimeUpdate={(e) => {
               const v = e.currentTarget;
               if (v.duration > 0) setProgress(v.currentTime / v.duration);
+              const active = chapters.find((c) => v.currentTime >= c.start && v.currentTime < c.end);
+              setCaption(active?.caption ?? "");
             }}
           />
+          {/* Caption strip — narrates the silent clip. Sits inside the frame so
+              it scales with the video and never pushes the layout around. */}
+          {caption && !ended ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-2 sm:p-3">
+              <p
+                aria-live="polite"
+                className="rounded-badge border-3 border-ink bg-arcade-yellow px-3 py-1 text-center font-heading text-[11px] font-extrabold uppercase tracking-wide text-night shadow-hard-sm sm:px-4 sm:py-1.5 sm:text-sm"
+              >
+                {caption}
+              </p>
+            </div>
+          ) : null}
           {ended ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-paper p-6 text-center">
               <p className="font-display text-4xl tracking-tight sm:text-5xl">

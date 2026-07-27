@@ -2,19 +2,36 @@
  * Debator — cut the recorded demo footage into the ≤30s home-page video.
  *
  * Reads demo-recording/raw.webm + events.json (from scripts/record-demo.mjs)
- * and speed-edits per phase: intro brisk, topic typing ~real-time, fighter
- * selection light, the match heavily fast-forwarded (first turn readable),
- * verdict held near real-time. Output: public/demo/demo-match.mp4 (h264,
- * silent, faststart). Needs ffmpeg on PATH.
+ * and speed-edits per phase: topic typing near real-time, fighter picks light,
+ * a beat on the Match Card's coin total, the match fast-forwarded (first turn
+ * readable), and a real hold on the verdict score bar.
  *
- * Usage: node scripts/edit-demo.mjs
+ * Two things the old cut got wrong, fixed here:
+ *  - DEAD SPACE. The old arena shots spent ~40% of the screen on empty dotted
+ *    background. That is fixed IN CAMERA — record-demo.mjs now scrolls each
+ *    finished turn to center — rather than by cropping here. A crop was tried
+ *    and rejected: to keep 16:9 it also eats the left/right margins, slicing
+ *    the logo and topic line mid-word, which reads as an accident. Framing
+ *    belongs in the shot, not the edit.
+ *  - CAPTIONS DRIFTING. The clip is silent, so DemoOverlay narrates it. Rather
+ *    than burn text into the pixels (unstyleable, unlocalizable, needs a
+ *    re-encode to fix a typo), we emit public/demo/demo-chapters.json with the
+ *    real cut boundaries and let the overlay render captions from THAT — one
+ *    source of truth, so a re-cut can never desync the words from the picture.
+ *
+ * Output: public/demo/demo-match.mp4 (h264, silent, faststart)
+ *       + public/demo/demo-chapters.json
+ * Needs ffmpeg on PATH. Usage: node scripts/edit-demo.mjs
  */
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const RAW = "demo-recording/raw.webm";
 const OUT = "public/demo/demo-match.mp4";
+const CHAPTERS = "public/demo/demo-chapters.json";
+const W = 1280;
+const H = 720;
 
 const events = JSON.parse(readFileSync("demo-recording/events.json", "utf8"));
 const ms = (name) => {
@@ -37,32 +54,71 @@ const duration = Number(last[1]) * 3600 + Number(last[2]) * 60 + Number(last[3])
 const offset = Math.max(0, duration - ms("end") / 1000);
 const t = (name) => ms(name) / 1000 + offset;
 
-// Phase plan: [start, end, target seconds on screen]. Speeds never go below 1x.
-// The clip OPENS just before typing begins — everything earlier is the page
-// still loading (dev-server compile on a cold route), not worth screen time.
+/**
+ * Phase plan. `target` = seconds on screen (speeds never go below 1x).
+ * `caption` is what DemoOverlay narrates over that stretch.
+ */
+// Boundaries use marks with REAL gaps between them. Two pairs are effectively
+// simultaneous in the recorder — setup-ready→typing-start (it clicks the topic
+// box immediately) and cost-shown→match-start (it clicks START immediately) —
+// so trimming between them yields a sub-frame clip that encodes to nothing.
+// The opening instead backs up a beat from setup-ready, and the coin beat is
+// the rules-done→cost-shown hold (where the recorder actually pauses on the
+// Match Card). The MIN_SEG guard below catches any future degenerate pair.
 const plan = [
-  [Math.max(0, t("typing-start") - 1.2), t("typing-start"), 1.2],
-  [t("typing-start"), t("typing-end"), 3.2],
-  [t("typing-end"), t("rules-done"), 6.5],
-  [t("rules-done"), t("turn-1-done"), 3.5],
-  [t("turn-1-done"), t("verdict"), 9.0],
-  [t("verdict"), duration, 5.0],
-];
+  { from: Math.max(0, t("setup-ready") - 2.0), to: t("typing-start"), target: 1.4, caption: "Set up your match" },
+  { from: t("typing-start"), to: t("typing-end"), target: 3.0, caption: "① Drop in any topic" },
+  { from: t("typing-end"), to: t("fighters-done"), target: 4.8, caption: "② Pick your two fighters" },
+  { from: t("fighters-done"), to: t("rules-done"), target: 2.4, caption: "③ Set the rules" },
+  { from: t("rules-done"), to: t("cost-shown"), target: 2.0, caption: "Every match has a coin price" },
+  { from: t("match-start"), to: t("turn-1-done"), target: 3.0, caption: "④ They argue — for real" },
+  { from: t("turn-1-done"), to: t("verdict"), target: 6.5, caption: "Three rounds, back and forth" },
+  { from: t("verdict"), to: t("verdict-framed"), target: 2.0, caption: "⑤ A neutral AI judge decides" },
+  { from: t("verdict-framed"), to: duration, target: 3.5, caption: "⑤ A neutral AI judge decides" },
+].filter((seg) => {
+  // A trim shorter than a couple of frames produces no packets and ffmpeg
+  // aborts with "Nothing was written into output file" — drop it loudly.
+  const real = seg.to - seg.from;
+  if (real >= 0.25) return true;
+  console.warn(`! skipping degenerate segment (${real.toFixed(3)}s): "${seg.caption}"`);
+  return false;
+});
 
 const chains = [];
 const labels = [];
-plan.forEach(([from, to, target], i) => {
-  const real = Math.max(0.05, to - from);
-  const speed = Math.max(1, real / target);
-  chains.push(
-    `[0:v]trim=start=${from.toFixed(3)}:end=${to.toFixed(3)},setpts=(PTS-STARTPTS)/${speed.toFixed(4)}[v${i}]`,
-  );
+const chapters = [];
+let clock = 0;
+
+plan.forEach((seg, i) => {
+  const real = Math.max(0.05, seg.to - seg.from);
+  const speed = Math.max(1, real / seg.target);
+  const shown = real / speed;
+
+  const steps = [
+    `trim=start=${seg.from.toFixed(3)}:end=${seg.to.toFixed(3)}`,
+    `setpts=(PTS-STARTPTS)/${speed.toFixed(4)}`,
+  ];
+  // Normalize EVERY segment to the same size, pixel format, aspect and frame
+  // rate before concat. The filter demands identical parameters on all inputs;
+  // mixing cropped and uncropped ones (differing SAR) fails the whole graph
+  // with "Error reinitializing filters", and Playwright's webm is variable-fps.
+  steps.push(`scale=${W}:${H}`, "setsar=1", "format=yuv420p", "fps=30");
+  chains.push(`[0:v]${steps.join(",")}[v${i}]`);
   labels.push(`[v${i}]`);
+
+  // Merge consecutive segments that narrate the same line.
+  const prev = chapters[chapters.length - 1];
+  if (prev && prev.caption === seg.caption) prev.end = clock + shown;
+  else chapters.push({ start: clock, end: clock + shown, caption: seg.caption });
+  clock += shown;
+
   console.log(
-    `seg ${i}: ${from.toFixed(1)}s → ${to.toFixed(1)}s (real ${real.toFixed(1)}s) @ ${speed.toFixed(1)}x → ${(real / speed).toFixed(1)}s`,
+    `seg ${i}: ${seg.from.toFixed(1)}s → ${seg.to.toFixed(1)}s (real ${real.toFixed(1)}s) @ ${speed.toFixed(1)}x` +
+      ` → ${shown.toFixed(1)}s`,
   );
 });
-const filter = `${chains.join(";")};${labels.join("")}concat=n=${plan.length}:v=1:a=0,fps=30[out]`;
+
+const filter = `${chains.join(";")};${labels.join("")}concat=n=${plan.length}:v=1:a=0[out]`;
 
 mkdirSync("public/demo", { recursive: true });
 execFileSync(
@@ -83,5 +139,13 @@ execFileSync(
   { stdio: ["ignore", "inherit", "inherit"] },
 );
 
-const total = plan.reduce((s, [from, to, target]) => s + Math.min(to - from, target), 0);
-console.log(`\nWrote ${OUT} (~${total.toFixed(1)}s)`);
+writeFileSync(
+  CHAPTERS,
+  `${JSON.stringify(
+    { duration: Number(clock.toFixed(3)), chapters: chapters.map((c) => ({ ...c, start: Number(c.start.toFixed(3)), end: Number(c.end.toFixed(3)) })) },
+    null,
+    2,
+  )}\n`,
+);
+
+console.log(`\nWrote ${OUT} (~${clock.toFixed(1)}s) + ${CHAPTERS} (${chapters.length} captions)`);
