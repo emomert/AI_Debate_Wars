@@ -11,7 +11,7 @@
 export const OPERATOR_NAME = "[OPERATOR NAME — placeholder, set before launch]";
 
 /** A real, monitored contact address for support + GDPR/KVKK data requests. */
-export const CONTACT_EMAIL = "contact@example.com"; // placeholder — replace before launch
+export const CONTACT_EMAIL = "info@debator.xyz";
 
 /** Jurisdiction whose law governs the Terms (e.g. "Turkey"). */
 export const GOVERNING_LAW = "[JURISDICTION — placeholder, set before launch]";

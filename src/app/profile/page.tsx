@@ -118,6 +118,10 @@ export default async function ProfilePage() {
   const coinRow = (Array.isArray(coinRes.data) ? coinRes.data[0] : coinRes.data) as
     | { purchased_balance: number; daily_spent: number }
     | null;
+  // Spendable total = non-expiring (purchased + promo) + today's remaining free
+  // coins. MUST match the header chip (CoinBalance.tsx), which shows the same
+  // sum — the "Daily coins" tile below then breaks out the free portion.
+  const dailyRemaining = coinRow ? Math.max(0, FREE_DAILY_COINS - coinRow.daily_spent) : 0;
 
   return (
     <GameShell>
@@ -136,15 +140,11 @@ export default async function ProfilePage() {
         ) : null}
         <Stat
           label={d.profile.stats.coinBalance}
-          value={coinRow ? `🪙 ${coinRow.purchased_balance}` : "—"}
+          value={coinRow ? `🪙 ${coinRow.purchased_balance + dailyRemaining}` : "—"}
         />
         <Stat
           label={d.profile.stats.dailyCoins}
-          value={
-            coinRow
-              ? `${Math.max(0, FREE_DAILY_COINS - coinRow.daily_spent)} / ${FREE_DAILY_COINS}`
-              : "—"
-          }
+          value={coinRow ? `${dailyRemaining} / ${FREE_DAILY_COINS}` : "—"}
         />
       </div>
       <div className="mt-2">
