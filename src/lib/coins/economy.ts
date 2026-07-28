@@ -89,9 +89,13 @@ const MODEL_COINS: Record<string, CoinPrice> = {
   "gpt-5.6-terra": 8,
   "gpt-5.4": 8,
   "anthropic/claude-sonnet-4.6": 8,
+  // Kimi K3 is priced like Sonnet 4.6 ($3/$15) AND thinks by default, so its
+  // thinking-inclusive estimate ($0.0575) only clears the 5x floor from 8 up.
+  "moonshotai/kimi-k3": 8,
   // ── 12 coins (Flagship — ≤ $0.12) ──────────────────────────────────────
   "gpt-5.6-sol": 12,
   "gpt-5.5": 12,
+  "anthropic/claude-opus-5": 12,
   "anthropic/claude-opus-4.8": 12,
   "anthropic/claude-opus-4.7": 12,
   "anthropic/claude-opus-4.6": 12,

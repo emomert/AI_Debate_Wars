@@ -108,6 +108,10 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
 
   // Anthropic — Claude
   { id: "anthropic/claude-fable-5", providerId: "openrouter", brand: "Claude", family: "Fable", displayName: "Fable 5", color: "purple", costTier: "high", debateRating: 98, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  // Opus 5 (added 2026-07-28). Probed bare vs reasoning.effort="low": 32 vs 32
+  // thinking tokens — the param changes nothing, so NO tag (docs/07). Same
+  // $5/$25 as the rest of the Opus line, so the same 12-coin band.
+  { id: "anthropic/claude-opus-5", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 5", color: "purple", costTier: "high", debateRating: 97, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "anthropic/claude-opus-4.8", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.8", color: "purple", costTier: "high", debateRating: 96, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "anthropic/claude-opus-4.7", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.7", color: "purple", costTier: "high", debateRating: 95, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "anthropic/claude-sonnet-5", providerId: "openrouter", brand: "Claude", family: "Sonnet", displayName: "Sonnet 5", color: "purple", costTier: "medium", debateRating: 94, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
@@ -130,6 +134,12 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "z-ai/glm-5", providerId: "openrouter", brand: "GLM", family: "GLM 5", displayName: "GLM 5", color: "purple", costTier: "low", debateRating: 85, avatar: "🌀", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // Moonshot — Kimi
+  // K3 (added 2026-07-28) is a big step up in price AND behaviour: probed bare
+  // it burns 526 thinking tokens in 10.0s, with reasoning.effort="low" just 8
+  // in 1.2s — a default-on thinker, so it KEEPS the cap (docs/07). At $3/$15
+  // (same as Sonnet 4.6) the thinking-inclusive estimate needs the 8-coin band;
+  // 4 coins would fail the 5x margin floor at 3.5x.
+  { id: "moonshotai/kimi-k3", providerId: "openrouter", brand: "Kimi", family: "Kimi K3", displayName: "Kimi K3", color: "purple", costTier: "high", debateRating: 91, avatar: "🌙", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "moonshotai/kimi-k2.6", providerId: "openrouter", brand: "Kimi", family: "Kimi K2", displayName: "Kimi K2.6", color: "purple", costTier: "medium", debateRating: 88, avatar: "🌙", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "moonshotai/kimi-k2.7-code", providerId: "openrouter", brand: "Kimi", family: "Kimi K2", displayName: "Kimi K2.7 Code", color: "purple", costTier: "medium", debateRating: 84, avatar: "🌙", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 
@@ -201,12 +211,13 @@ export const RECOMMENDED_MODEL_IDS: ReadonlySet<string> = new Set<string>([
   // OpenRouter brands — the standout(s) per brand
   "x-ai/grok-4.5",
   "anthropic/claude-sonnet-5",
-  "anthropic/claude-opus-4.8",
+  "anthropic/claude-opus-5",
   "anthropic/claude-haiku-4.5",
   "google/gemini-3.5-flash",
   "google/gemini-2.5-pro",
   "xiaomi/mimo-v2.5-pro",
   "z-ai/glm-5.2",
+  "moonshotai/kimi-k3",
   "moonshotai/kimi-k2.6",
   "nvidia/nemotron-3-ultra-550b-a55b",
   "qwen/qwen3.7-max",

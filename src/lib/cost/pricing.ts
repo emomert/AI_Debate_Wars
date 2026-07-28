@@ -58,6 +58,7 @@ export const modelPricing: Record<string, ModelPrice> = {
   "openrouter:x-ai/grok-4.20": { inputCostPer1M: 1.25, outputCostPer1M: 2.5 },
   // Anthropic
   "openrouter:anthropic/claude-fable-5": { inputCostPer1M: 10.0, outputCostPer1M: 50.0 },
+  "openrouter:anthropic/claude-opus-5": { inputCostPer1M: 5.0, outputCostPer1M: 25.0 },
   "openrouter:anthropic/claude-opus-4.8": { inputCostPer1M: 5.0, outputCostPer1M: 25.0 },
   "openrouter:anthropic/claude-opus-4.7": { inputCostPer1M: 5.0, outputCostPer1M: 25.0 },
   "openrouter:anthropic/claude-opus-4.6": { inputCostPer1M: 5.0, outputCostPer1M: 25.0 },
@@ -76,6 +77,7 @@ export const modelPricing: Record<string, ModelPrice> = {
   "openrouter:z-ai/glm-5.2": { inputCostPer1M: 0.42, outputCostPer1M: 1.32 },
   "openrouter:z-ai/glm-5": { inputCostPer1M: 0.6, outputCostPer1M: 1.92 },
   // Moonshot
+  "openrouter:moonshotai/kimi-k3": { inputCostPer1M: 3.0, outputCostPer1M: 15.0 },
   "openrouter:moonshotai/kimi-k2.6": { inputCostPer1M: 0.66, outputCostPer1M: 3.41 },
   "openrouter:moonshotai/kimi-k2.7-code": { inputCostPer1M: 0.72, outputCostPer1M: 3.49 },
   // NVIDIA

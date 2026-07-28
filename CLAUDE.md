@@ -47,7 +47,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 ## Current Feature Set
 
 - Topic input with AI topic check/improve (`/api/topic/check`, cheap model)
-- Two fighters from ~39 paid models across OpenAI (direct), DeepSeek (direct), and OpenRouter (Claude, Grok, Gemini, Xiaomi MiMo, GLM, Kimi, Nemotron, Qwen, MiniMax). No free tier; "fast" twin variants are deliberately not added.
+- Two fighters from ~57 paid models across OpenAI (direct, 14), DeepSeek (direct, 2), and OpenRouter (41 — Claude, Grok, Gemini, Xiaomi MiMo, GLM, Kimi, Nemotron, Qwen, MiniMax, Llama, Mistral, Nova, Hunyuan). No free tier; "fast" twin variants are deliberately not added.
 - Blitz Mode (currently hidden behind `BLITZ_ENABLED` — see Current Status): a fast 4-round / 8-turn variant on an animated arena stage — per-turn move-tag splashes (OBJECTION/COUNTER/…), buffer-then-stream generation (`useBlitzRunner`), an in-scene verdict, and a curated ~12-model roster (`blitzRoster.ts`). Reuses the debate pipeline; `punchy` length is blitz-internal. Phase 1 ships on the reusable fighter *panel* (bespoke per-model character art is Phase 2).
 - Multi-battle: run up to 3 battles on the same topic at once (different or same fighter pairs), all running concurrently — a tab switcher in the arena and results; only the watched battle speaks/sounds; manual pace gates only the watched battle (see `docs/09_UX_FLOWS.md`). Only the fighters differ per battle; all other settings are shared.
 - Strictly 3 rounds (July 2026 — the 3/5/7 selector was removed; the engine still renders legacy 5/7 shared/persisted matches)
