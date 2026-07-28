@@ -67,6 +67,21 @@ const MODEL_COINS: Record<string, CoinPrice> = {
   "amazon/nova-lite-v1": 1,
   "amazon/nova-2-lite-v1": 1,
   "tencent/hy3": 1,
+  "anthropic/claude-3-haiku": 1,
+  "z-ai/glm-4.5-air": 1,
+  "qwen/qwen3-max": 1,
+  "qwen/qwen3.6-flash": 1,
+  "mistralai/mistral-large-2512": 1,
+  "mistralai/mistral-medium-3.1": 1,
+  "mistralai/mistral-small-3.2-24b-instruct": 1,
+  "minimax/minimax-m2.1": 1,
+  "minimax/minimax-m2": 1,
+  "meta-llama/llama-3.3-70b-instruct": 1,
+  "meta-llama/llama-3.1-70b-instruct": 1,
+  "meta-llama/llama-3.1-8b-instruct": 1,
+  "moonshotai/kimi-k2": 1,
+  "google/gemini-2.5-flash-lite": 1,
+  "tencent/hunyuan-a13b-instruct": 1,
   // ── 2 coins (Standard — ≤ $0.02) ───────────────────────────────────────
   "gpt-4.1": 2,
   "gpt-4o": 2,
@@ -81,6 +96,16 @@ const MODEL_COINS: Record<string, CoinPrice> = {
   "google/gemini-2.5-flash": 2,
   "amazon/nova-pro-v1": 2,
   "anthropic/claude-haiku-4.5": 2,
+  "z-ai/glm-5.1": 2,
+  "z-ai/glm-4.7": 2,
+  "z-ai/glm-4.6": 2,
+  "z-ai/glm-4.5": 2,
+  "qwen/qwen3.6-plus": 2,
+  "qwen/qwen3.5-plus-20260420": 2,
+  "minimax/minimax-m1": 2,
+  "moonshotai/kimi-k2-thinking": 2,
+  "amazon/nova-premier-v1": 2,
+  "x-ai/grok-4.20-multi-agent": 2,
   // ── 4 coins (Premium — ≤ $0.04; the free-tier ceiling) ─────────────────
   "gpt-5.6-luna": 4,
   "x-ai/grok-4.5": 4,
@@ -90,6 +115,8 @@ const MODEL_COINS: Record<string, CoinPrice> = {
   "google/gemini-3.6-flash": 4,
   "google/gemini-2.5-pro": 4,
   "mistralai/mistral-medium-3-5": 4,
+  "anthropic/claude-sonnet-4.5": 4,
+  "anthropic/claude-sonnet-4": 4,
   // ── 8 coins (Elite — ≤ $0.08) ──────────────────────────────────────────
   "gpt-5.6-terra": 8,
   "gpt-5.4": 8,
@@ -105,6 +132,8 @@ const MODEL_COINS: Record<string, CoinPrice> = {
   "anthropic/claude-opus-4.7": 12,
   "anthropic/claude-opus-4.6": 12,
   "anthropic/claude-opus-4.5": 12,
+  "anthropic/claude-opus-4.1": 12,
+  "anthropic/claude-opus-4": 12,
   // ── 20 coins (Boss) ────────────────────────────────────────────────────
   "anthropic/claude-fable-5": 20,
 };
@@ -181,6 +210,22 @@ const PROFILE = { inTokens: 2680, outTokens: 900, thinkingTokens: 2400 };
 const OPENAI_REASONING = new Set(["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.5", "gpt-5.4"]);
 const DEEPSEEK_REASONING = new Set(["deepseek-v4-pro"]);
 
+/**
+ * OpenRouter models that think BY DEFAULT but carry no `reasoningEffort` tag.
+ * Measured 2026-07-28: each burns hundreds of thinking tokens bare, and
+ * effort:"low" does NOT reduce them (it raises them, or does nothing) — so the
+ * tag is correctly absent, yet the tokens are still billed. Without this set
+ * the estimator would price them as non-reasoners and the margin floor would be
+ * fiction. Probe before adding here, exactly as for the tag itself (docs/07).
+ */
+const OPENROUTER_DEFAULT_THINKERS = new Set([
+  "z-ai/glm-4.7", // 816 thinking bare -> 971 with effort:"low"
+  "z-ai/glm-4.5", // 867 -> 883
+  "z-ai/glm-4.5-air", // 299 -> 380
+  "minimax/minimax-m2", // 403 -> 662
+  "minimax/minimax-m1", // 120 -> 134
+]);
+
 /** Estimated per-match API cost for one fighter — the test's margin basis. */
 export function estimatedFighterCostUsd(modelId: string): number {
   const entry = getModelById(modelId);
@@ -189,7 +234,8 @@ export function estimatedFighterCostUsd(modelId: string): number {
   const reasons =
     Boolean(entry?.reasoningEffort) ||
     OPENAI_REASONING.has(modelId) ||
-    DEEPSEEK_REASONING.has(modelId);
+    DEEPSEEK_REASONING.has(modelId) ||
+    OPENROUTER_DEFAULT_THINKERS.has(modelId);
   const outTokens = PROFILE.outTokens + (reasons ? PROFILE.thinkingTokens : 0);
   return (PROFILE.inTokens * price.inputCostPer1M + outTokens * price.outputCostPer1M) / 1e6;
 }
