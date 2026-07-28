@@ -30,6 +30,21 @@
    - **Framing is done in camera**, not by cropping in the edit: the recorder
      scrolls each finished turn to center so the arena never shows half a
      screen of empty background.
+   - **1920x1080 @ 25fps, and both numbers are load-bearing.**
+     - *1080p without changing the shot:* the CSS viewport stays 1280x720 (same
+       breakpoints, same framing) while the browser runs at a real 1.5x device
+       scale, so those pixels render into 1920x1080. Context
+       `deviceScaleFactor` does NOT work — Playwright's recorder captures at
+       CSS size and only scales a page DOWN into `recordVideo.size`, leaving
+       the page in the top-left corner of a grey 1080p canvas. It has to be
+       `--force-device-scale-factor` at launch plus `viewport: null`. The
+       recorder asserts the resulting geometry and exits BEFORE starting a
+       (paid) match if it is wrong. Recording at a literal 1920x1080 viewport
+       is the wrong fix: it shrinks the UI, and in the ~900px-wide player the
+       text ends up harder to read than 720p was.
+     - *25fps is the real capture rate*, measured off the footage; Playwright
+       exposes no fps option. Encoding 30 or 60 only duplicates frames — more
+       bytes, identical motion. Keep output fps == source fps.
    - The clip is silent and narrates itself with captions. `edit-demo.mjs`
      emits `/public/demo/demo-chapters.json` (cut boundaries + the line for
      each stretch) and the overlay renders them, so a re-cut can't desync the

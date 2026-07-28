@@ -30,8 +30,16 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 const RAW = "demo-recording/raw.webm";
 const OUT = "public/demo/demo-match.mp4";
 const CHAPTERS = "public/demo/demo-chapters.json";
-const W = 1280;
-const H = 720;
+const W = 1920;
+const H = 1080;
+// Playwright captures at a FIXED 25fps (measured: avg_frame_rate 25/1). Encode
+// at exactly that so no frame is ever duplicated — the old 30fps output was
+// padding 25 real frames into 30 slots, and a 60fps output would pad them into
+// 60 for no extra motion information and ~2x the bytes.
+const FPS = 25;
+// 1080p is 2.25x the pixels of the old 720p cut, so hold the file near ~7MB
+// (it downloads when the viewer clicks "See a Demo", not on page load).
+const CRF = 26;
 
 const events = JSON.parse(readFileSync("demo-recording/events.json", "utf8"));
 const ms = (name) => {
@@ -102,7 +110,7 @@ plan.forEach((seg, i) => {
   // rate before concat. The filter demands identical parameters on all inputs;
   // mixing cropped and uncropped ones (differing SAR) fails the whole graph
   // with "Error reinitializing filters", and Playwright's webm is variable-fps.
-  steps.push(`scale=${W}:${H}`, "setsar=1", "format=yuv420p", "fps=30");
+  steps.push(`scale=${W}:${H}`, "setsar=1", "format=yuv420p", `fps=${FPS}`);
   chains.push(`[0:v]${steps.join(",")}[v${i}]`);
   labels.push(`[v${i}]`);
 
@@ -130,7 +138,7 @@ execFileSync(
     "-map", "[out]",
     "-an",
     "-c:v", "libx264",
-    "-crf", "22",
+    "-crf", String(CRF),
     "-preset", "medium",
     "-pix_fmt", "yuv420p",
     "-movflags", "+faststart",

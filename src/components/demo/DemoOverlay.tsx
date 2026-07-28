@@ -36,7 +36,7 @@ const CHAPTERS_SRC = "/demo/demo-chapters.json";
  * shown, since the footage already shows both). Empty string = no button, so a
  * re-shoot can never leave a dead link behind: re-publish, then update this.
  */
-const DEMO_MATCH_ID = "P0LNlRB9eLbm";
+const DEMO_MATCH_ID = "qMTdQ9i0-q3q";
 
 interface Chapter {
   start: number;

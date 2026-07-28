@@ -34,6 +34,34 @@ import { createClient } from "@supabase/supabase-js";
 const BASE = process.env.DEMO_BASE_URL ?? "http://localhost:3000";
 const OUT_DIR = "demo-recording";
 const TOPIC = "Jamie Lannister is a good person.";
+/**
+ * TRUE 1080p, same shot. The CSS viewport stays 720p-shaped so the LAYOUT
+ * (breakpoints, framing, every scroll position below) is identical to earlier
+ * shoots — only the pixel density changes. Recording at a literal 1920x1080
+ * viewport would instead shrink the UI and reveal more page: a different, and
+ * for a small embedded player a less legible, shot.
+ *
+ * Getting there is fussier than it looks. `deviceScaleFactor` on the CONTEXT
+ * does not work: Playwright's video recorder captures at CSS-pixel size and
+ * only ever scales a page DOWN to fit `recordVideo.size`, so a 1280x720
+ * viewport lands in the top-left corner of a 1920x1080 canvas with dead grey
+ * around it. The device scale has to be real at the BROWSER level
+ * (--force-device-scale-factor) with `viewport: null`, so Playwright does not
+ * override device metrics with its own emulation.
+ *
+ * WINDOW_SIZE is in CSS px and includes browser chrome (~16w / ~95h), so 1296
+ * x815 yields a 1280x721 CSS viewport = 1920x1081.5 real pixels. That slightly
+ * EXCEEDS the frame on purpose — Playwright scales it down to fit, which is
+ * better than the grey band an undersized viewport leaves. No window height
+ * gives exactly 720 (rounding jumps 719 -> 721).
+ *
+ * Playwright's recorder is pinned at 25fps and exposes no fps option, so a
+ * 60fps output could only duplicate frames — see docs/09.
+ */
+const WINDOW_SIZE = { width: 1296, height: 815 };
+const DEVICE_SCALE = 1.5;
+const VIDEO_SIZE = { width: 1920, height: 1080 };
+/** CSS viewport the choreography below assumes (used only for a sanity check). */
 const VIEWPORT = { width: 1280, height: 720 };
 
 /* ------------------------------- env helpers ------------------------------ */
@@ -103,10 +131,17 @@ const signInUrl =
 
 /* ------------------------------- browser work ----------------------------- */
 
-const browser = await chromium.launch({ channel: "chrome", headless: true });
+const browser = await chromium.launch({
+  channel: "chrome",
+  headless: true,
+  args: [
+    `--force-device-scale-factor=${DEVICE_SCALE}`,
+    `--window-size=${WINDOW_SIZE.width},${WINDOW_SIZE.height}`,
+  ],
+});
 
 // Phase 0 — burn the sign-in link OFF camera, keep the session.
-const authCtx = await browser.newContext({ viewport: VIEWPORT });
+const authCtx = await browser.newContext({ viewport: null });
 const authPage = await authCtx.newPage();
 await authPage.goto(signInUrl, { waitUntil: "networkidle" });
 if (/\/login/.test(authPage.url())) {
@@ -120,11 +155,37 @@ console.log(`Signed in as ${demoEmail} (off camera).`);
 
 // Phase 1 — the recorded session, already authenticated.
 const ctx = await browser.newContext({
-  viewport: VIEWPORT,
-  recordVideo: { dir: OUT_DIR, size: VIEWPORT },
+  viewport: null, // real window metrics — see the WINDOW_SIZE note above
+  recordVideo: { dir: OUT_DIR, size: VIDEO_SIZE },
   storageState,
 });
 const page = await ctx.newPage();
+
+// Verify the capture geometry BEFORE spending coins: a wrong window size
+// silently yields a letterboxed or mis-framed video, and by then a real match
+// has already been paid for.
+const metrics = await page.evaluate(() => ({
+  w: window.innerWidth,
+  h: window.innerHeight,
+  dpr: window.devicePixelRatio,
+}));
+if (
+  metrics.dpr !== DEVICE_SCALE ||
+  Math.abs(metrics.w - VIEWPORT.width) > 2 ||
+  Math.abs(metrics.h - VIEWPORT.height) > 4
+) {
+  console.error(
+    `Capture geometry is off: CSS ${metrics.w}x${metrics.h} @${metrics.dpr}x ` +
+      `(want ~${VIEWPORT.width}x${VIEWPORT.height} @${DEVICE_SCALE}x). Adjust WINDOW_SIZE.`,
+  );
+  await ctx.close();
+  await browser.close();
+  process.exit(1);
+}
+console.log(
+  `Capture: CSS ${metrics.w}x${metrics.h} @${metrics.dpr}x → ` +
+    `${metrics.w * metrics.dpr}x${metrics.h * metrics.dpr} real pixels.`,
+);
 
 const t0 = Date.now();
 const events = [];
