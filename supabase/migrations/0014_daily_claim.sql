@@ -199,3 +199,11 @@ $$;
 grant execute on function public.coin_status() to authenticated;
 grant execute on function public.coin_spend_match(text, int, int, int) to authenticated;
 grant execute on function public.coin_claim_daily() to authenticated;
+
+-- Postgres grants EXECUTE to PUBLIC by default on every new function, so
+-- coin_claim_daily picked up anon/PUBLIC without anyone asking for it. Nothing
+-- signed-out can actually do here (the auth.uid() check returns AUTH before any
+-- work, before even the rate-limit hit), but an unasked-for grant is still
+-- surface area — drop it, matching the posture migration 0013 set for the
+-- rate-limit RPCs. Verified post-apply: authenticated keeps EXECUTE, anon does not.
+revoke execute on function public.coin_claim_daily() from public, anon;
