@@ -43,6 +43,12 @@ export const coins = {
     freeBody: (daily: number, maxBand: number) =>
       `Signed-in players can claim ${daily} coins a day, free — press the claim button each day to collect them (skip a day and that day's coins are simply gone, no rollover). Claimed coins work on every fighter priced up to ${maxBand} coins — that covers most of the roster.`,
     packsTitle: "Coin packs",
+    // "What that buys" — tiers only, NO model names (owner 7/28: naming
+    // specific fighters dates the copy every time the catalog moves).
+    examplesIntro: "What that buys:",
+    exampleQuick: (n: number) => `≈ ${n} regular matches (2 coins)`,
+    examplePremium: (n: number) => `≈ ${n} premium bouts (6 coins)`,
+    exampleFlagship: (n: number) => `≈ ${n} frontier fights (13 coins)`,
     comingSoon: "Payments launching soon",
     buy: "Buy now",
     // ?checkout= status banners (set by /api/checkout redirects)

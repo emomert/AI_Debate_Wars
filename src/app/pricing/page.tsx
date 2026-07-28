@@ -27,6 +27,13 @@ import { SignupGateModal } from "@/components/coins/SignupGateModal";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
+// Match prices the pack cards translate into "what that buys". Coin amounts
+// only — the copy deliberately names no models (owner 7/28), so these stay
+// correct as the catalog moves.
+const QUICK_MATCH_COINS = 2; // two 1-coin fighters
+const PREMIUM_BOUT_COINS = 6; // e.g. a 4-coin fighter vs a 2-coin fighter
+const FLAGSHIP_FIGHT_COINS = 13; // a 12-coin flagship + a 1-coin sparring partner
+
 export default function PricingPage() {
   const d = useT();
   const supabase = getSupabaseBrowserClient();
@@ -117,6 +124,14 @@ export default function PricingPage() {
               <p className="text-xs text-ink/50">
                 {d.coins.pricing.perCoin(((p.usd / p.coins) * 100).toFixed(1))}
               </p>
+              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/50">
+                {d.coins.pricing.examplesIntro}
+              </p>
+              <ul className="mt-1 space-y-1 text-sm text-ink/70">
+                <li>{d.coins.pricing.exampleQuick(Math.floor(p.coins / QUICK_MATCH_COINS))}</li>
+                <li>{d.coins.pricing.examplePremium(Math.floor(p.coins / PREMIUM_BOUT_COINS))}</li>
+                <li>{d.coins.pricing.exampleFlagship(Math.floor(p.coins / FLAGSHIP_FIGHT_COINS))}</li>
+              </ul>
               <div className="mt-auto pt-4">
                 {PAYMENTS_ENABLED ? (
                   <ArcadeButton

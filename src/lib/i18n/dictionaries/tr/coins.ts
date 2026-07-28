@@ -39,6 +39,11 @@ export const coins = {
     freeBody: (daily: number, maxBand: number) =>
       `Giriş yapan oyuncular her gün ${daily} ücretsiz jeton talep edebilir — jetonları toplamak için her gün talep düğmesine basın (bir günü atlarsanız o günün jetonları devretmeden kaybolur). Talep edilen jetonlar ${maxBand} jetona kadar fiyatlanan her yarışmacıda geçer — kadronun çoğunu kapsar.`,
     packsTitle: "Jeton paketleri",
+    // "Ne alır" — sadece kademeler, model adı YOK (sahip 7/28).
+    examplesIntro: "Bu ne alır:",
+    exampleQuick: (n: number) => `≈ ${n} normal maç (2 jeton)`,
+    examplePremium: (n: number) => `≈ ${n} premium karşılaşma (6 jeton)`,
+    exampleFlagship: (n: number) => `≈ ${n} zirve dövüşü (13 jeton)`,
     comingSoon: "Ödemeler çok yakında",
     buy: "Hemen satın al",
     checkoutSuccess:
