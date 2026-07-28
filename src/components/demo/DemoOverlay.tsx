@@ -104,34 +104,38 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
       role="dialog"
       aria-modal="true"
       aria-label={d.home.demo.aria}
-      className="fixed inset-0 z-50 flex flex-col bg-night/95 p-3 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-night/95 p-3 sm:p-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Top bar: label + close */}
-      <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-2">
-        <span className="rounded-badge border-3 border-ink bg-arcade-yellow px-2 py-1 font-heading text-[11px] font-extrabold uppercase tracking-wide text-night">
-          {d.home.demo.watching}
-        </span>
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={onClose}
-          aria-label={d.home.demo.close}
-          className="rounded-btn border-3 border-ink bg-paper px-2.5 py-1 font-heading text-sm font-extrabold shadow-hard-sm transition hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2"
-        >
-          ✕
-        </button>
-      </div>
+      {/* The player is ONE centered group: label/close and the progress rail are
+          bound to the video frame's edges, not to the viewport. The max-width
+          also clamps against viewport height (16:9 + ~9rem of rails/padding) so
+          a short window shrinks the frame instead of pushing rails off screen. */}
+      <div className="flex w-full max-w-[min(56rem,calc((100dvh_-_9rem)*16/9))] flex-col">
+        {/* Top rail — sits just outside the frame's top edge. */}
+        <div className="flex items-center justify-between gap-2 pb-2">
+          <span className="rounded-badge border-3 border-ink bg-arcade-yellow px-2 py-1 font-heading text-[11px] font-extrabold uppercase tracking-wide text-night">
+            {d.home.demo.watching}
+          </span>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label={d.home.demo.close}
+            className="rounded-btn border-3 border-ink bg-paper px-2.5 py-1 font-heading text-sm font-extrabold shadow-hard-sm transition hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2"
+          >
+            ✕
+          </button>
+        </div>
 
-      {/* Stage — the real footage (16:9), vertically centered. */}
-      <div className="mx-auto mt-3 grid min-h-0 w-full max-w-4xl flex-1 place-items-center">
+        {/* Stage — the real footage (16:9). */}
         <div className="relative w-full overflow-hidden rounded-modal border-4 border-ink bg-night shadow-hard-lg">
           <video
             ref={videoRef}
             src={DEMO_SRC}
-            className="aspect-video w-full"
+            className="block aspect-video w-full"
             autoPlay
             muted
             playsInline
@@ -177,25 +181,25 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
             </div>
           ) : null}
         </div>
-      </div>
 
-      {/* Bottom bar: progress + skip */}
-      <div className="mx-auto mt-3 flex w-full max-w-4xl items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full border-2 border-ink bg-paper/20">
-          <div
-            className="h-full bg-arcade-yellow"
-            style={{ width: `${Math.min(100, (ended ? 1 : progress) * 100)}%` }}
-          />
+        {/* Bottom rail — sits directly under the frame's bottom edge. */}
+        <div className="flex items-center gap-3 pt-2">
+          <div className="h-2 flex-1 overflow-hidden rounded-full border-2 border-ink bg-paper/20">
+            <div
+              className="h-full bg-arcade-yellow"
+              style={{ width: `${Math.min(100, (ended ? 1 : progress) * 100)}%` }}
+            />
+          </div>
+          {!ended ? (
+            <button
+              type="button"
+              onClick={skip}
+              className="rounded-btn border-3 border-ink bg-paper px-3 py-1 font-heading text-xs font-extrabold uppercase tracking-wide shadow-hard-sm transition hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2"
+            >
+              {d.home.demo.skip}
+            </button>
+          ) : null}
         </div>
-        {!ended ? (
-          <button
-            type="button"
-            onClick={skip}
-            className="rounded-btn border-3 border-ink bg-paper px-3 py-1 font-heading text-xs font-extrabold uppercase tracking-wide shadow-hard-sm transition hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2"
-          >
-            {d.home.demo.skip}
-          </button>
-        ) : null}
       </div>
     </div>
   );
