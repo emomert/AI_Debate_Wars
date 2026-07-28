@@ -44,6 +44,26 @@ When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
 
 - Signed-in users get **15 coins/day** (`FREE_DAILY_COINS`), computed as
   allowance − today's daily-bucket spend → **no rollover by construction**.
+- **Claim-gated since 2026-07-28 (migration 0014).** The allowance used to be
+  implicit — `coin_status()` reported `daily_spent`, and everyone derived
+  `available = 15 − daily_spent`, so a user who never opened the app still had
+  15 coins silently waiting. Now a `ClaimDailyButton` ("🎁 Claim 15 free
+  coins" — mounted in the header next to the coin balance chip, and inside the
+  free-tier card on `/pricing`) calls the `coin_claim_daily()` RPC, which
+  inserts a row into `coin_daily_claims (user_id, claim_date)` for today
+  (UTC). `coin_status()` now also returns `claimed_today`, and both the client
+  (`dailyRemaining` in `src/lib/coins/client.ts`) and `coin_spend_match` gate
+  the allowance on that flag: **unclaimed → 0 daily coins available**, no
+  matter how much of the 15 is unspent. Skip a day and that day's coins are
+  simply never available — there is no catch-up.
+  - **The allowance stays COMPUTED, never CREDITED.** Claiming does not touch
+    `coin_ledger` — it only records that today was claimed, and the existing
+    `15 − daily_spent` computation is gated on that row's existence. A
+    replayed, forged, or spammed claim call therefore cannot mint anything;
+    the worst case is a no-op `insert … on conflict do nothing`.
+    `primary key (user_id, claim_date)` makes double-claiming structurally
+    impossible, and `coin_claim_daily()` is additionally guarded by the same
+    `rl_hit` brute-force limiter `coin_redeem_promo` uses.
 - Daily coins cover fighters **up to 4 coins** (`FREE_MAX_FIGHTER_COINS`);
   premium fighters (8/12/20 — purple ★ chip) need purchased/promo coins.
 - Packs (owner-set): **100/$4.99 · 250/$9.99 · 700/$19.99** — `/pricing` buy
@@ -52,7 +72,7 @@ When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
   buttons render.
 - Signed-out: everything browsable; START routes to `/login?next=/setup`.
 
-## Data & enforcement (migrations 0012 + 0013)
+## Data & enforcement (migrations 0012 + 0013 + 0014)
 
 - `coin_ledger` — append-only; buckets `purchased` / `promo` / `daily`;
   own-rows SELECT RLS; writes only via SECURITY DEFINER RPCs keyed on
@@ -78,6 +98,11 @@ When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
   (row-locked), one-per-account PK, **10 attempts/hour/user inside the DB**
   (reuses `rl_hit`), atomic credit.
 - New error code `OUT_OF_COINS` (402) with en/tr arena copy.
+- `coin_daily_claims (user_id, claim_date)` — own-rows SELECT RLS, no write
+  policy (definer-only). `coin_claim_daily()` inserts `on conflict do nothing`
+  and returns `CLAIMED` on the first claim of the day, `ALREADY` on a repeat,
+  `AUTH` signed-out, `RATE_LIMITED` past 60 attempts/hour/user. It NEVER
+  writes to `coin_ledger` — see "Free tier & packs" above.
 
 ## Promo codes (marketing)
 
@@ -105,8 +130,14 @@ bucket = spendable on any fighter, never expire.
 - Match Card: a dedicated "Total cost — 🪙 N coins" row (across battles, judge
   included) at the bottom of the card; replaced the easy-to-miss badge chip
   (owner 7/16).
-- `/pricing`: free-tier explainer, packs + match-count examples, rules,
-  promo redemption. Footer link (flag-gated).
+- `/pricing`: free-tier explainer + `ClaimDailyButton` (`variant="panel"`),
+  packs, rules, promo redemption. Footer link (flag-gated).
+- `ClaimDailyButton` (`src/components/coins/ClaimDailyButton.tsx`): renders
+  nothing signed-out, coins-off, or once today is already claimed. `chip`
+  variant sits in the header next to `CoinBalance`; `panel` variant is the
+  full-width button in the `/pricing` free-tier card. Re-checks claim state on
+  focus and `ada:coins-changed` (mirrors `CoinBalance`), so a tab left open
+  past midnight UTC shows the button again.
 - `PricingPopup`: once-per-device tier intro for signed-in users on setup.
 
 ## Operator tools

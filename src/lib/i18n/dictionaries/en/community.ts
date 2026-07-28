@@ -110,7 +110,6 @@ export const community = {
       hint: "Off: unlisted — only people with the link can open it.",
     },
     noVerdictHint: "This match has no AI verdict, so the crowd judges it.",
-    privacyNote: "Whatever you hide is stripped before upload — it never leaves your match.",
     publish: "Publish match",
     publishing: "Publishing…",
     update: "Update shared match",

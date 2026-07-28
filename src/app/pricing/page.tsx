@@ -22,14 +22,10 @@ import { COIN_PACKS } from "@/lib/coins/economy";
 import { FREE_DAILY_COINS, FREE_MAX_FIGHTER_COINS, PAYMENTS_ENABLED } from "@/lib/coins/config";
 import { COINS_CHANGED_EVENT } from "@/lib/coins/client";
 import { PromoRedeem } from "@/components/coins/PromoRedeem";
+import { ClaimDailyButton } from "@/components/coins/ClaimDailyButton";
 import { SignupGateModal } from "@/components/coins/SignupGateModal";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n/LocaleProvider";
-
-// Example match prices the pack cards translate into "what that buys".
-const QUICK_MATCH_COINS = 2; // two 1-coin fighters
-const PREMIUM_BOUT_COINS = 6; // e.g. Sonnet 5 (4) + Kimi (2)
-const FLAGSHIP_FIGHT_COINS = 13; // e.g. GPT-5.5 (12) + a 1-coin sparring partner
 
 export default function PricingPage() {
   const d = useT();
@@ -72,7 +68,6 @@ export default function PricingPage() {
         <h1 className="font-display text-4xl tracking-tight sm:text-5xl">
           {d.coins.pricing.title}
         </h1>
-        <p className="mt-1 max-w-2xl text-ink/65">{d.coins.pricing.subtitle}</p>
 
         {checkoutStatus ? (
           <div
@@ -95,6 +90,7 @@ export default function PricingPage() {
           <p className="mt-1 text-sm text-ink/70">
             {d.coins.pricing.freeBody(FREE_DAILY_COINS, FREE_MAX_FIGHTER_COINS)}
           </p>
+          <ClaimDailyButton variant="panel" />
         </GamePanel>
 
         {/* Packs */}
@@ -121,14 +117,6 @@ export default function PricingPage() {
               <p className="text-xs text-ink/50">
                 {d.coins.pricing.perCoin(((p.usd / p.coins) * 100).toFixed(1))}
               </p>
-              <p className="mt-3 text-xs font-bold uppercase tracking-wide text-ink/50">
-                {d.coins.pricing.examplesIntro}
-              </p>
-              <ul className="mt-1 space-y-1 text-sm text-ink/70">
-                <li>{d.coins.pricing.exampleQuick(Math.floor(p.coins / QUICK_MATCH_COINS))}</li>
-                <li>{d.coins.pricing.examplePremium(Math.floor(p.coins / PREMIUM_BOUT_COINS))}</li>
-                <li>{d.coins.pricing.exampleFlagship(Math.floor(p.coins / FLAGSHIP_FIGHT_COINS))}</li>
-              </ul>
               <div className="mt-auto pt-4">
                 {PAYMENTS_ENABLED ? (
                   <ArcadeButton

@@ -50,6 +50,8 @@ export const result = {
     takesIt: (name: string) => `${name} kazandı`,
     draw: "Berabere",
     discussionComplete: "Tartışma tamamlandı",
+    winnerBadge: (name: string) => `🥇 ${name} KAZANDI`,
+    drawBadge: "🤝 BERABERE",
     winningArgument: "💥 Kazanan argüman: ",
     whyThis: "⚖️ Neden bu karar",
     sideFor: "Savunan",
@@ -57,12 +59,13 @@ export const result = {
     sideA: "A",
     sideB: "B",
     changeJudge: "🔁 Hakemi değiştir",
+    judgeTabsLabel: "Kararlar arasında geçiş yap",
+    latestTag: "En son",
   },
 
   // RejudgeSection (VerdictCard içinde) + bağımsız hakem-ekle paneli
   rejudge: {
     addJudgeTitle: "⚖️ Sonradan hakem ekleyin",
-    secondOpinionBody: "Aynı dökümü farklı bir hakeme verip yepyeni bir karar alın.",
     addJudgeBody: "Maç hakemsiz oynandı — tamamlanmış münazarayı puanlamak için şimdi bir hakem seçin.",
     close: "▴ Kapat",
     pickJudge: "⚖️ Hakem seçin",
@@ -70,7 +73,6 @@ export const result = {
     fighterWarning: "⚠️ Bu hakem maçta yarıştığı için karar daha az tarafsız olabilir.",
     deliberating: "⚖️ Hakem değerlendiriyor…",
     runVerdict: "🏆 Yeni kararı çalıştırın",
-    billingNote: "Yeni bir hakem turu çalıştırır — hakemin jeton fiyatına mal olur (en az 1 jeton). Önceki karar kayıtta kalır.",
   },
 
   // VerdictCard içindeki paylaşım satırı
@@ -110,7 +112,6 @@ export const result = {
 
   // MatchSaver
   saver: {
-    saved: "✓ Profilinize kaydedildi",
     signIn: "Giriş yapın",
     signInNudge: "bu maçı geçmişinize kaydetmek için.",
     saving: "Kaydediliyor…",

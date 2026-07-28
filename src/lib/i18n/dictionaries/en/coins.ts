@@ -22,12 +22,26 @@ export const coins = {
     later: "Not now",
   },
 
+  /** ClaimDailyButton (docs/23_COINS.md; migration 0014) — the daily allowance
+   *  is claim-gated: it stays computed, never credited, but you must press
+   *  claim each day or that day's coins are simply never available. */
+  claim: {
+    cta: (n: number) => `🎁 Claim ${n} free coins`,
+    chipCta: (n: number) => `🎁 Claim ${n}`,
+    busy: "Claiming…",
+    claimed: "✅ Claimed! Come back tomorrow for more free coins.",
+    claimedShort: "✅ Claimed",
+    error: "Couldn't claim right now — try again in a moment.",
+    errorShort: "Retry claim",
+    rateLimited: "Too many attempts — try again in an hour.",
+    rateLimitedShort: "Try later",
+  },
+
   pricing: {
     title: "Coins & Pricing",
-    subtitle: "Every fighter has a coin price. A match costs the two fighters added together — the Auto judge is included.",
     freeTitle: "🎁 Free, every single day",
     freeBody: (daily: number, maxBand: number) =>
-      `Signed-in players get ${daily} coins a day, free. They work on every fighter priced up to ${maxBand} coins — that covers most of the roster. Unused daily coins don't roll over; they refresh at midnight UTC.`,
+      `Signed-in players can claim ${daily} coins a day, free — press the claim button each day to collect them (skip a day and that day's coins are simply gone, no rollover). Claimed coins work on every fighter priced up to ${maxBand} coins — that covers most of the roster.`,
     packsTitle: "Coin packs",
     comingSoon: "Payments launching soon",
     buy: "Buy now",
@@ -40,10 +54,6 @@ export const coins = {
     bestValue: "Best value",
     perCoin: (cents: string) => `${cents}¢ / coin`,
     packHeading: (coins: number) => `${coins} coins`,
-    examplesIntro: "What that buys:",
-    exampleQuick: (n: number) => `≈ ${n} quick matches (two 1-coin fighters)`,
-    examplePremium: (n: number) => `≈ ${n} premium bouts (e.g. Sonnet 5 vs Kimi)`,
-    exampleFlagship: (n: number) => `≈ ${n} flagship fights (e.g. GPT-5.5 on stage)`,
     rulesTitle: "How coins work",
     rules: [
       "A match costs fighter A + fighter B coins — the price is on every fighter card.",

@@ -16,7 +16,6 @@ import { MULTILOCALE_ENABLED } from "@/lib/i18n/config";
 import { DottedBackground } from "@/components/game/DottedBackground";
 import { AudioToggle } from "@/components/game/AudioToggle";
 import { MotionToggle } from "@/components/game/MotionToggle";
-import { HelpButton } from "@/components/game/HelpButton";
 import { LanguageToggle } from "@/components/game/LanguageToggle";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { COINS_ENABLED } from "@/lib/coins/config";
@@ -30,6 +29,11 @@ const AuthButton = dynamic(
 // Same treatment for the coin balance chip (it also pulls the Supabase SDK).
 const CoinBalance = dynamic(
   () => import("@/components/coins/CoinBalance").then((m) => m.CoinBalance),
+  { ssr: false },
+);
+// ...and the daily-claim chip (docs/23_COINS.md; migration 0014).
+const ClaimDailyButton = dynamic(
+  () => import("@/components/coins/ClaimDailyButton").then((m) => m.ClaimDailyButton),
   { ssr: false },
 );
 const authEnabled = isSupabaseConfigured();
@@ -129,12 +133,12 @@ export function GameShell({
                 <span aria-hidden className="mx-0.5 hidden h-6 w-px bg-ink/15 sm:block" />
               </>
             ) : null}
+            {COINS_ENABLED ? <ClaimDailyButton variant="chip" /> : null}
             {COINS_ENABLED ? <CoinBalance /> : null}
             {authEnabled ? <AuthButton /> : null}
             {MULTILOCALE_ENABLED ? <LanguageToggle /> : null}
             <MotionToggle />
             <AudioToggle />
-            <HelpButton />
           </div>
         </div>
         {hud ? (

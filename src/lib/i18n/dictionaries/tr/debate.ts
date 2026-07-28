@@ -86,7 +86,7 @@ export const debate = {
     },
     OUT_OF_COINS: {
       title: "Bu maç için yeterli jeton yok",
-      body: "Bakiyeniz bu yarışmacıları karşılayamıyor. Bir jeton paketi alın, promosyon kodu kullanın ya da daha uygun yarışmacılar seçin — günlük ücretsiz jetonlar yarın yenilenir.",
+      body: "Bakiyeniz bu yarışmacıları karşılayamıyor. Bugünün ücretsiz jetonlarını henüz almadıysanız üst bardan veya fiyatlandırma sayfasından alın — aldıysanız bir jeton paketi alın, promosyon kodu kullanın ya da daha uygun yarışmacılar seçin.",
     },
     INSUFFICIENT_CREDITS: {
       title: "Bu yarışmacının jetonu bitti",

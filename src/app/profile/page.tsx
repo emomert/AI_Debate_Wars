@@ -116,12 +116,17 @@ export default async function ProfilePage() {
   const recent = matches.slice(0, 40);
   // Coin status for the stat tiles (null when coins are off or the RPC fails).
   const coinRow = (Array.isArray(coinRes.data) ? coinRes.data[0] : coinRes.data) as
-    | { purchased_balance: number; daily_spent: number }
+    | { purchased_balance: number; daily_spent: number; claimed_today: boolean }
     | null;
   // Spendable total = non-expiring (purchased + promo) + today's remaining free
   // coins. MUST match the header chip (CoinBalance.tsx), which shows the same
-  // sum — the "Daily coins" tile below then breaks out the free portion.
-  const dailyRemaining = coinRow ? Math.max(0, FREE_DAILY_COINS - coinRow.daily_spent) : 0;
+  // sum — the "Daily coins" tile below then breaks out the free portion. The
+  // daily allowance is claim-gated (migration 0014): 0 until claimed_today.
+  const dailyRemaining = coinRow
+    ? coinRow.claimed_today
+      ? Math.max(0, FREE_DAILY_COINS - coinRow.daily_spent)
+      : 0
+    : 0;
 
   return (
     <GameShell>

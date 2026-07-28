@@ -90,7 +90,7 @@ export const debate = {
     },
     OUT_OF_COINS: {
       title: "Not enough coins for this match",
-      body: "Your balance can't cover these fighters. Grab a coin pack, redeem a promo code, or pick cheaper fighters — daily free coins come back tomorrow.",
+      body: "Your balance can't cover these fighters. If you haven't claimed today's free coins yet, claim them from the header or the pricing page — otherwise grab a coin pack, redeem a promo code, or pick cheaper fighters.",
     },
     INVALID_MODEL: {
       title: "That fighter isn't in the roster",

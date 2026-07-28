@@ -17,12 +17,27 @@ export const coins = {
     later: "Şimdi değil",
   },
 
+  /** ClaimDailyButton (docs/23_COINS.md; migration 0014) — günlük ödenek artık
+   *  talep edilmesi gerekiyor: her zaman hesaplanır, asla otomatik yüklenmez —
+   *  her gün talep düğmesine basmanız gerekir, aksi halde o günün jetonları
+   *  hiç kullanılamaz. */
+  claim: {
+    cta: (n: number) => `🎁 ${n} ücretsiz jeton talep et`,
+    chipCta: (n: number) => `🎁 ${n} talep et`,
+    busy: "Talep ediliyor…",
+    claimed: "✅ Talep edildi! Daha fazlası için yarın tekrar gelin.",
+    claimedShort: "✅ Talep edildi",
+    error: "Şu anda talep edilemedi — birazdan tekrar deneyin.",
+    errorShort: "Tekrar dene",
+    rateLimited: "Çok fazla deneme — bir saat sonra tekrar deneyin.",
+    rateLimitedShort: "Sonra deneyin",
+  },
+
   pricing: {
     title: "Jetonlar ve Fiyatlandırma",
-    subtitle: "Her yarışmacının bir jeton fiyatı var. Bir maç, iki yarışmacının toplamına mal olur — Otomatik hakem dahildir.",
     freeTitle: "🎁 Her gün ücretsiz",
     freeBody: (daily: number, maxBand: number) =>
-      `Giriş yapan oyuncular her gün ${daily} ücretsiz jeton alır. Bu jetonlar ${maxBand} jetona kadar fiyatlanan her yarışmacıda geçer — kadronun çoğunu kapsar. Kullanılmayan günlük jetonlar devretmez; UTC gece yarısında yenilenir.`,
+      `Giriş yapan oyuncular her gün ${daily} ücretsiz jeton talep edebilir — jetonları toplamak için her gün talep düğmesine basın (bir günü atlarsanız o günün jetonları devretmeden kaybolur). Talep edilen jetonlar ${maxBand} jetona kadar fiyatlanan her yarışmacıda geçer — kadronun çoğunu kapsar.`,
     packsTitle: "Jeton paketleri",
     comingSoon: "Ödemeler çok yakında",
     buy: "Hemen satın al",
@@ -34,10 +49,6 @@ export const coins = {
     bestValue: "En avantajlı",
     perCoin: (cents: string) => `${cents}¢ / jeton`,
     packHeading: (coins: number) => `${coins} jeton`,
-    examplesIntro: "Bununla neler yapılır:",
-    exampleQuick: (n: number) => `≈ ${n} hızlı maç (iki 1 jetonluk yarışmacı)`,
-    examplePremium: (n: number) => `≈ ${n} premium karşılaşma (örn. Sonnet 5 vs Kimi)`,
-    exampleFlagship: (n: number) => `≈ ${n} amiral gemisi dövüşü (örn. sahnede GPT-5.5)`,
     rulesTitle: "Jetonlar nasıl çalışır?",
     rules: [
       "Bir maç, Yarışmacı A + Yarışmacı B jetonlarına mal olur — fiyat her yarışmacı kartında yazar.",

@@ -186,8 +186,6 @@ export function PublishPanel({ session }: { session: DebateSession }) {
             />
           </div>
 
-          <p className="mt-2 text-[11px] text-ink/45">{t.privacyNote}</p>
-
           {state === "published" && postId ? (
             <div className="mt-4 rounded-card border-3 border-ink bg-arcade-green/20 p-3">
               <p className="font-heading text-sm font-extrabold">

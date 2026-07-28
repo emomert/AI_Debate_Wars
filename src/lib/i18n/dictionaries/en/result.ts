@@ -50,6 +50,8 @@ export const result = {
     takesIt: (name: string) => `${name} takes it`,
     draw: "It's a draw",
     discussionComplete: "Discussion complete",
+    winnerBadge: (name: string) => `🥇 ${name} WINS`,
+    drawBadge: "🤝 DRAW",
     winningArgument: "💥 Winning argument: ",
     whyThis: "⚖️ Why this verdict",
     sideFor: "Pro",
@@ -57,12 +59,13 @@ export const result = {
     sideA: "A",
     sideB: "B",
     changeJudge: "🔁 Change the judge",
+    judgeTabsLabel: "Switch between verdicts",
+    latestTag: "Latest",
   },
 
   // RejudgeSection (inside VerdictCard) + the standalone add-a-judge panel
   rejudge: {
     addJudgeTitle: "⚖️ Add a judge after the fact",
-    secondOpinionBody: "Hand the same transcript to a different judge for a fresh verdict.",
     addJudgeBody: "The match ran without a judge — pick one now to score the finished debate.",
     close: "▴ Close",
     pickJudge: "⚖️ Pick a judge",
@@ -70,7 +73,6 @@ export const result = {
     fighterWarning: "⚠️ This judge fought in the match, so the verdict may be less neutral.",
     deliberating: "⚖️ The judge is deliberating…",
     runVerdict: "🏆 Run the new verdict",
-    billingNote: "Runs one fresh judge turn — it costs the judge's coin price (minimum 1 coin). The previous verdict stays on record.",
   },
 
   // Share row inside the VerdictCard
@@ -110,7 +112,6 @@ export const result = {
 
   // MatchSaver
   saver: {
-    saved: "✓ Saved to your profile",
     signIn: "Sign in",
     signInNudge: "to save this match to your history.",
     saving: "Saving…",

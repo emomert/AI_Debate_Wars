@@ -98,11 +98,7 @@ export function MatchSaver({ session }: { session: DebateSession }) {
   if (!supabase || session.status !== "complete") return null;
 
   if (state === "saved") {
-    return (
-      <p className="text-center text-xs font-semibold text-arcade-green">
-        {d.result.saver.saved}
-      </p>
-    );
+    return null;
   }
 
   if (!userId) {

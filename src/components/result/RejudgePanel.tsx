@@ -143,18 +143,13 @@ export function RejudgeSection({
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <ArcadeButton
-          variant="primary-yellow"
-          disabled={judgeId === "" || busy}
-          onClick={() => void rejudge(getModelById(judgeId) ?? null)}
-        >
-          {busy ? d.result.rejudge.deliberating : d.result.rejudge.runVerdict}
-        </ArcadeButton>
-        <p className="text-xs text-ink/55">
-          {d.result.rejudge.billingNote}
-        </p>
-      </div>
+      <ArcadeButton
+        variant="primary-yellow"
+        disabled={judgeId === "" || busy}
+        onClick={() => void rejudge(getModelById(judgeId) ?? null)}
+      >
+        {busy ? d.result.rejudge.deliberating : d.result.rejudge.runVerdict}
+      </ArcadeButton>
     </div>
   );
 }

@@ -9,7 +9,8 @@
  * "Share match" — the full transcript + verdict as text, no save required).
  */
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
 import type { DebateSession, DebateVerdict } from "@/lib/debate/debateTypes";
@@ -85,34 +86,88 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
   const nameB = session.modelB.displayName;
   const brandA = getModelById(session.modelA.modelId)?.brand ?? "";
   const brandB = getModelById(session.modelB.modelId)?.brand ?? "";
-  const judgeName = modelDisplayName(verdict.judgeModelId);
   const debate = session.mode === "debate";
   const canRejudge = Boolean(onSession) && isDebateComplete(session);
 
-  // Everything shared reflects the verdict being DISPLAYED — during the live
-  // reveal the runner can hold a verdict the persisted session doesn't yet.
-  const shareSession: DebateSession =
-    session.verdict === verdict ? session : { ...session, verdict };
+  // Every verdict this session has ever had, oldest first, with the LIVE
+  // `verdict` prop last — it can be fresher than `session.verdict` during the
+  // live reveal (see the `shareSession` note below), so it — not
+  // `session.verdict` — is the one appended.
+  const verdictList = useMemo(
+    () => [...(session.pastVerdicts ?? []), verdict],
+    [session.pastVerdicts, verdict],
+  );
 
-  const winnerLabel = (() => {
-    switch (verdict.winner) {
+  // Selecting a judge tab. Defaults to (and snaps back to) the latest verdict
+  // whenever the list grows — e.g. a fresh re-judge landing.
+  const [selectedIndex, setSelectedIndex] = useState(verdictList.length - 1);
+  useEffect(() => {
+    setSelectedIndex(verdictList.length - 1);
+    // Only the LENGTH matters here — a new verdict always means a longer list,
+    // and re-selecting on every list re-creation (e.g. a fresh array with the
+    // same entries) would fight the user's manual tab picks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verdictList.length]);
+  const selectedVerdict = verdictList[selectedIndex] ?? verdict;
+
+  // Disambiguate tabs when the same judge appears more than once.
+  const tabLabels = useMemo(() => {
+    const total = new Map<string, number>();
+    for (const v of verdictList) {
+      const name = modelDisplayName(v.judgeModelId);
+      total.set(name, (total.get(name) ?? 0) + 1);
+    }
+    const seen = new Map<string, number>();
+    return verdictList.map((v) => {
+      const name = modelDisplayName(v.judgeModelId);
+      if ((total.get(name) ?? 0) <= 1) return name;
+      const n = (seen.get(name) ?? 0) + 1;
+      seen.set(name, n);
+      return `${name} #${n}`;
+    });
+  }, [verdictList]);
+
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const onTabsKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    e.preventDefault();
+    const count = verdictList.length;
+    let next = selectedIndex;
+    if (e.key === "ArrowLeft") next = (selectedIndex - 1 + count) % count;
+    else if (e.key === "ArrowRight") next = (selectedIndex + 1) % count;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = count - 1;
+    setSelectedIndex(next);
+    tabRefs.current[next]?.focus();
+  };
+
+  const judgeName = modelDisplayName(selectedVerdict.judgeModelId);
+
+  // Everything shared reflects the SELECTED verdict — during the live reveal
+  // the runner can hold a verdict the persisted session doesn't yet, and after
+  // a re-judge the user may be looking at an earlier tab.
+  const shareSession: DebateSession =
+    session.verdict === selectedVerdict ? session : { ...session, verdict: selectedVerdict };
+
+  const winnerBadgeText = (() => {
+    switch (selectedVerdict.winner) {
       case "modelA":
-        return d.result.verdict.takesIt(nameA);
+        return d.result.verdict.winnerBadge(nameA);
       case "modelB":
-        return d.result.verdict.takesIt(nameB);
+        return d.result.verdict.winnerBadge(nameB);
       case "tie":
-        return d.result.verdict.draw;
+        return d.result.verdict.drawBadge;
       default:
-        return d.result.verdict.discussionComplete;
+        return null;
     }
   })();
 
   const headline =
-    verdict.winner === "modelA"
+    selectedVerdict.winner === "modelA"
       ? t.beat(nameA, nameB)
-      : verdict.winner === "modelB"
+      : selectedVerdict.winner === "modelB"
         ? t.beat(nameB, nameA)
-        : verdict.winner === "tie"
+        : selectedVerdict.winner === "tie"
           ? t.drawHeadline(nameA, nameB)
           : t.versus(nameA, nameB);
 
@@ -225,20 +280,77 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       className="relative overflow-hidden rounded-panel border-4 border-ink bg-arcade-purple p-1 shadow-hard-lg"
-      // Announce the verdict to screen readers when it reveals (Batch 4 / a11y).
-      role="status"
-      aria-live="polite"
-      aria-label="Final verdict"
     >
       <div className="rounded-[20px] border-3 border-ink bg-card p-4 sm:p-6">
-        <motion.h2
-          initial={reduce ? false : { rotate: -3, scale: 0.9 }}
-          animate={{ rotate: -2, scale: 1 }}
-          transition={{ type: "spring", stiffness: 220, damping: 12 }}
-          className="inline-block rounded-btn border-3 border-ink bg-arcade-yellow px-3 py-1 font-display text-3xl tracking-tight text-night sm:text-4xl"
-        >
-          {d.result.verdict.badge}
-        </motion.h2>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <motion.h2
+            initial={reduce ? false : { rotate: -3, scale: 0.9 }}
+            animate={{ rotate: -2, scale: 1 }}
+            transition={{ type: "spring", stiffness: 220, damping: 12 }}
+            className="inline-block rounded-btn border-3 border-ink bg-arcade-yellow px-3 py-1 font-display text-3xl tracking-tight text-night sm:text-4xl"
+            // Announce the verdict reveal to screen readers. Scoped to this
+            // static-text badge (not the whole card) so switching judge tabs
+            // below — which only changes local state, not this text — never
+            // re-triggers the live region.
+            role="status"
+            aria-live="polite"
+          >
+            {d.result.verdict.badge}
+          </motion.h2>
+
+          {winnerBadgeText ? (
+            <motion.div
+              initial={reduce ? false : { rotate: 3, scale: 0.9 }}
+              animate={{ rotate: 2, scale: 1 }}
+              transition={{ type: "spring", stiffness: 220, damping: 12 }}
+              className="inline-block min-w-0 max-w-full break-words rounded-btn border-3 border-ink bg-arcade-green px-3 py-1 font-display text-2xl tracking-tight text-night sm:text-3xl"
+            >
+              {winnerBadgeText}
+            </motion.div>
+          ) : null}
+        </div>
+
+        {verdictList.length > 1 ? (
+          <div
+            role="tablist"
+            aria-label={d.result.verdict.judgeTabsLabel}
+            onKeyDown={onTabsKeyDown}
+            className="mt-3 flex flex-wrap gap-2"
+          >
+            {verdictList.map((v, i) => {
+              const active = i === selectedIndex;
+              const isLatest = i === verdictList.length - 1;
+              return (
+                <button
+                  key={`${v.judgeModelId}-${i}`}
+                  ref={(el) => {
+                    tabRefs.current[i] = el;
+                  }}
+                  type="button"
+                  role="tab"
+                  id={`verdict-tab-${i}`}
+                  aria-selected={active}
+                  aria-controls="verdict-panel"
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setSelectedIndex(i)}
+                  className={cn(
+                    "rounded-btn border-3 border-ink px-3 py-1.5 font-heading text-xs font-extrabold uppercase tracking-wide transition focus-visible:outline-3 focus-visible:outline-offset-2",
+                    active
+                      ? "bg-arcade-blue text-white shadow-hard-sm"
+                      : "bg-surface text-ink hover:-translate-y-0.5",
+                  )}
+                >
+                  {tabLabels[i]}
+                  {isLatest ? (
+                    <span className="ml-1 text-[10px] font-bold opacity-70">
+                      {d.result.verdict.latestTag}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
 
         {/* The question + who argued which side — one compact strip. */}
         <div className="mt-4 rounded-card border-3 border-ink bg-paper p-3">
@@ -262,41 +374,49 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
           </div>
         </div>
 
-        <p className="mt-4 font-heading text-xl font-extrabold sm:text-2xl">
-          {winnerLabel}
-        </p>
-        {verdict.winnerArgument ? (
-          <p className="mt-1 text-sm text-ink/80 sm:text-base">
-            <span className="font-bold">{d.result.verdict.winningArgument}</span>
-            {verdict.winnerArgument}
-          </p>
-        ) : null}
+        {/* Everything below renders from the SELECTED judge tab. */}
+        <div
+          id="verdict-panel"
+          role={verdictList.length > 1 ? "tabpanel" : undefined}
+          aria-labelledby={verdictList.length > 1 ? `verdict-tab-${selectedIndex}` : undefined}
+        >
+          {selectedVerdict.winnerArgument ? (
+            <p className="mt-4 text-sm text-ink/80 sm:text-base">
+              <span className="font-bold">{d.result.verdict.winningArgument}</span>
+              {selectedVerdict.winnerArgument}
+            </p>
+          ) : null}
 
-        {/* Why the judge decided this way (leans to the winner; **bold** the
-            decisive points). */}
-        <div className="mt-3 rounded-card border-3 border-ink bg-surface p-3">
-          <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-ink/45">
-            {d.result.verdict.whyThis}
-          </p>
-          <MarkdownText content={verdict.summary} />
+          {/* Why the judge decided this way (leans to the winner; **bold** the
+              decisive points). */}
+          <div className="mt-3 rounded-card border-3 border-ink bg-surface p-3">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-ink/45">
+              {d.result.verdict.whyThis}
+            </p>
+            <MarkdownText content={selectedVerdict.summary} />
+          </div>
+
+          {selectedVerdict.scoreModelA !== undefined ? (
+            <div className="mt-4">
+              <ScoreBreakdown
+                nameA={nameA}
+                nameB={nameB}
+                scoreA={selectedVerdict.scoreModelA}
+                scoreB={selectedVerdict.scoreModelB}
+              />
+            </div>
+          ) : null}
+
+          {COST_UI_ENABLED ? (
+            <div className="mt-4">
+              <CostBadge
+                cost={selectedVerdict.cost}
+                usage={selectedVerdict.usage}
+                latencyMs={selectedVerdict.latencyMs}
+              />
+            </div>
+          ) : null}
         </div>
-
-        {verdict.scoreModelA !== undefined ? (
-          <div className="mt-4">
-            <ScoreBreakdown
-              nameA={nameA}
-              nameB={nameB}
-              scoreA={verdict.scoreModelA}
-              scoreB={verdict.scoreModelB}
-            />
-          </div>
-        ) : null}
-
-        {COST_UI_ENABLED ? (
-          <div className="mt-4">
-            <CostBadge cost={verdict.cost} usage={verdict.usage} latencyMs={verdict.latencyMs} />
-          </div>
-        ) : null}
 
         {/* Footer: the judge (+ change it in place) and the share row. */}
         <div className="mt-5 border-t-3 border-ink/10 pt-3">
@@ -316,9 +436,6 @@ export function VerdictCard({ session, verdict, availability, onSession }: Verdi
 
           {rejudgeOpen && canRejudge && onSession ? (
             <div className="mt-3 rounded-card border-3 border-ink bg-paper p-3">
-              <p className="mb-3 text-sm text-ink/60">
-                {d.result.rejudge.secondOpinionBody}
-              </p>
               <RejudgeSection
                 session={session}
                 availability={availability}

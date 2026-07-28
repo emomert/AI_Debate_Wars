@@ -109,7 +109,6 @@ export const community = {
       hint: "Kapalı: liste dışı — yalnızca bağlantıya sahip olanlar açabilir.",
     },
     noVerdictHint: "Bu maçta AI kararı yok; kararı kalabalık verir.",
-    privacyNote: "Gizlediğin her şey yüklenmeden önce ayıklanır — maçından asla çıkmaz.",
     publish: "Maçı yayınla",
     publishing: "Yayınlanıyor…",
     update: "Paylaşılan maçı güncelle",
