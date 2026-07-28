@@ -256,10 +256,80 @@ TTS and streams at $9+/month. Both are <strong>tools</strong>. Neither is fun.</
   say "You" and "Opponent," never model names — so nobody argues from brand
   loyalty and the verdict isn't a popularity contest. This is the detail
   technical audiences respect.</li>
-  <li><strong>Free to watch.</strong> 15 coins a day, claimed daily. Rivals gate
-  behind $9/month or charge per debate.</li>
+  <li><strong>Free to watch, and cents to play.</strong> 15 coins a day claimed
+  daily = 7 free matches, forever. Paid matches start around <strong>6¢</strong>.
+  Rivals gate behind $9/month or charge <strong>~$1.27 per debate</strong> — see
+  the price section below; this gap is bigger than any feature you have.</li>
   <li><strong>Deep Debate.</strong> Live web search with numbered citations mid-fight.</li>
 </ul>
+
+<h3>The price gap is your sharpest weapon — swing it carefully</h3>
+
+<p>Compelle charges roughly <strong>$1.27 per debate</strong>. Run the numbers
+against your own coin bands and the gap isn't a percentage, it's an order of
+magnitude:</p>
+
+<div class="scroller">
+<table>
+  <thead><tr><th>Pack</th><th>¢ / coin</th><th>Regular match<br>(2 coins)</th><th>Premium bout<br>(6 coins)</th><th>Frontier fight<br>(13 coins)</th><th>vs $1.27/debate</th></tr></thead>
+  <tbody>
+    <tr><td>100 @ $4.99</td><td class="num">4.99¢</td><td class="num">$0.10</td><td class="num">$0.30</td><td class="num">$0.65</td><td>12.7× / 4.2× / 2.0× cheaper</td></tr>
+    <tr><td>250 @ $9.99</td><td class="num">4.00¢</td><td class="num">$0.08</td><td class="num">$0.24</td><td class="num">$0.52</td><td>15.9× / 5.3× / 2.4× cheaper</td></tr>
+    <tr><td><strong>700 @ $19.99</strong></td><td class="num">2.86¢</td><td class="num"><strong>$0.057</strong></td><td class="num">$0.17</td><td class="num">$0.37</td><td><strong>22.2×</strong> / 7.4× / 3.4× cheaper</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout ok">
+  <div class="t">The number that ends the argument</div>
+  <p><strong>15 free coins a day = 7 regular matches every day, forever, for
+  $0.</strong> The same volume at $1.27/debate is <strong>$8.89 a day</strong> —
+  <strong>$3,245 a year</strong>. Your free tier is worth more annually than most
+  people spend on software.</p>
+</div>
+
+<p>And this isn't a land-grab you'll have to walk back. <code>economy.test.ts</code>
+fails CI if any model in the catalog drops below <strong>5× margin</strong>, so
+every price above is already profitable. A competitor at $1.27 cannot answer it
+without going below their own cost. <em>Cheaper and profitable</em> is a
+defensible position; cheaper-because-subsidised is not, and you have the former.</p>
+
+<div class="callout warn">
+  <div class="t">Do not name them in public copy</div>
+  <p>The instinct is to put "22× cheaper than Compelle" on the homepage. Don't:</p>
+  <ul>
+    <li><strong>It ages badly.</strong> They change pricing, your number becomes
+    a false claim about a named company, and you look either sloppy or dishonest.</li>
+    <li><strong>HN and Reddit punish it.</strong> Competitor-bashing from the
+    smaller player reads as insecurity and reliably becomes the top comment
+    instead of your product.</li>
+    <li><strong>It advertises them.</strong> Most of your audience has never
+    heard of Compelle. Don't introduce them.</li>
+  </ul>
+  <p><strong>Instead: state your own price plainly and prominently, and let the
+  audience do the arithmetic.</strong> Somebody in the comments will make the
+  comparison for you — and coming from them it's evidence, not marketing.</p>
+</div>
+
+<div class="sample">
+  <div class="sh"><span>How to say it</span><span class="r">no competitor named</span></div>
+  <div class="sb">✅ "7 free matches a day. After that, a match costs about 6 cents."
+✅ "No subscription. A frontier matchup — two flagship models — runs 37¢."
+✅ "The free tier is 15 coins a day, and most of the roster costs 1–2 coins a side."
+
+❌ "22x cheaper than Compelle!"
+❌ "Unlike other AI debate platforms that charge $1.27 per debate…"
+
+<em class="note">The first set is a fact about you. The second is a claim about
+someone else that you have to keep true forever. Only the first is safe to put
+on a page, and it lands just as hard — "6 cents" is self-evidently cheap to
+anyone who has priced an LLM call.</em></div>
+</div>
+
+<p>Where the gap <em>does</em> belong: as a calm, factual reply when someone
+else raises it in a thread ("what about Compelle?"). Answer with your own
+numbers and no adjectives. That is the one context where the comparison reads as
+confidence rather than desperation.</p>
 
 <h3>Stop saying</h3>
 <ul class="tight">
@@ -383,7 +453,7 @@ Happy to run whatever matchup people want in the comments — there are 91 model
 <strong>Body:</strong>
 Free to try, no account needed to watch. You choose both fighters (Claude, GPT, Gemini, Grok, DeepSeek, Qwen, Mistral, Llama…), set a topic, and they argue three rounds. A neutral model judges blind and scores it.
 
-Built it because every "AI debate" tool I found looked like a dashboard. This one has sound effects and a verdict card you can screenshot.
+Built it because every "AI debate" tool I found looked like a dashboard, and the ones that didn't wanted a dollar per debate. You get 7 a day free here.
 
 <em class="note">Short, no story, no ask. This sub rewards the thing itself. Post Sat/Sun morning US time.</em></div>
 </div>
@@ -410,6 +480,8 @@ A few things that turned out to matter more than expected:
 - Costs are tracked per turn with cache-aware pricing, and there are hard global/per-IP daily spend caps in front of every paid route, because the alternative is a stranger draining the API budget overnight.
 
 91 models across 15 providers behind one interface. There's a /report page that renders the actual prompts, catalog and pricing from the same source files the API routes use, so it can't drift from reality.
+
+On cost: 7 matches a day are free, and beyond that a match runs about 6 cents. A CI test fails the build if any model in the catalog would sell below 5x its provider cost, so the pricing is checked rather than guessed.
 
 Free to try: https://www.debator.xyz
 
@@ -502,7 +574,7 @@ Neither fighter knows who they're up against: transcripts are identity-blind, so
 
 Optional Deep Debate grounds every turn in live web search with numbered citations. Verdicts are cryptographically signed, so the one you share is provably the one that happened.
 
-15 free coins a day. No subscription.</div>
+7 free matches every day. No subscription. After the free tier, a match costs about 6 cents.</div>
 </div>
 
 <h3>Discord + niche communities <span class="pill free">FREE</span></h3>
