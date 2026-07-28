@@ -120,7 +120,14 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "anthropic/claude-opus-4.5", providerId: "openrouter", brand: "Claude", family: "Opus", displayName: "Opus 4.5", color: "purple", costTier: "high", debateRating: 90, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Google — Gemini
+  // 3.6 Flash (added 2026-07-28): probed 786 thinking bare vs 535 with
+  // effort="low" — a default-on thinker, so it keeps the cap (docs/07).
+  { id: "google/gemini-3.6-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.6", displayName: "Gemini 3.6 Flash", color: "purple", costTier: "medium", debateRating: 93, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "google/gemini-3.5-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.5", displayName: "Gemini 3.5 Flash", color: "purple", costTier: "medium", debateRating: 92, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  // 3.5 Flash Lite (added 2026-07-28) is the exact trap docs/07 warns about:
+  // 0 thinking tokens bare, 372 WITH effort="low". The param switches thinking
+  // ON here, so it must stay UNTAGGED.
+  { id: "google/gemini-3.5-flash-lite", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.5", displayName: "Gemini 3.5 Flash Lite", color: "purple", costTier: "low", debateRating: 86, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "google/gemini-3.1-flash-lite", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.1", displayName: "Gemini 3.1 Flash Lite", color: "purple", costTier: "low", debateRating: 84, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "google/gemini-2.5-pro", providerId: "openrouter", brand: "Gemini", family: "Gemini 2.5", displayName: "Gemini 2.5 Pro", color: "purple", costTier: "medium", debateRating: 90, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "google/gemini-2.5-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 2.5", displayName: "Gemini 2.5 Flash", color: "purple", costTier: "low", debateRating: 85, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
@@ -150,6 +157,9 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   // Alibaba — Qwen
   { id: "qwen/qwen3.7-max", providerId: "openrouter", brand: "Qwen", family: "Qwen3.7", displayName: "Qwen3.7 Max", color: "purple", costTier: "medium", debateRating: 91, avatar: "🦅", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "qwen/qwen3.7-plus", providerId: "openrouter", brand: "Qwen", family: "Qwen3.7", displayName: "Qwen3.7 Plus", color: "purple", costTier: "low", debateRating: 87, avatar: "🦅", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  // Flash (added 2026-07-28) completes the 3.7 line. Probed 1208 thinking bare
+  // vs 1103 capped — reasons by default, so it keeps the cap like its siblings.
+  { id: "qwen/qwen3.7-flash", providerId: "openrouter", brand: "Qwen", family: "Qwen3.7", displayName: "Qwen3.7 Flash", color: "purple", costTier: "low", debateRating: 83, avatar: "🦅", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // MiniMax
   { id: "minimax/minimax-m3", providerId: "openrouter", brand: "MiniMax", family: "MiniMax M3", displayName: "MiniMax M3", color: "purple", costTier: "low", debateRating: 87, avatar: "🧿", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
@@ -168,6 +178,9 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
 
   // Amazon — Nova
   { id: "amazon/nova-pro-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Pro", color: "purple", costTier: "medium", debateRating: 86, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
+  // Nova 2 (added 2026-07-28) — new generation, own family. Probed 0 thinking
+  // tokens bare; effort="low" only adds 3, so it stays UNTAGGED.
+  { id: "amazon/nova-2-lite-v1", providerId: "openrouter", brand: "Amazon", family: "Nova 2", displayName: "Nova 2 Lite", color: "purple", costTier: "low", debateRating: 82, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "amazon/nova-lite-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Lite", color: "purple", costTier: "low", debateRating: 78, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Tencent — Hunyuan
@@ -213,7 +226,7 @@ export const RECOMMENDED_MODEL_IDS: ReadonlySet<string> = new Set<string>([
   "anthropic/claude-sonnet-5",
   "anthropic/claude-opus-5",
   "anthropic/claude-haiku-4.5",
-  "google/gemini-3.5-flash",
+  "google/gemini-3.6-flash",
   "google/gemini-2.5-pro",
   "xiaomi/mimo-v2.5-pro",
   "z-ai/glm-5.2",

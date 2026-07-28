@@ -66,7 +66,9 @@ export const modelPricing: Record<string, ModelPrice> = {
   "openrouter:anthropic/claude-sonnet-5": { inputCostPer1M: 2.0, outputCostPer1M: 10.0 },
   "openrouter:anthropic/claude-sonnet-4.6": { inputCostPer1M: 3.0, outputCostPer1M: 15.0 },
   // Google
+  "openrouter:google/gemini-3.6-flash": { inputCostPer1M: 1.5, outputCostPer1M: 7.5 },
   "openrouter:google/gemini-3.5-flash": { inputCostPer1M: 1.5, outputCostPer1M: 9.0 },
+  "openrouter:google/gemini-3.5-flash-lite": { inputCostPer1M: 0.3, outputCostPer1M: 2.5 },
   "openrouter:google/gemini-3.1-flash-lite": { inputCostPer1M: 0.25, outputCostPer1M: 1.5 },
   "openrouter:google/gemini-2.5-pro": { inputCostPer1M: 1.25, outputCostPer1M: 10.0 },
   "openrouter:google/gemini-2.5-flash": { inputCostPer1M: 0.3, outputCostPer1M: 2.5 },
@@ -86,6 +88,7 @@ export const modelPricing: Record<string, ModelPrice> = {
   // Qwen
   "openrouter:qwen/qwen3.7-max": { inputCostPer1M: 1.25, outputCostPer1M: 3.75 },
   "openrouter:qwen/qwen3.7-plus": { inputCostPer1M: 0.32, outputCostPer1M: 1.28 },
+  "openrouter:qwen/qwen3.7-flash": { inputCostPer1M: 0.03, outputCostPer1M: 0.13 },
   // MiniMax
   "openrouter:minimax/minimax-m3": { inputCostPer1M: 0.3, outputCostPer1M: 1.2 },
   "openrouter:minimax/minimax-m2.7": { inputCostPer1M: 0.24, outputCostPer1M: 0.96 },
@@ -96,6 +99,7 @@ export const modelPricing: Record<string, ModelPrice> = {
   "openrouter:mistralai/mistral-medium-3-5": { inputCostPer1M: 1.5, outputCostPer1M: 7.5 },
   "openrouter:mistralai/mistral-small-2603": { inputCostPer1M: 0.15, outputCostPer1M: 0.6 },
   "openrouter:amazon/nova-pro-v1": { inputCostPer1M: 0.8, outputCostPer1M: 3.2 },
+  "openrouter:amazon/nova-2-lite-v1": { inputCostPer1M: 0.3, outputCostPer1M: 2.5 },
   "openrouter:amazon/nova-lite-v1": { inputCostPer1M: 0.06, outputCostPer1M: 0.24 },
   "openrouter:tencent/hy3": { inputCostPer1M: 0.14, outputCostPer1M: 0.58 },
   "openrouter:anthropic/claude-haiku-4.5": { inputCostPer1M: 1.0, outputCostPer1M: 5.0 },
