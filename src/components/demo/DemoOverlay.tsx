@@ -29,6 +29,14 @@ import { useT } from "@/lib/i18n/LocaleProvider";
 
 const DEMO_SRC = "/demo/demo-match.mp4";
 const CHAPTERS_SRC = "/demo/demo-chapters.json";
+/**
+ * The community post for the match in the video — the end card links to it so
+ * "Real match · recorded live" is checkable rather than just claimed. Published
+ * through the normal result-page PublishPanel (public, model names + verdict
+ * shown, since the footage already shows both). Empty string = no button, so a
+ * re-shoot can never leave a dead link behind: re-publish, then update this.
+ */
+const DEMO_MATCH_ID = "P0LNlRB9eLbm";
 
 interface Chapter {
   start: number;
@@ -99,6 +107,12 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
     router.push("/setup");
   }, [onClose, router]);
 
+  // New tab on purpose: the end card is the conversion moment, so reading the
+  // transcript must not cost the viewer the "Use Debator" CTA behind it.
+  const openMatch = useCallback(() => {
+    window.open(`/m/${DEMO_MATCH_ID}`, "_blank", "noopener,noreferrer");
+  }, []);
+
   return (
     <div
       role="dialog"
@@ -160,12 +174,14 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
             </div>
           ) : null}
           {ended ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-paper p-6 text-center">
-              <p className="font-display text-4xl tracking-tight sm:text-5xl">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-y-auto bg-paper p-4 text-center sm:gap-3 sm:p-6">
+              <p className="font-display text-2xl tracking-tight sm:text-5xl">
                 {d.home.demo.yourTurn}
               </p>
-              <p className="max-w-md text-sm text-ink/70 sm:text-base">{d.home.demo.yourTurnSub}</p>
-              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <p className="max-w-md text-xs text-ink/70 sm:text-base">{d.home.demo.yourTurnSub}</p>
+              {/* Primary alone on top so the CTA keeps its weight; the proof
+                  link and Replay sit beneath it as equal secondaries. */}
+              <div className="mt-1 flex flex-col items-center gap-2 sm:mt-2">
                 <ArcadeButton
                   variant="primary-green"
                   size="lg"
@@ -174,9 +190,16 @@ export function DemoOverlay({ onClose }: { onClose: () => void }) {
                 >
                   {d.home.demo.cta}
                 </ArcadeButton>
-                <ArcadeButton variant="neutral-white" onClick={replay}>
-                  {d.home.demo.replay}
-                </ArcadeButton>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {DEMO_MATCH_ID ? (
+                    <ArcadeButton variant="neutral-white" size="sm" onClick={openMatch}>
+                      {d.home.demo.seeMatch}
+                    </ArcadeButton>
+                  ) : null}
+                  <ArcadeButton variant="neutral-white" size="sm" onClick={replay}>
+                    {d.home.demo.replay}
+                  </ArcadeButton>
+                </div>
               </div>
             </div>
           ) : null}

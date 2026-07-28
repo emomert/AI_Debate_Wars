@@ -34,6 +34,15 @@
      emits `/public/demo/demo-chapters.json` (cut boundaries + the line for
      each stretch) and the overlay renders them, so a re-cut can't desync the
      words from the picture. Missing JSON just means no captions.
+   - **The end card links to the recorded match itself** ("See the whole
+     match ↗" → `/m/<id>`, new tab), so "Real match · recorded live" is
+     checkable instead of merely claimed. The post is a normal community
+     publish — reopen the match on `/profile` ("View"), then use the result
+     page's PublishPanel with its defaults (public · model names shown ·
+     verdict included; the footage already shows both). Put the resulting id
+     in `DEMO_MATCH_ID` in `DemoOverlay.tsx`. **A re-shoot invalidates it:**
+     re-publish the new match and update the constant — an empty id hides the
+     button rather than shipping a dead link.
 2. User enters a topic — optionally runs the AI topic check to sharpen it.
 3. User picks two fighters (brand → family → model; swap A/B available).
 4. User sets the rules: tone per fighter, pace (manual/auto), Deep Debate on/off. **Matches are strictly 3 rounds and short response length (July 2026)** — the 3/5/7 selector and the short/medium/long picker were removed; old shared/published 5/7 or medium/long matches still render.

@@ -33,6 +33,7 @@ export const home = {
     yourTurn: "Sıra sizde.",
     yourTurnSub: "Kendi maçınızı kurun — istediğiniz konu, istediğiniz iki yapay zekâ, karar dâhil.",
     cta: "Debator'ı Kullanın",
+    seeMatch: "Maçın tamamını gör ↗",
   },
 
   howItWorks: {

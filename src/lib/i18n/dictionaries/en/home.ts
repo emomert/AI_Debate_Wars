@@ -33,6 +33,7 @@ export const home = {
     yourTurn: "Your turn.",
     yourTurnSub: "Set up your own match — any topic, any two AI fighters, verdict included.",
     cta: "Use Debator",
+    seeMatch: "See the whole match ↗",
   },
 
   howItWorks: {
