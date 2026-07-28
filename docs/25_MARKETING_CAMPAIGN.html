@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debator — Launch Campaign on $100</title>
+<style>
+  :root {
+    --paper:#F7F7F2; --ink:#141412; --muted:rgb(20 20 18/.58); --hair:rgb(20 20 18/.14);
+    --card:#FFFFFF; --yellow:#FFD91A; --green:#4CAF50; --red:#DC2626; --blue:#2563EB;
+    --purple:#7C3AED; --night:#050505; --code-bg:#14140F; --code-ink:#F3EFD9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper:#2E261F; --ink:#EBDAC6; --muted:rgb(235 218 198/.6); --hair:rgb(235 218 198/.16);
+            --card:#3A3025; --code-bg:#1B160F; --code-ink:#EFE6CE; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font:15px/1.65 system-ui,"Segoe UI",sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:44px 22px 90px; }
+  .heading { font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",system-ui,sans-serif; font-weight:800; }
+  .mono { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; }
+  .eyebrow { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  h1 { font-size:clamp(27px,5vw,38px); line-height:1.08; margin:10px 0 12px; text-wrap:balance; }
+  h2 { font-size:21px; margin:0; }
+  h3 { font-size:15.5px; margin:22px 0 6px; }
+  h4 { font-size:13.5px; margin:16px 0 4px; letter-spacing:.02em; }
+  p  { max-width:70ch; }
+  .lede { color:var(--muted); max-width:64ch; font-size:16px; }
+
+  section.part { margin:46px 0; }
+  .part-head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .stepno { flex:none; width:34px; height:34px; border-radius:10px; border:2.5px solid var(--night);
+            background:var(--yellow); color:var(--night); display:grid; place-items:center;
+            font-weight:800; font-size:15px; box-shadow:3px 3px 0 var(--night); }
+  ul.tight { padding-left:20px; margin:8px 0; } ul.tight li { margin:6px 0; max-width:66ch; }
+  ol.steps { padding-left:20px; margin:8px 0; } ol.steps li { margin:7px 0; max-width:66ch; }
+
+  table { border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px; }
+  th,td { border:1.5px solid var(--hair); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:rgb(127 127 127/.12); font-weight:800; font-size:12px;
+       letter-spacing:.05em; text-transform:uppercase; }
+  td.num { text-align:right; font-family:ui-monospace,Consolas,monospace; white-space:nowrap; }
+  .scroller { overflow-x:auto; }
+
+  .callout { border:2.5px solid var(--night); border-radius:14px; padding:13px 17px; margin:18px 0;
+             background:var(--card); box-shadow:4px 4px 0 var(--night); max-width:700px; }
+  .callout .t { font-weight:800; font-size:12px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:5px; }
+  .callout.warn .t { color:var(--red); } .callout.ok .t { color:var(--green); }
+  .callout.info .t { color:var(--blue); }
+  .callout p { margin:5px 0; font-size:14px; } .callout p:last-child { margin-bottom:0; }
+  .callout ul { margin:5px 0; padding-left:18px; } .callout li { margin:5px 0; font-size:14px; }
+
+  .sample { border:2px solid var(--night); border-radius:12px; background:var(--card);
+            margin:12px 0; overflow:hidden; box-shadow:3px 3px 0 var(--night); max-width:700px; }
+  .sample .sh { background:var(--night); color:#fff; font-size:11px; font-weight:800;
+                letter-spacing:.07em; text-transform:uppercase; padding:5px 12px;
+                display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .sample .sh .r { opacity:.65; font-weight:600; letter-spacing:.03em; text-transform:none; }
+  .sample .sb { padding:12px 15px; font-size:14px; white-space:pre-wrap; }
+  .sample .sb em.note { display:block; margin-top:9px; padding-top:8px; border-top:1.5px dashed var(--hair);
+                        font-size:12.5px; color:var(--muted); font-style:normal; white-space:normal; }
+
+  pre { background:var(--code-bg); color:var(--code-ink); border-radius:12px; padding:13px 15px;
+        overflow-x:auto; font-size:12.5px; line-height:1.55; border:2px solid var(--night); max-width:700px; }
+  code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; }
+  p code, li code, td code { background:rgb(127 127 127/.16); padding:1px 5px; border-radius:5px; font-size:12.5px; }
+  pre code { background:none; padding:0; }
+
+  .pill { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.05em;
+          border:2px solid var(--night); border-radius:999px; padding:2px 10px; }
+  .pill.free { background:var(--green); color:#fff; }
+  .pill.paid { background:var(--yellow); color:var(--night); }
+  .pill.hi   { background:var(--purple); color:#fff; }
+
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin:16px 0; }
+  .tile { border:2px solid var(--night); border-radius:12px; background:var(--card);
+          padding:12px 15px; box-shadow:3px 3px 0 var(--night); }
+  .tile .k { font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; font-weight:800; color:var(--muted); }
+  .tile .v { font-weight:800; font-size:15px; margin-top:2px; }
+  .tile p { font-size:13px; margin:6px 0 0; color:var(--muted); }
+
+  hr { border:0; border-top:1.5px solid var(--hair); margin:40px 0; }
+  .toc { border:2px solid var(--night); border-radius:12px; background:var(--card); padding:12px 18px;
+         box-shadow:3px 3px 0 var(--night); }
+  .toc ol { margin:6px 0; padding-left:20px; } .toc li { margin:4px 0; font-size:14px; }
+  a { color:var(--blue); } @media (prefers-color-scheme: dark){ a { color:#7FB0FF; } }
+  .foot { margin-top:56px; padding-top:16px; border-top:1.5px solid var(--hair);
+          font-size:12.5px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="eyebrow">Debator · docs/25 · written 2026-07-28</div>
+<h1 class="heading">Launching Debator on $100</h1>
+<p class="lede">A campaign built for the budget that actually exists — not a
+deck that assumes $5k. Every channel below is either free or costs under $50,
+every sample is copy you can paste today, and the timeline is shaped around
+the one constraint that decides everything: <strong>you cannot take money
+yet.</strong></p>
+
+<div class="toc">
+  <div class="eyebrow">Contents</div>
+  <ol>
+    <li>The constraint that sets the timeline</li>
+    <li>Where the money actually goes</li>
+    <li>Positioning — what to say, and what to stop saying</li>
+    <li>The growth loop you already shipped</li>
+    <li>Channel playbook, with sample copy</li>
+    <li>The content engine (this is what the API budget is for)</li>
+    <li>Six-week calendar</li>
+    <li>Numbers to watch, and when to quit a channel</li>
+    <li>What not to do</li>
+  </ol>
+</div>
+
+<!-- ─────────────────────────────────────────── 1 -->
+<section class="part">
+<div class="part-head"><div class="stepno">1</div><h2 class="heading">The constraint that sets the timeline</h2></div>
+
+<div class="callout warn">
+  <div class="t">Read this before spending a dollar</div>
+  <p>Polar's production org is still in <strong>test mode</strong> pending
+  merchant review (~2 weeks from 2026-07-27, so roughly <strong>Aug 10</strong>).
+  Card checkout renders "Payments are currently unavailable." Only free /
+  100%-discount orders complete.</p>
+  <p><strong>Consequence:</strong> every visitor you buy or earn before that
+  date is a visitor you cannot convert. Traffic does not keep. A Show HN spike
+  is a once-per-product event, and spending it on a page that can't sell is the
+  single most expensive mistake available to you right now.</p>
+</div>
+
+<p>So the campaign splits at that gate:</p>
+
+<div class="grid2">
+  <div class="tile">
+    <div class="k">Phase 0 · now → payments live</div>
+    <div class="v">Build ammunition. Spend $0 on reach.</div>
+    <p>Produce the content bank, seed low-stakes communities, collect emails,
+    fix what early users trip over. Nothing irreversible fires here.</p>
+  </div>
+  <div class="tile">
+    <div class="k">Phase 1 · payments live → +2 weeks</div>
+    <div class="v">Fire everything at once.</div>
+    <p>Product Hunt, Show HN, and the Reddit blitz land inside one week, on top
+    of a content library that already exists. One-shot channels get used once,
+    properly.</p>
+  </div>
+</div>
+
+<p>The waiting period is not dead time — it is the only time you'll ever have to
+build a content backlog without the pressure of a live launch. Use it.</p>
+
+<div class="callout info">
+  <div class="t">Hidden cost, flag it now</div>
+  <p>Vercel <strong>Hobby prohibits commercial use</strong> (docs/18 Tier 1 §2).
+  The moment you take real money you need Pro at <strong>$20/month</strong> —
+  that is 20% of a $100 budget, recurring, before any marketing. Budget it as a
+  cost of doing business, not as marketing spend, and do not let it eat the
+  campaign line.</p>
+</div>
+</section>
+
+<!-- ─────────────────────────────────────────── 2 -->
+<section class="part">
+<div class="part-head"><div class="stepno">2</div><h2 class="heading">Where the money actually goes</h2></div>
+
+<p>The honest answer for a $100 consumer-app budget: <strong>almost none of it
+should go to ads.</strong> $100 of Reddit or X inventory buys roughly 60–150
+clicks in AI-adjacent targeting. At a generous 15% signup and 3% purchase, that
+is <em>zero to one</em> customers. The same $100 spent on API credits produces
+several hundred debates, which is a year of content for channels that cost
+nothing to post on.</p>
+
+<div class="scroller">
+<table>
+  <thead><tr><th>Line</th><th>Amount</th><th>What it buys</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><strong>API / content fuel</strong></td><td class="num">$60</td>
+        <td>~400–600 matches across the catalog</td>
+        <td>Every clip, screenshot, Reddit post and thread comes from here. Highest-leverage dollar you have.</td></tr>
+    <tr><td><strong>Promo coins (seeding)</strong></td><td class="num">$40</td>
+        <td>~3,000–4,000 coins given away</td>
+        <td>Real API cost of coins people redeem. Buys first-run experiences from creators and early users.</td></tr>
+    <tr><td><strong>Micro-newsletter slot</strong></td><td class="num">$0–50</td>
+        <td>One classified in a 2–8k-subscriber AI newsletter</td>
+        <td>The <em>only</em> paid channel where $50 buys genuinely targeted reach. Optional; Phase 1 only.</td></tr>
+    <tr><td>Paid social ads</td><td class="num">$0</td>
+        <td>—</td>
+        <td>Skip entirely at this budget. Revisit only after one organic channel proves it converts.</td></tr>
+    <tr><td>Tools</td><td class="num">$0</td>
+        <td>Buffer/free tier, CapCut, OBS, Canva free</td>
+        <td>Nothing here needs paying for at this scale.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="mono" style="font-size:13px;">Ideal case: <strong>$100</strong> = $60 API + $40 promo coins, $0 ads.<br>
+Stretch case: <strong>$250</strong> = the above + $50 newsletter + $100 held in reserve for whichever channel proves itself.</p>
+
+<div class="callout ok">
+  <div class="t">Why the API budget goes further than it looks</div>
+  <p><code>economy.test.ts</code> enforces ≥5× margin at 5¢/coin, so a coin's
+  true provider cost is ≤1¢. A 6-coin premium match costs you <strong>≤6¢</strong>;
+  a 13-coin frontier match <strong>≤13¢</strong>. $60 is therefore
+  <strong>500+ real matches</strong> — vastly more than a content calendar needs.
+  Spend it freely on generating material and stop treating matches as precious.</p>
+</div>
+
+<h3>Do not skip: hard caps before any traffic</h3>
+<p>A campaign that works is indistinguishable from abuse until you check the
+bill. Before the first post goes out, confirm the provider dashboard caps in
+docs/18 Tier 1 §3 are actually set (OpenAI monthly budget, prepaid-only
+DeepSeek/OpenRouter, <code>SEARCH_DAILY_MAX</code>), and that
+<code>SPEND_GLOBAL_DAILY_USD</code> is at a number you'd be willing to lose in
+a day. Your in-app caps are $15/day global — a genuinely viral post will hit
+that ceiling and start refusing matches. Decide in advance whether that is a
+feature (cost safety) or a disaster (bad first impression at the exact moment
+attention peaks), and set it accordingly the night before launch.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── 3 -->
+<section class="part">
+<div class="part-head"><div class="stepno">3</div><h2 class="heading">Positioning — what to say, and what to stop saying</h2></div>
+
+<p>The niche is no longer empty. Compelle runs model-vs-model debates as a
+Bittensor subnet at ~$1.27/debate. VoxArena sells philosophical personas with
+TTS and streams at $9+/month. Both are <strong>tools</strong>. Neither is fun.</p>
+
+<div class="callout">
+  <div class="t">The one-line position</div>
+  <p style="font-size:17px;"><strong>Debator is a fighting game where the
+  fighters are 91 AI models.</strong></p>
+  <p>Not a decision tool. Not a research assistant. Not "compare LLM outputs."
+  A game — and the product already knows this; the whole design brief is
+  "arcade interface, serious intelligence."</p>
+</div>
+
+<h3>What actually differentiates you (lead with these)</h3>
+<ul class="tight">
+  <li><strong>You pick both fighters.</strong> 91 models, 15 brands — Claude vs
+  Grok, GPT vs DeepSeek, whatever grudge match someone wants. Rivals pick for
+  you or offer a handful. This is the single most tweetable feature.</li>
+  <li><strong>It's a game, visibly.</strong> Arcade UI, sound, round counters,
+  a verdict card built to be screenshotted. Competitors look like dashboards.</li>
+  <li><strong>The judge is blind and so are the fighters.</strong> Transcripts
+  say "You" and "Opponent," never model names — so nobody argues from brand
+  loyalty and the verdict isn't a popularity contest. This is the detail
+  technical audiences respect.</li>
+  <li><strong>Free to watch.</strong> 15 coins a day, claimed daily. Rivals gate
+  behind $9/month or charge per debate.</li>
+  <li><strong>Deep Debate.</strong> Live web search with numbered citations mid-fight.</li>
+</ul>
+
+<h3>Stop saying</h3>
+<ul class="tight">
+  <li>"AI-powered debate platform" — every competitor says this; it means nothing.</li>
+  <li>Naming specific models in evergreen copy. The catalog grows constantly;
+  a tagline citing "GPT-5.5" dates itself within weeks. (Same reason the
+  pricing page dropped model names.)</li>
+  <li>Anything implying it settles questions truthfully. It's entertainment.
+  Overclaiming here invites the exact reply-guy dunk that kills a launch thread.</li>
+</ul>
+
+<h3>Taglines to test</h3>
+<div class="sample"><div class="sh"><span>Tagline candidates</span></div><div class="sb">Make AIs fight your ideas.            ← current, strong, keep
+91 AI models. One arena. Pick your fighters.
+Two AIs enter. One verdict. You picked both.
+The only fighting game where the roster is every LLM.</div></div>
+</section>
+
+<!-- ─────────────────────────────────────────── 4 -->
+<section class="part">
+<div class="part-head"><div class="stepno">4</div><h2 class="heading">The growth loop you already shipped</h2></div>
+
+<p>This is the part most $100 campaigns don't have, and you built it months ago
+without calling it marketing. Every finished match can become a public page
+with an OG image. That means <strong>your users manufacture your landing
+pages.</strong></p>
+
+<ol class="steps">
+  <li>User finishes a match →</li>
+  <li>Verdict card offers <strong>Share match</strong> (one click, publishes an
+  unlisted <code>/m/&lt;id&gt;</code> and copies the link) and
+  <strong>Copy image</strong> →</li>
+  <li>They paste it into Discord/X/a group chat →</li>
+  <li>The <code>/api/og</code> unfurl shows the verdict card, signed and marked
+  <span class="pill free">✓ Verified</span> →</li>
+  <li>A stranger lands on a real debate, not a marketing page, with
+  "Run your own" right there →</li>
+  <li>Signup gate → 15 free coins → back to step 1.</li>
+</ol>
+
+<div class="callout ok">
+  <div class="t">Checked against production 2026-07-28 — the loop is wired correctly</div>
+  <p>A live public match (<code>/m/qMTdQ9i0-q3q</code>) returns <strong>200 with
+  no <code>noindex</code></strong>, and <code>src/app/m/[id]/page.tsx</code> only
+  sets <code>index:false</code> for <em>unlisted</em> posts. So public matches are
+  already crawlable. Good — that was the hard part.</p>
+</div>
+
+<div class="callout warn">
+  <div class="t">But nothing tells Google they exist</div>
+  <p><code>https://www.debator.xyz/sitemap.xml</code> → <strong>404</strong>.
+  <code>/robots.txt</code> → <strong>404</strong>. Discovery therefore depends
+  entirely on a crawler walking links from <code>/community</code>, which is slow
+  and misses anything that scrolls off the feed.</p>
+  <p><strong>Fix, ~1 hour:</strong> add <code>src/app/sitemap.ts</code> and
+  <code>src/app/robots.ts</code> (Next.js App Router generates both from a plain
+  exported function). Have the sitemap list the static routes plus every
+  <em>public</em> match — deliberately excluding unlisted ones, which are
+  link-only by design and must not leak into an index.</p>
+  <p>This is the highest-ROI hour in this entire document: it is the only item
+  that keeps paying in a year, and it costs nothing per month.</p>
+</div>
+
+<div class="callout info">
+  <div class="t">Also confirm before launch</div>
+  <p><code>SHARE_SECRET</code> is present in <code>.env.local</code>, but Vercel's
+  production env is a separate store — verify it's set there too. Without it,
+  verdict signing stays dormant and shares never render the
+  <span class="pill free">✓ Verified</span> badge, which is the thing that makes a
+  forwarded screenshot credible rather than just another AI screenshot.</p>
+</div>
+</section>
+
+<!-- ─────────────────────────────────────────── 5 -->
+<section class="part">
+<div class="part-head"><div class="stepno">5</div><h2 class="heading">Channel playbook, with sample copy</h2></div>
+
+<h3>Reddit <span class="pill free">FREE</span> <span class="pill hi">HIGHEST LEVERAGE</span></h3>
+<p>The best free channel for this product, and the easiest to get banned from.
+<strong>The rule that matters: post the result, not the product.</strong> Nobody
+upvotes "check out my app." Everybody upvotes "I made two AIs argue about this
+and the verdict surprised me."</p>
+
+<div class="scroller">
+<table>
+  <thead><tr><th>Subreddit</th><th>Scale</th><th>Angle</th><th>Self-promo risk</th></tr></thead>
+  <tbody>
+    <tr><td>r/InternetIsBeautiful</td><td>17M</td><td>The arcade UI itself — perfect fit, free to try</td><td>Low (that's the sub's purpose)</td></tr>
+    <tr><td>r/singularity</td><td>3.5M</td><td>Frontier-model matchups, AGI-flavoured topics</td><td>Medium — lead with the transcript</td></tr>
+    <tr><td>r/artificial</td><td>1M</td><td>Same, slightly more sober framing</td><td>Medium</td></tr>
+    <tr><td>r/ChatGPT · r/OpenAI</td><td>10M · 2.5M</td><td>"GPT vs Claude, judged blind"</td><td>High — read rules first, some ban links</td></tr>
+    <tr><td>r/LocalLLaMA</td><td>500k</td><td>Open-weight models (Qwen, GLM, Kimi, Mistral) vs closed</td><td>Medium — technical, hates hype</td></tr>
+    <tr><td>r/SideProject · r/indiehackers</td><td>600k</td><td>Build story, the economics of running 91 models</td><td>Low (that's the sub's purpose)</td></tr>
+    <tr><td>r/webgames</td><td>250k</td><td>Framed purely as a game</td><td>Low</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="sample">
+  <div class="sh"><span>Reddit post</span><span class="r">r/singularity</span></div>
+  <div class="sb"><strong>Title:</strong> I made Claude Opus 5 and GPT-5.5 debate whether we've already passed AGI — then had a third model judge without knowing who wrote what
+
+<strong>Body:</strong>
+I've been building an arena where you pick two LLMs and make them argue a topic for three rounds, then a neutral third model scores it.
+
+The part I care about: the fighters never see each other's names. The transcript labels them "You" and "Opponent," and the judge gets the same anonymised text. So the verdict can't be brand loyalty — it's scoring the arguments.
+
+Opus took this one 60–40. The judge's reasoning was that GPT kept redefining AGI mid-argument to dodge the counterexamples, which is... exactly what I'd have said.
+
+Full transcript + verdict: [link to /m/&lt;id&gt;]
+
+Happy to run whatever matchup people want in the comments — there are 91 models in the roster.
+
+<em class="note">Why this works: the title is the result, not the product. The technical detail (identity-blind) earns credibility. The last line converts the thread into a live demo — and running requests in the comments is the single best conversion tactic you have, because each one produces another shareable link.</em></div>
+</div>
+
+<div class="sample">
+  <div class="sh"><span>Reddit post</span><span class="r">r/InternetIsBeautiful</span></div>
+  <div class="sb"><strong>Title:</strong> Debator — pick any two of 91 AI models, give them a topic, and watch them fight it out in an arcade UI
+
+<strong>Body:</strong>
+Free to try, no account needed to watch. You choose both fighters (Claude, GPT, Gemini, Grok, DeepSeek, Qwen, Mistral, Llama…), set a topic, and they argue three rounds. A neutral model judges blind and scores it.
+
+Built it because every "AI debate" tool I found looked like a dashboard. This one has sound effects and a verdict card you can screenshot.
+
+<em class="note">Short, no story, no ask. This sub rewards the thing itself. Post Sat/Sun morning US time.</em></div>
+</div>
+
+<h3>Hacker News — Show HN <span class="pill free">FREE</span> <span class="pill hi">ONE SHOT</span></h3>
+<p>You get one real attempt. HN is allergic to marketing language and rewards
+engineering substance — which you happen to have in unusual depth. Lead with
+the architecture, not the fun.</p>
+
+<div class="sample">
+  <div class="sh"><span>Show HN</span><span class="r">Tue–Thu, 8–10am ET</span></div>
+  <div class="sb"><strong>Title:</strong> Show HN: Debator – make two LLMs debate, judged blind by a third
+
+<strong>Body:</strong>
+I built an arena where two language models argue a topic under rules the models don't control.
+
+The design constraint I started with: the models must never drive the conversation. The app decides who speaks, which round it is, what that round's task is, and when it ends. Models only generate one turn at a time against a strict prompt. No loops, no "let's continue," no model deciding it has won.
+
+A few things that turned out to matter more than expected:
+
+- Fighters are identity-blind. The transcript labels them "You"/"Opponent" and never contains a model name. Before this, models would defer to a name they recognised.
+- The judge gets the same anonymised transcript and returns structured JSON — winner, decisive argument, reasoning, 0–100 scores. Verdicts are HMAC-signed, so a shared verdict renders "verified" and a doctored one doesn't.
+- OpenRouter's reasoning.effort param is a trap: it CAPS thinking on models that reason by default, but SWITCHES IT ON for opt-in reasoners. Tagging it blanket-style took one model from 0 to 3,577 thinking tokens a turn and 5.8s to 183s. Every model in the catalog is now probed bare vs effort:low before it gets tagged.
+- Costs are tracked per turn with cache-aware pricing, and there are hard global/per-IP daily spend caps in front of every paid route, because the alternative is a stranger draining the API budget overnight.
+
+91 models across 15 providers behind one interface. There's a /report page that renders the actual prompts, catalog and pricing from the same source files the API routes use, so it can't drift from reality.
+
+Free to try: https://www.debator.xyz
+
+<em class="note">Every claim here is verifiable in the repo, which is the point — HN will check. The reasoning.effort finding is genuinely novel and is the most likely thing to get quoted in comments. Do not use the word "arcade" in the title; save it for the site.</em></div>
+</div>
+
+<h3>X / Twitter <span class="pill free">FREE</span></h3>
+<p>Clips, not announcements. The verdict card was built to be screenshotted —
+use it. One post per match, not one post per feature.</p>
+
+<div class="sample">
+  <div class="sh"><span>X — single post + image</span></div>
+  <div class="sb">i made Grok 4.5 and Claude Opus 5 argue about whether Saruman was more righteous than Gandalf
+
+neither of them knew who they were up against
+a third model scored it blind
+
+Opus won by 20 points 🏆
+
+[verdict card image]
+
+<em class="note">Lowercase, no hashtags, no "check out my app," no link in the first post (the algorithm suppresses it) — put the link in the first reply. The image does the work.</em></div>
+</div>
+
+<div class="sample">
+  <div class="sh"><span>X — thread opener for launch day</span></div>
+  <div class="sb">i spent 6 months building a fighting game where the fighters are 91 AI models
+
+you pick both of them. they argue for 3 rounds. a neutral model judges without knowing who's who.
+
+here's what i learned making LLMs fight 🧵
+
+<em class="note">Thread beats: (1) models defer to names they recognise → identity-blind fix; (2) the reasoning.effort trap with the 5.8s→183s number; (3) letting models control turn order produces infinite agreement loops; (4) the cost of running 91 models and how the coin economy covers it; (5) the demo clip; (6) link + free coins.
+Build-in-public threads outperform product announcements roughly 10:1 for solo founders.</em></div>
+</div>
+
+<h3>TikTok / Reels / Shorts <span class="pill free">FREE</span> <span class="pill hi">BEST UPSIDE</span></h3>
+<p>"AI vs AI" is an established, proven short-form format, and this is the only
+channel where a $0 budget can still reach six figures of people. It is also the
+most work. If you only pick one channel to do properly, pick this one.</p>
+
+<div class="sample">
+  <div class="sh"><span>Short-form script · 35s vertical</span></div>
+  <div class="sb"><strong>0:00–0:03</strong>  Hook, text on screen, no intro:
+             "I made ChatGPT and Claude fight about this."
+             (topic on screen, big)
+
+<strong>0:03–0:08</strong>  Fighter select — the two logo tiles snapping in.
+             This is your best visual. Do not skip it.
+
+<strong>0:08–0:22</strong>  Best 2 lines from each side, as captions over the
+             arena. Cut every pause. TTS voice reads them.
+
+<strong>0:22–0:30</strong>  Verdict card slams in. Score bar animates.
+
+<strong>0:30–0:35</strong>  "Who do you think should've won? I'll run the
+             rematch with your topic." → comment bait.
+
+<em class="note">Post 1/day for 14 days from the content bank. The comment bait is doing double duty: it farms engagement AND generates your next video's topic for free. Reply to every comment with a real match you actually ran.</em></div>
+</div>
+
+<h4>Topics that reliably travel</h4>
+<ul class="tight">
+  <li><strong>Fandom grudges</strong> — LOTR/Marvel/anime power scaling. Enormous, argumentative, zero political risk. (Your existing Saruman match is exactly this.)</li>
+  <li><strong>Model-vs-model pride</strong> — "GPT argues it's smarter than Claude." AI Twitter cannot scroll past this.</li>
+  <li><strong>Mild everyday spice</strong> — pineapple on pizza, is a hot dog a sandwich, should tipping exist.</li>
+  <li><strong>Tech religion</strong> — tabs vs spaces, Rust vs Go, is CSS a programming language.</li>
+</ul>
+<div class="callout warn">
+  <div class="t">Avoid</div>
+  <p>Elections, war, abortion, religion, anything targeting a real living person.
+  The reach is tempting and the downside is your provider accounts. Note the
+  "unhinged" tone is barred from publishing for exactly this reason — don't
+  route around your own safety rail for engagement.</p>
+</div>
+
+<h3>Product Hunt <span class="pill free">FREE</span> <span class="pill hi">ONE SHOT</span></h3>
+<p>Launch <em>after</em> payments are live, Tue–Thu, 12:01am PT. Needs prep:
+gallery images (the fighter select, the arena mid-fight, the verdict card), the
+6.2 MB demo video as the hero, and 15–20 people told in advance. Don't buy
+upvotes — PH detects it and it kills the launch.</p>
+<div class="sample">
+  <div class="sh"><span>Product Hunt listing</span></div>
+  <div class="sb"><strong>Name:</strong> Debator
+<strong>Tagline:</strong> Make AIs fight your ideas (60 char limit — this fits)
+<strong>Description:</strong>
+Pick any two of 91 AI models — Claude, GPT, Gemini, Grok, DeepSeek, Qwen and more — give them a topic, and watch them argue it out for three rounds in an arcade fighting-game interface.
+
+Neither fighter knows who they're up against: transcripts are identity-blind, so nobody wins on brand recognition. A neutral third model judges the anonymised transcript and scores it 0–100.
+
+Optional Deep Debate grounds every turn in live web search with numbered citations. Verdicts are cryptographically signed, so the one you share is provably the one that happened.
+
+15 free coins a day. No subscription.</div>
+</div>
+
+<h3>Discord + niche communities <span class="pill free">FREE</span></h3>
+<p>Slow but converts far better than Reddit because you're a person, not a post.
+Join 5–6 AI Discords, be useful for two weeks before mentioning the product, then
+offer to run people's matchups live. The <code>/m/&lt;id&gt;</code> links do the
+selling. A promo code with 20 redemptions per server makes you welcome instead of
+spammy.</p>
+
+<h3>SEO <span class="pill free">FREE</span> <span class="pill hi">COMPOUNDS</span></h3>
+<p>Slowest channel, only one that still pays in a year. Two moves:</p>
+<ul class="tight">
+  <li><strong>Let published matches index</strong> (see §4). Every public match
+  is a page targeting a query nobody else has content for.</li>
+  <li><strong>Publish 20 seeded matches on head-term matchups</strong> — "GPT-5.6 vs
+  Claude Opus 5," "DeepSeek vs Qwen," etc. — from the content bank. That's a $2
+  API spend for 20 indexable pages on queries with real search volume and
+  almost no competition.</li>
+</ul>
+
+<h3>Micro-newsletters <span class="pill paid">$0–50</span></h3>
+<p>The only paid channel worth touching here. Skip TLDR AI ($3–8k). Target
+<strong>2k–8k subscriber</strong> AI newsletters that sell classifieds at
+$25–75 — they're on beehiiv/Substack, and you find them by asking. One slot,
+tracked with a dedicated promo code so you can measure it exactly. If it
+doesn't clear its cost in signups, never buy another.</p>
+</section>
+
+<!-- ─────────────────────────────────────────── 6 -->
+<section class="part">
+<div class="part-head"><div class="stepno">6</div><h2 class="heading">The content engine</h2></div>
+
+<p>Everything above eats content. This is the factory that feeds it, and it's
+what the $60 API line is really buying.</p>
+
+<div class="callout ok">
+  <div class="t">The rule</div>
+  <p><strong>One match → five assets.</strong> Never run a match for a single
+  post. Every match yields: a vertical clip, a verdict-card image, a Reddit
+  post, an X post, and an indexable <code>/m/&lt;id&gt;</code> page. Fifty
+  matches is therefore 250 assets — roughly three months of daily posting for
+  about $5 of API spend.</p>
+</div>
+
+<h4>Phase 0 production run (do this now, while payments are in review)</h4>
+<ol class="steps">
+  <li>Write 50 topics: 20 fandom grudges, 10 model-vs-model, 10 everyday spice, 10 tech religion.</li>
+  <li>Run them, varying the matchups so the roster's range is visible. Deep Debate on for ~10 so citations show up in the footage.</li>
+  <li>Keep the ~20 with genuinely surprising verdicts. Discard the rest — a boring debate makes a boring clip and no amount of editing fixes it.</li>
+  <li>Publish all 20 publicly to the community hub. That seeds <code>/community</code>
+  (an empty hub on launch day reads as a dead product) <em>and</em> creates 20 SEO pages.</li>
+  <li>Clip the best 14 vertically. That is two weeks of daily short-form, banked before launch.</li>
+</ol>
+
+<h4>Promo codes are your marketing currency</h4>
+<p>You already have the tooling. Mint a distinct code per channel — that's how
+you attribute without any analytics work, since redemptions are visible in
+<code>/admin</code>:</p>
+<pre><code>node scripts/create-promo.mjs --coins 100 --max 50  --days 30 --code REDDIT-LAUNCH
+node scripts/create-promo.mjs --coins 100 --max 200 --days 14 --code PRODUCTHUNT
+node scripts/create-promo.mjs --coins 150 --max 25  --days 30 --code CREATOR
+node scripts/create-promo.mjs --coins 100 --max 40  --days 30 --code NEWSLETTER-01</code></pre>
+<p>100 coins ≈ $1 of real API cost. A 50-redemption code is a <strong>$50
+maximum</strong> exposure, capped in the database — you cannot overspend it by
+accident. That is a far better deal than any ad platform will give you, and the
+redemption count tells you exactly which channel is working.</p>
+
+<div class="callout info">
+  <div class="t">Creator outreach — the highest-value $40 you can spend</div>
+  <p>Find 20–30 small AI creators (5k–50k followers; the big ones won't reply
+  and don't convert). Send a <code>CREATOR</code> code worth 150 coins with a
+  specific matchup suggestion tailored to what they already post about. Not
+  "please cover my app" — "I ran &lt;model they love&gt; against &lt;rival&gt;
+  on &lt;their topic&gt;, here's the verdict, here's a code to run your own."
+  The link is the pitch. Expect 2–4 to post; one of those is worth more than the
+  entire ad budget.</p>
+</div>
+</section>
+
+<!-- ─────────────────────────────────────────── 7 -->
+<section class="part">
+<div class="part-head"><div class="stepno">7</div><h2 class="heading">Six-week calendar</h2></div>
+
+<div class="scroller">
+<table>
+  <thead><tr><th>Week</th><th>Gate</th><th>Do</th><th>Spend</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1</strong><br>Jul 28–Aug 3</td><td>Payments in review</td>
+      <td>Run the 50-match production block. Publish 20 to the hub. <strong>Ship <code>sitemap.ts</code> + <code>robots.ts</code></strong> (both 404 today). Verify <code>SHARE_SECRET</code> on Vercel. Confirm provider caps. Mint the promo codes.</td><td class="num">~$10</td></tr>
+    <tr><td><strong>2</strong><br>Aug 4–10</td><td>Payments in review</td>
+      <td>Clip 14 shorts. Start posting 1/day to TikTok+Reels+Shorts — this channel needs a running start, and it's the one that doesn't depend on checkout working. Join Discords, say nothing yet. Draft PH assets + Show HN post.</td><td class="num">~$5</td></tr>
+    <tr><td><strong>3</strong><br>Aug 11–17</td><td>⚡ Payments live</td>
+      <td>Verify a real card end-to-end with your own money first. Then the soft posts: r/SideProject, r/webgames, r/InternetIsBeautiful. Creator outreach goes out. Shorts continue daily.</td><td class="num">~$20</td></tr>
+    <tr><td><strong>4</strong><br>Aug 18–24</td><td>Live</td>
+      <td><strong>Launch week.</strong> Tue: Product Hunt 12:01am PT. Wed: Show HN 8am ET. Thu–Fri: r/singularity + r/artificial with the best two matches. X thread on launch day. Be at the keyboard all day answering everything.</td><td class="num">~$25</td></tr>
+    <tr><td><strong>5</strong><br>Aug 25–31</td><td>Live</td>
+      <td>Ride whatever moved. Post the "what I learned launching" retro to r/indiehackers. Buy the newsletter slot only if a channel has proven it converts.</td><td class="num">~$0–50</td></tr>
+    <tr><td><strong>6</strong><br>Sep 1–7</td><td>Live</td>
+      <td>Cut everything that produced nothing. Double down on the one channel that worked. Decide whether Turkish (<code>MULTILOCALE_ENABLED</code>) opens a second market cheaply.</td><td class="num">reserve</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout warn">
+  <div class="t">Week 3, before anything else</div>
+  <p>Buy a coin pack with a real card, on a real phone, on mobile data. Polar
+  activation flipping on is not proof the flow works end-to-end for a stranger.
+  The webhook must point at <code>www.debator.xyz</code> — the apex 308-redirects
+  and Polar does not follow redirects, which fails <em>silently</em>: no coins, no
+  error. Discovering that during a Product Hunt spike would be the worst possible
+  time.</p>
+</div>
+</section>
+
+<!-- ─────────────────────────────────────────── 8 -->
+<section class="part">
+<div class="part-head"><div class="stepno">8</div><h2 class="heading">Numbers to watch, and when to quit a channel</h2></div>
+
+<p>At this budget you cannot afford to be sentimental about a channel. Set the
+kill criteria before you start so you're not arguing with yourself later.</p>
+
+<div class="scroller">
+<table>
+  <thead><tr><th>Metric</th><th>Where</th><th>Healthy</th><th>Kill if</th></tr></thead>
+  <tbody>
+    <tr><td>Signups / day</td><td>Supabase</td><td>10+ in launch week</td><td>—</td></tr>
+    <tr><td>Match completion</td><td><code>/admin</code></td><td>&gt;60% of started matches finish</td><td>&lt;40% → the product leaks, fix before spending more</td></tr>
+    <tr><td>Shares per completed match</td><td>published rows</td><td>&gt;15%</td><td>&lt;5% → the share CTA isn't working; the loop is your engine</td></tr>
+    <tr><td>Promo redemptions per code</td><td><code>/admin</code></td><td>&gt;20% of cap</td><td>&lt;5% in 2 weeks → that channel is dead, stop posting there</td></tr>
+    <tr><td>Day-2 return</td><td>daily claims</td><td>&gt;20% claim twice</td><td>&lt;10% → it's a toy, not a habit; fix retention before acquisition</td></tr>
+    <tr><td>First purchase</td><td><code>coin_ledger</code> <code>reason='order'</code></td><td>any, week 4</td><td>zero by end of week 5 → price or value problem, not a traffic problem</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout info">
+  <div class="t">The number that actually decides everything</div>
+  <p><strong>Day-2 return rate.</strong> The daily-claim button makes this
+  trivially measurable — a row in <code>coin_daily_claims</code> per user per day
+  is a clean retention curve, for free. If people don't come back on day two, no
+  amount of traffic will build a business, and every dollar of acquisition is
+  wasted. Check this before you spend the reserve.</p>
+</div>
+</section>
+
+<!-- ─────────────────────────────────────────── 9 -->
+<section class="part">
+<div class="part-head"><div class="stepno">9</div><h2 class="heading">What not to do</h2></div>
+<ul class="tight">
+  <li><strong>Don't launch on Product Hunt or HN before payments work.</strong>
+  Both are one-shot. Spending them on a page that can't sell is unrecoverable.</li>
+  <li><strong>Don't buy ads at this budget.</strong> $100 of clicks is noise.
+  The same money as content produces assets that keep working.</li>
+  <li><strong>Don't buy upvotes or followers.</strong> PH and Reddit detect it,
+  and the penalty is the launch.</li>
+  <li><strong>Don't post the product where the result belongs.</strong> Reddit
+  bans the first and upvotes the second.</li>
+  <li><strong>Don't chase political reach.</strong> Your provider accounts are
+  the whole business; a suspended OpenRouter key ends the campaign faster than
+  any competitor.</li>
+  <li><strong>Don't run all channels at once.</strong> Solo founder, five
+  channels, two weeks = five channels done badly. Shorts + Reddit properly beats
+  everything half-done.</li>
+  <li><strong>Don't remove the spend caps to handle a traffic spike.</strong>
+  Raise them deliberately with a number you'd accept losing. The caps are the
+  only thing standing between a viral post and a bill you can't pay.</li>
+</ul>
+</section>
+
+<hr>
+
+<section class="part">
+<h2 class="heading">If you only do three things</h2>
+<ol class="steps">
+  <li><strong>Ship a sitemap and robots.txt.</strong> Both are 404 in production
+  right now, so your already-crawlable match pages are effectively invisible.
+  One hour of work; the only item here that compounds forever and costs nothing
+  per month.</li>
+  <li><strong>Run 50 matches this week and clip 14 of them.</strong> ~$10, and it
+  is the entire campaign's ammunition. Without it every channel above is empty.</li>
+  <li><strong>Post one short per day for 14 days starting week 2.</strong> The
+  only free channel that can still reach six figures, and the only one that
+  works while checkout is still in review.</li>
+</ol>
+<p>Everything else in this document is optional. Those three are not.</p>
+</section>
+
+<div class="foot">
+  Debator · docs/25 · drafted 2026-07-28. Budget assumptions: $100 ideal / $250
+  ceiling, plus ~$100 API. Product facts (91 models, 15 brands, coin bands, pack
+  prices, Polar review status, spend caps) are drawn from the repo and
+  <code>docs/23_COINS.md</code> as of this date — re-check before quoting them in
+  public copy, since the catalog grows continuously.
+</div>
+
+</div>
+</body>
+</html>
