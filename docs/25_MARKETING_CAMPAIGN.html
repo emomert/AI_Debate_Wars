@@ -119,38 +119,46 @@ yet.</strong></p>
 <section class="part">
 <div class="part-head"><div class="stepno">1</div><h2 class="heading">The constraint that sets the timeline</h2></div>
 
-<div class="callout warn">
-  <div class="t">Read this before spending a dollar</div>
-  <p>Polar's production org is still in <strong>test mode</strong> pending
-  merchant review (~2 weeks from 2026-07-27, so roughly <strong>Aug 10</strong>).
-  Card checkout renders "Payments are currently unavailable." Only free /
-  100%-discount orders complete.</p>
-  <p><strong>Consequence:</strong> every visitor you buy or earn before that
-  date is a visitor you cannot convert. Traffic does not keep. A Show HN spike
-  is a once-per-product event, and spending it on a page that can't sell is the
-  single most expensive mistake available to you right now.</p>
+<div class="callout ok">
+  <div class="t">Cleared 2026-07-28 — Polar is activated, payments are open</div>
+  <p>Verified live: <code>/api/checkout?pack=100</code> creates a real Polar
+  session that renders a working card form — correct product ("100 Coins",
+  $4.99), buyer email attached, Polar as merchant of record, an active
+  <strong>Pay now</strong> button, and no "Payments are currently unavailable"
+  notice. The revenue path is open.</p>
 </div>
 
-<p>So the campaign splits at that gate:</p>
+<p>The original blocker is gone, so the gate that used to set the schedule no
+longer does. <strong>The constraint is now content readiness, not
+checkout.</strong> That matters, because the failure mode has moved:</p>
 
 <div class="grid2">
   <div class="tile">
-    <div class="k">Phase 0 · now → payments live</div>
-    <div class="v">Build ammunition. Spend $0 on reach.</div>
-    <p>Produce the content bank, seed low-stakes communities, collect emails,
-    fix what early users trip over. Nothing irreversible fires here.</p>
+    <div class="k">Old risk — resolved</div>
+    <div class="v">Traffic arrives, can't pay.</div>
+    <p>Gone. You can convert anyone you reach, from today.</p>
   </div>
   <div class="tile">
-    <div class="k">Phase 1 · payments live → +2 weeks</div>
-    <div class="v">Fire everything at once.</div>
-    <p>Product Hunt, Show HN, and the Reddit blitz land inside one week, on top
-    of a content library that already exists. One-shot channels get used once,
-    properly.</p>
+    <div class="k">New risk — live now</div>
+    <div class="v">Traffic arrives, nothing to show.</div>
+    <p>Product Hunt and Show HN are still one-shot. Firing them before the
+    content bank exists, before shorts have any traction, and before
+    <code>/community</code> has matches in it, wastes them just as
+    permanently.</p>
   </div>
 </div>
 
-<p>The waiting period is not dead time — it is the only time you'll ever have to
-build a content backlog without the pressure of a live launch. Use it.</p>
+<div class="callout warn">
+  <div class="t">Do not launch this week</div>
+  <p>The temptation now that payments work is to fire Product Hunt immediately.
+  Resist it for <strong>~two weeks</strong>. A launch spike lands on whatever
+  exists that day: an empty community hub, no clips in circulation, and no
+  answers ready for "how is this different from Compelle?" reads as a dead
+  product no matter how good the app is. Spend the fortnight loading the gun.</p>
+  <p>What genuinely can start today: the content production run, the sitemap
+  fix, short-form posting, and the low-stakes subreddits. None of those are
+  one-shot, and all of them get better with a running start.</p>
+</div>
 
 <div class="callout info">
   <div class="t">Hidden cost, flag it now</div>
@@ -582,30 +590,37 @@ redemption count tells you exactly which channel is working.</p>
 <table>
   <thead><tr><th>Week</th><th>Gate</th><th>Do</th><th>Spend</th></tr></thead>
   <tbody>
-    <tr><td><strong>1</strong><br>Jul 28–Aug 3</td><td>Payments in review</td>
-      <td>Run the 50-match production block. Publish 20 to the hub. <strong>Ship <code>sitemap.ts</code> + <code>robots.ts</code></strong> (both 404 today). Verify <code>SHARE_SECRET</code> on Vercel. Confirm provider caps. Mint the promo codes.</td><td class="num">~$10</td></tr>
-    <tr><td><strong>2</strong><br>Aug 4–10</td><td>Payments in review</td>
-      <td>Clip 14 shorts. Start posting 1/day to TikTok+Reels+Shorts — this channel needs a running start, and it's the one that doesn't depend on checkout working. Join Discords, say nothing yet. Draft PH assets + Show HN post.</td><td class="num">~$5</td></tr>
-    <tr><td><strong>3</strong><br>Aug 11–17</td><td>⚡ Payments live</td>
-      <td>Verify a real card end-to-end with your own money first. Then the soft posts: r/SideProject, r/webgames, r/InternetIsBeautiful. Creator outreach goes out. Shorts continue daily.</td><td class="num">~$20</td></tr>
+    <tr><td><strong>1</strong><br>Jul 28–Aug 3</td><td>💳 Payments LIVE</td>
+      <td><strong>Buy a pack with your own real card first</strong> — before anything else, on mobile data. Then: the 50-match production block, publish 20 to the hub, ship <code>sitemap.ts</code> + <code>robots.ts</code> (both 404 today), verify <code>SHARE_SECRET</code> on Vercel, confirm provider caps, mint the promo codes.</td><td class="num">~$15</td></tr>
+    <tr><td><strong>2</strong><br>Aug 4–10</td><td>Live</td>
+      <td>Clip 14 shorts, start posting 1/day — this channel needs a running start and compounds. Soft Reddit posts: r/SideProject, r/webgames, r/InternetIsBeautiful. Creator outreach goes out. Join Discords, say nothing yet. Draft PH assets + Show HN post.</td><td class="num">~$25</td></tr>
+    <tr><td><strong>3</strong><br>Aug 11–17</td><td>Live</td>
+      <td><strong>Launch week.</strong> Tue: Product Hunt 12:01am PT. Wed: Show HN 8am ET. Thu–Fri: r/singularity + r/artificial with the best two matches. X thread on launch day. Be at the keyboard all day answering everything.</td><td class="num">~$20</td></tr>
     <tr><td><strong>4</strong><br>Aug 18–24</td><td>Live</td>
-      <td><strong>Launch week.</strong> Tue: Product Hunt 12:01am PT. Wed: Show HN 8am ET. Thu–Fri: r/singularity + r/artificial with the best two matches. X thread on launch day. Be at the keyboard all day answering everything.</td><td class="num">~$25</td></tr>
-    <tr><td><strong>5</strong><br>Aug 25–31</td><td>Live</td>
       <td>Ride whatever moved. Post the "what I learned launching" retro to r/indiehackers. Buy the newsletter slot only if a channel has proven it converts.</td><td class="num">~$0–50</td></tr>
-    <tr><td><strong>6</strong><br>Sep 1–7</td><td>Live</td>
-      <td>Cut everything that produced nothing. Double down on the one channel that worked. Decide whether Turkish (<code>MULTILOCALE_ENABLED</code>) opens a second market cheaply.</td><td class="num">reserve</td></tr>
+    <tr><td><strong>5–6</strong><br>Aug 25–Sep 7</td><td>Live</td>
+      <td>Cut everything that produced nothing. Double down on the one channel that worked. Check day-2 return before spending the reserve. Decide whether Turkish (<code>MULTILOCALE_ENABLED</code>) opens a second market cheaply.</td><td class="num">reserve</td></tr>
   </tbody>
 </table>
 </div>
 
 <div class="callout warn">
-  <div class="t">Week 3, before anything else</div>
-  <p>Buy a coin pack with a real card, on a real phone, on mobile data. Polar
-  activation flipping on is not proof the flow works end-to-end for a stranger.
-  The webhook must point at <code>www.debator.xyz</code> — the apex 308-redirects
-  and Polar does not follow redirects, which fails <em>silently</em>: no coins, no
-  error. Discovering that during a Product Hunt spike would be the worst possible
-  time.</p>
+  <div class="t">Week 1, before anything else</div>
+  <p>Buy a coin pack with a real card, on a real phone, on mobile data, and
+  confirm the coins actually land. Activation flipping on is <em>not</em> proof
+  the full flow works for a stranger — it only proves the checkout page renders.
+  The paid path has never once completed end-to-end; the earlier verification
+  used a 100%-discount order, which does not exercise card capture or the paid
+  webhook.</p>
+  <p>The webhook must point at <code>www.debator.xyz</code> — the apex
+  308-redirects and Polar does not follow redirects, which fails
+  <strong>silently</strong>: no coins, no error, nothing logged, because the
+  handler never runs. That already happened once. Confirm by checking for a
+  <code>coin_ledger</code> row with <code>reason='order'</code> after the test
+  purchase; if it's missing, Polar's Deliveries log has a Redeliver button and
+  crediting is idempotent, so redeliver freely.</p>
+  <p>Discovering this during a Product Hunt spike is the worst possible timing,
+  and it is now the single highest-consequence unknown in the whole plan.</p>
 </div>
 </section>
 
