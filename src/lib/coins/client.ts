@@ -33,3 +33,22 @@ export const COINS_CHANGED_EVENT = "ada:coins-changed";
 export function notifyCoinsChanged(): void {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(COINS_CHANGED_EVENT));
 }
+
+/**
+ * Fired the MOMENT a spend is set in motion, carrying the amount, so the header
+ * chip can drop instantly instead of waiting for the round trip.
+ *
+ * Why this exists: a match is charged server-side at the very start of the turn
+ * route, but the client only learns the new balance when it re-reads
+ * `coin_status`. The first turn takes seconds of model generation, so a
+ * refresh-on-response alone leaves the chip stale for the whole first turn —
+ * the balance looked like it dropped late. The listener applies this amount
+ * optimistically and the next real fetch (fired on turn success) replaces it
+ * with the authoritative number.
+ */
+export const COINS_SPENT_EVENT = "ada:coins-spent";
+
+export function notifyCoinsSpent(amount: number): void {
+  if (typeof window === "undefined" || !Number.isFinite(amount) || amount <= 0) return;
+  window.dispatchEvent(new CustomEvent(COINS_SPENT_EVENT, { detail: { amount } }));
+}

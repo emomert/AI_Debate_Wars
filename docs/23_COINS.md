@@ -90,7 +90,17 @@ bucket = spendable on any fighter, never expire.
 ## UI map
 
 - Header: `CoinBalance` chip (purchased + daily remaining → links `/pricing`),
-  refreshes on focus/auth/`ada:coins-changed`.
+  refreshes on focus/auth/`ada:coins-changed`, and drops OPTIMISTICALLY on
+  `ada:coins-spent` (2026-07-28). Before that the chip only re-read the balance
+  when the first turn RESPONDED, so a match's charge — applied server-side
+  before any model work — appeared ~18s late; it now shows within ~1.6s of
+  START (the rest is the /debate page transition). `debateClient.generateTurn`
+  fires the spend on the first turn of each battle (`messages.length === 0`,
+  the request that triggers `ensureMatchCharged`) and re-reads on success;
+  `generateVerdict` re-reads too, since a picked judge is charged there.
+  The chip keeps a spend counter so an in-flight read cannot wipe a newer
+  optimistic drop — starting a match remounts the chip, and that mount's fetch
+  (issued pre-charge) otherwise resolved late and restored the old number.
 - Picker rows: coin chip replaces the $-tier badge; purple ★ = premium.
 - Match Card: a dedicated "Total cost — 🪙 N coins" row (across battles, judge
   included) at the bottom of the card; replaced the easy-to-miss badge chip

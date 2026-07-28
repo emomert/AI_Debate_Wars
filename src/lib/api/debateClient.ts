@@ -18,6 +18,8 @@ import type {
   DebateVerdict,
 } from "@/lib/debate/debateTypes";
 import type { TopicCheckResult } from "@/lib/debate/topicCheck";
+import { notifyCoinsChanged, notifyCoinsSpent } from "@/lib/coins/client";
+import { matchCoinCost } from "@/lib/coins/economy";
 import type { Locale } from "@/lib/i18n/config";
 import { ProviderError, type AppErrorCode } from "@/lib/utils/errors";
 
@@ -54,11 +56,30 @@ export async function generateTurn(
   turnId: string,
   signal?: AbortSignal,
 ): Promise<DebateMessage> {
+  // The match is charged once, server-side, at the start of the FIRST turn's
+  // request (ensureMatchCharged) — before any model work. Tell the header chip
+  // now rather than after generation, or the balance appears to drop seconds
+  // late. Every path (prefetch included) funnels through here, and each battle
+  // in a multi-battle match charges separately, so each one fires on its own
+  // first turn.
+  const chargesNow = session.messages.length === 0;
+  if (chargesNow) {
+    notifyCoinsSpent(
+      matchCoinCost({
+        modelAId: session.modelA.modelId,
+        modelBId: session.modelB.modelId,
+        deepDebate: session.deepDebate,
+        responseLength: session.responseLength,
+      }),
+    );
+  }
   const data = await postJson<GenerateTurnResponse>(
     "/api/debate/turn",
     { session, turnId },
     signal,
   );
+  // Replace the optimistic figure with the authoritative one.
+  if (chargesNow) notifyCoinsChanged();
   return data.message;
 }
 
@@ -71,6 +92,9 @@ export async function generateVerdict(
     { session },
     signal,
   );
+  // A picked third-model judge is charged at the verdict route; Auto is free.
+  // Re-read either way rather than guessing which resolved judge was used.
+  notifyCoinsChanged();
   return data.verdict;
 }
 
