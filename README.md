@@ -1,92 +1,86 @@
-# AI Debate Arena — Project Documentation Pack
+# AI Debate Arena
 
-This documentation pack defines the product, visual identity, architecture, debate engine, prompting system, provider layer, cost tracking, UX flows, roadmap, and implementation workflow for **AI Debate Arena**.
+Debator (AI Debate Arena) is an arcade-style Next.js app where users pick a topic, choose two real AI fighters, and watch a fixed-length debate with a mandatory judge. Costs are tracked internally; the cost UI is currently hidden.
 
-AI Debate Arena is a gamified web app where users enter a topic, select two AI models, choose a structured debate or discussion mode, configure rounds and judge settings, and watch the models debate in a colorful browser-game style interface.
+The current launch shape is:
 
-## Recommended Workflow
+- English-only UI
+- Debate Mode only
+- fixed 3-round matches
+- short responses only
+- mandatory judge in every match
+- real providers: OpenAI, DeepSeek, OpenRouter
+- recorded demo video on the home page
 
-Use this pack with Claude Code or another agentic coding tool.
-
-1. Create a fresh Next.js project.
-2. Copy all files from this documentation pack into the project root.
-3. Start with `CLAUDE.md`.
-4. Ask the AI coding agent to read all docs before writing code.
-5. Implement in phases:
-   - Phase 0: documentation validation
-   - Phase 1: static UI with mock data
-   - Phase 2: mock debate engine
-   - Phase 3: real OpenAI and DeepSeek integration
-   - Phase 4: streaming and cost tracking
-   - Phase 5: polish, sound, animation, responsiveness
-
-## Suggested Stack
-
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- Framer Motion
-- API routes
-- Provider abstraction layer
-- Local state for MVP
-- Optional later: Supabase/Postgres + authentication
-
-## Important Principle
-
-The AI models should **not** control the debate flow.  
-The application should control the round plan, speaker order, stop conditions, judge behavior, cost tracking, and session state.
-
-The AI models should only generate one turn at a time under strict role and round instructions.
-
-## Running the App
+## Quick Start
 
 ```bash
-npm install
-npm run dev      # http://localhost:3000
+npm ci
+npm run dev
 ```
 
-Other scripts: `npm run build`, `npm run start`, `npm run typecheck`.
+Use Node 24.x to match production on Vercel.
 
-Flow: **Home** → **Setup** (`/setup`) → **Debate** (`/debate`) → **Result**
-(`/result`). Each turn is generated one at a time by a server route; the app —
-never a model — controls speaker order, rounds, stop conditions and judge timing.
+## Scripts
 
-### Mock mode (no API keys)
+- `npm run dev`
+- `npm run build`
+- `npm run start`
+- `npm run typecheck`
+- `npm run test`
 
-Works out of the box. The default fighters are **Mock Sage** and **Mock Rebel**
-(provider `mock`), which run instantly and free through the same API routes as
-real providers. **"Try a Sample"** on Home jumps straight into a mock match.
+`npm run lint` runs ESLint noninteractively. GitHub Actions runs locked installation, lint, typecheck, tests and build on Node 24.
 
-### Live mode (OpenAI / DeepSeek)
+## Environment
 
-Add keys to a `.env.local` (or `.env`) file, then restart:
+Start from [.env.example](./.env.example) and keep your local secrets in `.env.local`.
 
-```bash
-OPENAI_API_KEY=sk-...
-DEEPSEEK_API_KEY=...
-```
+Required or commonly used variables:
 
-In **Setup → Choose Your Fighters**, real models show a **“ready”** badge when a
-key is present and **“needs key”** when not. Keys are read **server-side only**
-(in `/api/debate/*` routes) and are never sent to the browser. If you pick a
-real model without its key, the arena shows a friendly "needs API key" error with
-a Retry button — mock fighters keep working regardless.
+- `OPENAI_API_KEY`
+- `DEEPSEEK_API_KEY`
+- `OPENROUTER_API_KEY`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `COIN_CHARGE_SECRET`
+- `NEXT_PUBLIC_PAYMENTS_ENABLED`
+- `POLAR_ACCESS_TOKEN`
+- `POLAR_WEBHOOK_SECRET`
+- `POLAR_PRODUCT_100`
+- `POLAR_PRODUCT_250`
+- `POLAR_PRODUCT_700`
 
-The judge’s **Auto** option picks a neutral judge based on available keys
-(OpenAI → DeepSeek → Mock). You can also force Model A/B or a specific third model
-as judge (with a bias warning).
+Production matches require Supabase and a signed-in user even with coins disabled. With coins enabled (the default), charges also require signing. Apply migration 0015 before releasing this version. `SUPABASE_SERVICE_ROLE_KEY` signs charges and enables distributed rate limits/admin analytics; `COIN_CHARGE_SECRET` is an optional signing override. Payments require the Polar variables including `POLAR_SERVER`, plus `NEXT_PUBLIC_PAYMENTS_ENABLED=true`. These flags do not verify checkout or webhook delivery by themselves.
 
-### Environment variables
+## Current Behavior
 
-See `.env.example`. Only `OPENAI_API_KEY` and `DEEPSEEK_API_KEY` are needed for
-the MVP; everything else is for later phases. Optional overrides:
-`OPENAI_BASE_URL`, `DEEPSEEK_BASE_URL`.
+- Fighters come from the live model catalog in [`src/lib/models/modelRegistry.ts`](./src/lib/models/modelRegistry.ts).
+- Pricing comes from [`src/lib/cost/pricing.ts`](./src/lib/cost/pricing.ts).
+- The server owns round order, transcripts and fixed price quotes; repeated requests return saved answers. Budgets are reserved before each paid attempt. Old saved sessions remain readable, but sessions without a server record cannot generate further turns or verdicts.
+- To run local debates without Supabase, explicitly set `NEXT_PUBLIC_COINS_ENABLED=false`, supply at least one provider API key, and restart/rebuild. There are no mock fighters.
+- Migrations are not applied automatically; run them manually when needed.
 
-### Status
+## Deployment Notes
 
-✅ **MVP usable locally** — deterministic debate engine, provider abstraction
-(mock + OpenAI + DeepSeek), server-side API routes, per-message + total cost
-tracking, Judge Mode with verdict, simulated streaming, error/empty/loading
-states, responsive arcade UI. OpenRouter is intentionally not wired yet but the
-provider layer is ready for it (one registry entry).
+- The git remote stays connected after a folder move as long as the `.git` directory is present.
+- A missing local `.vercel` directory only affects Vercel CLI linking and deploy commands.
+- Run scripts from the repository root. The demo helpers use relative paths and additionally require installed Chrome and `ffmpeg` on PATH.
 
+The migration runner now tracks versions and checksums and applies pending files only. Production was baselined through 0014 and migration 0015 was applied on September 8, 2026. Start with `node scripts/apply-migrations.mjs --status`; the one-time baseline command is only for an existing installation without a migration ledger. Follow [the release procedure](docs/27_AUDIT_FIXES_2026-09-08.md); a folder move does not require replaying SQL.
+
+## Demo
+
+The home page uses a recorded match video at [`public/demo/demo-match.mp4`](./public/demo/demo-match.mp4).
+Regeneration helpers live in [`scripts/record-demo.mjs`](./scripts/record-demo.mjs) and [`scripts/edit-demo.mjs`](./scripts/edit-demo.mjs).
+
+## Docs
+
+- [September audit fixes and release procedure](./docs/27_AUDIT_FIXES_2026-09-08.md)
+
+- [AGENTS.md — repository instructions](./AGENTS.md)
+- [docs/07_PROVIDER_INTEGRATION.md](./docs/07_PROVIDER_INTEGRATION.md)
+- [docs/08_COST_TRACKING.md](./docs/08_COST_TRACKING.md)
+- [docs/18_RELEASE_REQUIREMENTS.md](./docs/18_RELEASE_REQUIREMENTS.md)
+- [docs/23_COINS.md](./docs/23_COINS.md)
+- [docs/26_PROJECT_AUDIT_2026-09-08.md](./docs/26_PROJECT_AUDIT_2026-09-08.md)

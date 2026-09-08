@@ -49,7 +49,7 @@ casual banters, the hidden unhinged tone seethes, and custom tone text is
 passed through (sanitized, 80-char cap). The judge always gets courtroom
 gravitas. Legacy `tts-1` models reject `instructions`, so it's omitted there.
 
-## Cost armor (CLAUDE.md rules)
+## Cost armor (AGENTS.md rules)
 
 - `/api/tts` runs `enforceLimits(req, "tts")` (per-IP `RL_TTS_PER_MIN`,
   default 20/min) **and the daily spend caps** before any provider call, and

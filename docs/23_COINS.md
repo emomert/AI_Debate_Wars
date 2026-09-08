@@ -1,5 +1,9 @@
 # 23 — Coin Economy
 
+> **September 8 update:** 13 verified model additions have explicit coin prices. Billable fighter bands now account for the least-revenue pack, hidden reasoning, retries, Deep Debate search, longer output, and the included Auto verdict: 4 / 8 / 12 / 40 / 80 / 160 coins. GPT-5/GPT-6 variants are priced with hidden reasoning included. The live daily-claim schema is present; earlier “0014 pending” notes are stale. Payment implementation is complete but activation depends on environment and verified operations.
+>
+> **Billing note:** the economic checks are conservative planning invariants, not a guaranteed profit statement or an upper bound on provider invoices. Match ownership, persisted quotes, generation replay protection, and provider spend reservations are enforced separately; see [the audit](26_PROJECT_AUDIT_2026-09-08.md) for boundaries.
+
 > LIVE since 2026-07-12 (owner decision: launch before checkout — coins are
 > distributed via promo codes + `scripts/mint-coins.mjs` until Polar lands).
 > `COINS_ENABLED` (`src/lib/coins/config.ts`) defaults ON; the kill switch is
@@ -10,11 +14,14 @@
 
 ## The user-facing rule
 
-A match costs **fighter A + fighter B coins**. Deep Debate +2 flat. (The old
+A match costs **fighter A + fighter B coins**, plus a 4-coin allocation for the
+included Auto verdict. Deep Debate adds **20 coins flat**. That metered add-on
+uses purchased or promo coins, including when both fighters are in the free
+band. (The old
 "long length ×2" multiplier survives in `economy.ts` for legacy sessions, but
 the UI is strictly short-length since July 2026, so new matches never hit it.) The judge is priced **separately, at the
 verdict route** (decoupled from the match charge 2026-07-13 — see below): the
-**Auto judge (and a fighter-as-judge) is free**; a PICKED third-model judge adds
+**Auto judge has no additional verdict charge**; a PICKED third-model judge adds
 its coin price (flat). Judge charges are keyed on **(session, judge, transcript)**,
 so switching to a *different* judge costs that judge's price while re-running the
 **same** judge (or Auto) is idempotent/free. Multi-battle: each battle is priced
@@ -29,16 +36,50 @@ and charged separately.
 
 ## Coin prices
 
-Explicit per-model map in `src/lib/coins/economy.ts` (`MODEL_COINS`), banded
-1 / 2 / 4 / 8 / 12 / 20 per fighter from real per-match API cost.
+Explicit per-model map in `src/lib/coins/economy.ts` (`MODEL_COINS`) uses
+billable bands 4 / 8 / 12 / 40 / 80 / 160 per fighter. The source editorial
+bands remain in the file so each model's uplift is auditable. The 4-coin band
+is the free-tier ceiling; GPT-5/GPT-6 reasoning variants and the most expensive
+models occupy the higher bands.
 `economy.test.ts` enforces two invariants on every run:
 
-- every catalog model has a coin price;
-- every model clears a **≥5× margin** at 5¢/coin retail against `pricing.ts`
-  (usage profile: 2,680 in + 900 out + 2,400 thinking tokens for reasoning
-  models — from real recorded matches).
+- every catalog model has an **explicit** coin price (an own-property check now rejects fallback-only entries);
+- every model clears a conservative **≥5× planning comparison** at the lowest
+  net pack value, including short/medium/long fighter output;
+- every deep/long catalog pairing clears the same floor after the included Auto
+  judge allocation, search fees, retry allowance, and operating overhead;
+- every selectable third-model judge clears the floor against its verdict cost.
 
 When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
+
+The 700-coin pack is the least-revenue case. With the documented processor
+allowance of 10% plus $0.30 per order, its net is $17.691, or **$0.0252729 per
+coin**. The estimates apply a 20% retry allowance and 10% operating overhead
+(a 1.32 multiplier), use uncached input or the higher published cache-write
+rate, and include these planning profiles:
+
+- Fighter: 2,680 input tokens and 900 visible output tokens across three short
+  rounds; medium uses 1,500 output tokens and legacy long uses 2,400.
+- Reasoning: 3,000 hidden tokens for every GPT-5/GPT-6 variant plus tagged or
+  measured default-thinking models.
+- Deep Debate: 5,200 input tokens, 4,500 visible output tokens, and three
+  $0.005 searches per fighter.
+- Judge: 6,500 input / 700 output tokens for a normal transcript, or 12,000
+  input tokens for a deep transcript, with the same hidden-reasoning rule.
+
+These are conservative planning assumptions, not a profit guarantee and not a
+claim that the provider ledger bounds the final invoice. The checked-in GitHub
+Actions workflow runs economy tests alongside lint, TypeScript and build.
+
+For scale, the estimator puts one DeepSeek V4 Flash fighter at about $0.0084
+for a short match, $0.0110 for legacy long output, and $0.0359 for Deep Debate.
+GPT-6 Astra is about $0.3016 for a short match and $0.6006 for Deep Debate;
+its 160-coin fighter price is deliberately much higher because its published
+output rate is $50/M tokens and it carries hidden reasoning. A conservative
+Deep Debate match pairing DeepSeek V4 Flash with Haiku 4.5 (legacy long
+profile) is about $0.1325 including the Auto judge, six search calls, retries,
+and overhead; the corresponding charge is 40 coins (16 fighter coins × 2,
+plus 4 Auto allocation and 20 Deep Debate coins).
 
 ## Free tier & packs
 
@@ -65,7 +106,9 @@ When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
     impossible, and `coin_claim_daily()` is additionally guarded by the same
     `rl_hit` brute-force limiter `coin_redeem_promo` uses.
 - Daily coins cover fighters **up to 4 coins** (`FREE_MAX_FIGHTER_COINS`);
-  premium fighters (8/12/20 — purple ★ chip) need purchased/promo coins.
+  fighters above 4 coins (purple ★ chip) need purchased/promo coins. The
+  included Auto allocation is daily-eligible; Deep Debate's 20-coin metered
+  add-on is purchased/promo funded.
 - Packs (owner-set): **100/$4.99 · 250/$9.99 · 700/$19.99** — `/pricing` buy
   buttons go to `/api/checkout?pack=N` when `NEXT_PUBLIC_PAYMENTS_ENABLED=true`
   (signed-out → the START signup gate); otherwise the disabled "coming soon"

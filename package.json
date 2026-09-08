@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint src scripts next.config.mjs eslint.config.mjs --ext .js,.mjs,.ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -17,21 +17,32 @@
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
     "framer-motion": "^11.15.0",
-    "next": "^15.1.6",
+    "next": "^15.5.25",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
-    "autoprefixer": "^10.4.20",
+    "autoprefixer": "^10.5.5",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.25",
     "pg": "^8.22.0",
     "playwright-core": "^1.61.1",
-    "postcss": "^8.4.49",
+    "postcss": "^8.5.28",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.9"
+    "vitest": "^5.0.0"
+  },
+  "overrides": {
+    "browserslist": "4.28.9",
+    "next": {
+      "postcss": "8.5.28",
+      "sharp": "0.35.4"
+    },
+    "postcss-selector-parser": "6.1.3"
   }
 }

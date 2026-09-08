@@ -21,6 +21,8 @@ export interface ProviderModelConfig {
   modelId: string;
   maxOutputTokens: number;
   supportsStreaming: boolean;
+  /** Omit sampling temperature for models whose API does not accept it. */
+  supportsTemperature?: boolean;
   /**
    * Cap the hidden chain-of-thought of reasoning models (OpenRouter's unified
    * `reasoning.effort` param). Set in the model registry for free reasoning

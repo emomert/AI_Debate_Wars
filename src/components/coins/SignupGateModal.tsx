@@ -11,7 +11,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { ArcadeButton } from "@/components/game/ArcadeButton";
-import { FREE_DAILY_COINS } from "@/lib/coins/config";
+import { COINS_ENABLED, FREE_DAILY_COINS } from "@/lib/coins/config";
 import { playSound } from "@/lib/audio/soundManager";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
@@ -49,7 +49,7 @@ export function SignupGateModal({ open, onClose }: { open: boolean; onClose: () 
           🔐
         </p>
         <p className="mt-1 font-display text-2xl tracking-tight">{d.coins.gate.title}</p>
-        <p className="mt-2 text-sm text-ink/70">{d.coins.gate.body(FREE_DAILY_COINS)}</p>
+        <p className="mt-2 text-sm text-ink/70">{COINS_ENABLED ? d.coins.gate.body(FREE_DAILY_COINS) : d.coins.gate.accountBody}</p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
           <ArcadeButton
             variant="primary-green"

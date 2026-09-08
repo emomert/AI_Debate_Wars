@@ -43,6 +43,8 @@ export interface ModelCatalogEntry {
   debateRating: number;
   avatar: string;
   supportsStreaming: boolean;
+  /** False when the provider's supported parameters exclude temperature. */
+  supportsTemperature?: boolean;
   /**
    * Whether the model writes fluent, reliable Turkish. Drives model hiding when
    * the UI is in Turkish (a quality bar for a Turkish-first product, not just
@@ -66,13 +68,12 @@ export interface ModelCatalogEntry {
 
 export const MODEL_CATALOG: ModelCatalogEntry[] = [
   // ── OpenAI (backend: openai) ─────────────────────────────────────────────
-  // Verified against the live docs (July 2026): the GPT-5.6 family (Sol /
-  // Terra / Luna, shipped 2026-07-09), GPT-5.5 and the GPT-5.4 family are
-  // current. Only gpt-5.1-chat-latest was removed (OpenAI shuts it down
-  // 2026-07-23). Later sunsets stay selectable until their date — REMOVE
-  // gpt-5.2/5.3-chat-latest by Aug 10, gpt-4.1-nano by Oct 23, and
-  // gpt-5-mini/nano by Dec 11, 2026 (developers.openai.com/api/docs/deprecations).
+  // Astra verified September 8; older GPT families retain their July entries.
+  // Removed chat-latest aliases stay absent. Recheck deprecations before the
+  // October 23 (4.1 nano) and December 11 (GPT-5 mini/nano snapshots) sunsets.
   // All OpenAI models are fluent in Turkish → supportsTurkish: true.
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "gpt-6-astra", providerId: "openai", brand: "OpenAI", family: "GPT-6", displayName: "GPT-6 Astra", color: "blue", costTier: "high", debateRating: 99, avatar: "👑", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "gpt-5.6-sol", providerId: "openai", brand: "OpenAI", family: "GPT-5.6", displayName: "GPT-5.6 Sol", color: "blue", costTier: "high", debateRating: 98, avatar: "👑", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "gpt-5.6-terra", providerId: "openai", brand: "OpenAI", family: "GPT-5.6", displayName: "GPT-5.6 Terra", color: "blue", costTier: "high", debateRating: 96, avatar: "🥇", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "gpt-5.6-luna", providerId: "openai", brand: "OpenAI", family: "GPT-5.6", displayName: "GPT-5.6 Luna", color: "blue", costTier: "medium", debateRating: 92, avatar: "🌜", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
@@ -93,6 +94,8 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
 
   // ── DeepSeek (backend: deepseek) ─────────────────────────────────────────
   // Live /models list returns exactly these two (June 2026). Both fluent in Turkish.
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "deepseek-v4-flash-vision-exp", providerId: "deepseek", brand: "DeepSeek", family: "DeepSeek V4", displayName: "DeepSeek V4 Flash Vision (Experimental)", color: "red", costTier: "low", debateRating: 88, avatar: "🐋", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "deepseek-v4-pro", providerId: "deepseek", brand: "DeepSeek", family: "DeepSeek V4", displayName: "DeepSeek V4 Pro", color: "red", costTier: "medium", debateRating: 90, avatar: "🐉", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "deepseek-v4-flash", providerId: "deepseek", brand: "DeepSeek", family: "DeepSeek V4", displayName: "DeepSeek V4 Flash", color: "red", costTier: "low", debateRating: 83, avatar: "⚔️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
@@ -101,6 +104,8 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   // `reasoning` support verified against the live list. Refresh by re-querying.
 
   // xAI — Grok
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "x-ai/grok-4.6", providerId: "openrouter", brand: "Grok", family: "Grok 4.6", displayName: "Grok 4.6", color: "purple", costTier: "medium", debateRating: 96, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "x-ai/grok-4.5", providerId: "openrouter", brand: "Grok", family: "Grok 4.5", displayName: "Grok 4.5", color: "purple", costTier: "medium", debateRating: 95, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "x-ai/grok-4.3", providerId: "openrouter", brand: "Grok", family: "Grok 4.3", displayName: "Grok 4.3", color: "purple", costTier: "medium", debateRating: 92, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   // NOTE: xAI's public lineup jumps 4.3 → 4.20 ("4.2" doesn't exist).
@@ -108,6 +113,8 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "x-ai/grok-4.20-multi-agent", providerId: "openrouter", brand: "Grok", family: "Grok 4.20", displayName: "Grok 4.20 Multi-Agent", color: "purple", costTier: "medium", debateRating: 91, avatar: "🪐", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // Anthropic — Claude
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "anthropic/claude-fable-5.1", providerId: "openrouter", brand: "Claude", family: "Fable", displayName: "Fable 5.1", color: "purple", costTier: "high", debateRating: 99, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, supportsTemperature: false },
   { id: "anthropic/claude-fable-5", providerId: "openrouter", brand: "Claude", family: "Fable", displayName: "Fable 5", color: "purple", costTier: "high", debateRating: 98, avatar: "✳️", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   // Opus 5 (added 2026-07-28). Probed bare vs reasoning.effort="low": 32 vs 32
   // thinking tokens — the param changes nothing, so NO tag (docs/07). Same
@@ -127,6 +134,9 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   // Google — Gemini
   // 3.6 Flash (added 2026-07-28): probed 786 thinking bare vs 535 with
   // effort="low" — a default-on thinker, so it keeps the cap (docs/07).
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "google/gemini-3.8-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.8", displayName: "Gemini 3.8 Flash", color: "purple", costTier: "medium", debateRating: 95, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "google/gemini-3.7-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.7", displayName: "Gemini 3.7 Flash", color: "purple", costTier: "medium", debateRating: 94, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "google/gemini-3.6-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.6", displayName: "Gemini 3.6 Flash", color: "purple", costTier: "medium", debateRating: 93, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "google/gemini-3.5-flash", providerId: "openrouter", brand: "Gemini", family: "Gemini 3.5", displayName: "Gemini 3.5 Flash", color: "purple", costTier: "medium", debateRating: 92, avatar: "💠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   // 3.5 Flash Lite (added 2026-07-28) is the exact trap docs/07 warns about:
@@ -143,6 +153,9 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "xiaomi/mimo-v2.5", providerId: "openrouter", brand: "Xiaomi", family: "MiMo V2.5", displayName: "MiMo V2.5", color: "purple", costTier: "low", debateRating: 81, avatar: "🟠", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // Z.AI — GLM
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "z-ai/glm-5.3", providerId: "openrouter", brand: "GLM", family: "GLM 5.3", displayName: "GLM 5.3", color: "purple", costTier: "medium", debateRating: 93, avatar: "🧠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "z-ai/glm-5.3-flash", providerId: "openrouter", brand: "GLM", family: "GLM 5.3", displayName: "GLM 5.3 Flash", color: "purple", costTier: "low", debateRating: 86, avatar: "🧠", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "z-ai/glm-5.2", providerId: "openrouter", brand: "GLM", family: "GLM 5", displayName: "GLM 5.2", color: "purple", costTier: "low", debateRating: 88, avatar: "🌀", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "z-ai/glm-5", providerId: "openrouter", brand: "GLM", family: "GLM 5", displayName: "GLM 5", color: "purple", costTier: "low", debateRating: 85, avatar: "🌀", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "z-ai/glm-5.1", providerId: "openrouter", brand: "GLM", family: "GLM 5", displayName: "GLM 5.1", color: "purple", costTier: "medium", debateRating: 86, avatar: "🌀", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
@@ -162,6 +175,10 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "nvidia/nemotron-3-super-120b-a12b", providerId: "openrouter", brand: "Nemotron", family: "Nemotron 3", displayName: "Nemotron 3 Super", color: "purple", costTier: "low", debateRating: 83, avatar: "🟩", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
 
   // Alibaba — Qwen
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "qwen/qwen3.8-max-0902", providerId: "openrouter", brand: "Qwen", family: "Qwen 3.8", displayName: "Qwen 3.8 Max (0902)", color: "purple", costTier: "medium", debateRating: 95, avatar: "🐉", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "qwen/qwen3.8-27b", providerId: "openrouter", brand: "Qwen", family: "Qwen 3.8", displayName: "Qwen 3.8 27B", color: "purple", costTier: "low", debateRating: 85, avatar: "🐉", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
+  { id: "qwen/qwen3.8-2.4t-a95b", providerId: "openrouter", brand: "Qwen", family: "Qwen 3.8", displayName: "Qwen 3.8 2.4T A95B", color: "purple", costTier: "medium", debateRating: 94, avatar: "🐉", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "qwen/qwen3.7-max", providerId: "openrouter", brand: "Qwen", family: "Qwen3.7", displayName: "Qwen3.7 Max", color: "purple", costTier: "medium", debateRating: 91, avatar: "🦅", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "qwen/qwen3.7-plus", providerId: "openrouter", brand: "Qwen", family: "Qwen3.7", displayName: "Qwen3.7 Plus", color: "purple", costTier: "low", debateRating: 87, avatar: "🦅", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192, reasoningEffort: "low" },
   // Flash (added 2026-07-28) completes the 3.7 line. Probed 1208 thinking bare
@@ -183,6 +200,8 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   // ── July 2026 expansion (all OpenRouter; live-verified ids + pricing) ──────
 
   // Meta — Llama 4
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "meta/muse-glimmer-30b", providerId: "openrouter", brand: "Meta", family: "Muse", displayName: "Muse Glimmer 30B", color: "purple", costTier: "low", debateRating: 85, avatar: "🦙", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "meta-llama/llama-4-maverick", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Maverick", color: "purple", costTier: "low", debateRating: 88, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "meta-llama/llama-4-scout", providerId: "openrouter", brand: "Meta", family: "Llama 4", displayName: "Llama 4 Scout", color: "purple", costTier: "low", debateRating: 82, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
   { id: "meta-llama/llama-3.3-70b-instruct", providerId: "openrouter", brand: "Meta", family: "Llama 3.3", displayName: "Llama 3.3 70B", color: "purple", costTier: "low", debateRating: 83, avatar: "🦙", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
@@ -205,6 +224,8 @@ export const MODEL_CATALOG: ModelCatalogEntry[] = [
   { id: "amazon/nova-premier-v1", providerId: "openrouter", brand: "Amazon", family: "Nova", displayName: "Nova Premier", color: "purple", costTier: "high", debateRating: 88, avatar: "🧭", supportsStreaming: true, supportsTurkish: true, maxOutputTokens: 8192 },
 
   // Tencent — Hunyuan
+  // Added 2026-09-08: catalog and text completion verified; ratings are editorial.
+  { id: "tencent/hy4-preview", providerId: "openrouter", brand: "Tencent", family: "Hunyuan 4", displayName: "Hunyuan 4 (Preview)", color: "purple", costTier: "medium", debateRating: 89, avatar: "🐧", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192, reasoningEffort: "low" },
   { id: "tencent/hy3", providerId: "openrouter", brand: "Tencent", family: "Hunyuan 3", displayName: "Hunyuan 3", color: "purple", costTier: "low", debateRating: 84, avatar: "🐧", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192 },
   { id: "tencent/hunyuan-a13b-instruct", providerId: "openrouter", brand: "Tencent", family: "Hunyuan A13B", displayName: "Hunyuan A13B", color: "purple", costTier: "low", debateRating: 76, avatar: "🐧", supportsStreaming: true, supportsTurkish: false, maxOutputTokens: 8192 },
 
@@ -243,6 +264,16 @@ export function getModelById(id: string): ModelCatalogEntry | undefined {
  * couple of models show them all anyway.
  */
 export const RECOMMENDED_MODEL_IDS: ReadonlySet<string> = new Set<string>([
+  "gpt-6-astra",
+  "deepseek-v4-flash-vision-exp",
+  "anthropic/claude-fable-5.1",
+  "qwen/qwen3.8-max-0902",
+  "google/gemini-3.8-flash",
+  "x-ai/grok-4.6",
+  "z-ai/glm-5.3",
+  "z-ai/glm-5.3-flash",
+  "tencent/hy4-preview",
+  "meta/muse-glimmer-30b",
   // OpenAI — flagship · fast mid · mini
   "gpt-5.6-sol",
   "gpt-5.6-luna",
@@ -354,6 +385,7 @@ export function getProviderModelConfig(
   modelId: string;
   maxOutputTokens: number;
   supportsStreaming: boolean;
+  supportsTemperature?: boolean;
   reasoningEffort?: "low" | "medium";
 } {
   const entry = getModelById(modelId);
@@ -362,6 +394,7 @@ export function getProviderModelConfig(
     modelId,
     maxOutputTokens: entry?.maxOutputTokens ?? 4096,
     supportsStreaming: entry?.supportsStreaming ?? false,
+    supportsTemperature: entry?.supportsTemperature,
     reasoningEffort: entry?.reasoningEffort,
   };
 }
@@ -380,10 +413,10 @@ export function getProviderModelConfig(
  */
 export type DeepSearchStrategy = "native" | "injected";
 
-export function deepSearchStrategy(modelId: string): DeepSearchStrategy {
-  if (process.env.DEEP_SEARCH_MODE === "hybrid") {
-    return getModelById(modelId)?.providerId === "openrouter" ? "native" : "injected";
-  }
+export function deepSearchStrategy(_modelId: string): DeepSearchStrategy {
+  void _modelId; // Keep the shared caller signature while all models use one strategy.
+  // App-managed search has an explicit per-query reservation. Provider-native
+  // search can introduce unbounded extra input/fees outside our token budget.
   return "injected";
 }
 

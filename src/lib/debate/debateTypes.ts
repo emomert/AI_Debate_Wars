@@ -99,6 +99,8 @@ export interface TokenUsage {
    * discounted cached rate, so the displayed cost reflects what was really paid.
    */
   cachedInputTokens?: number;
+  /** Subset of input tokens billed as cache writes (distinct from cache hits). */
+  cacheWriteInputTokens?: number;
 }
 
 export interface CostBreakdown {

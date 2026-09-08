@@ -9,8 +9,11 @@ import "server-only";
 import type { Citation, TokenUsage } from "@/lib/debate/debateTypes";
 import { ProviderError, type AppErrorCode } from "@/lib/utils/errors";
 import { isSafeHttpUrl } from "@/lib/utils/url";
+import { reserveSpend, completionReservationUsd } from "@/lib/security/spendBudget";
+import { calculateCost } from "@/lib/cost/calculateCost";
 
 interface ChatCallOptions {
+  providerId?: string;
   baseUrl: string;
   apiKey: string;
   model: string;
@@ -120,6 +123,10 @@ export async function callChatCompletions(
   }
 
   try {
+    const providerId = opts.providerId ?? (baseUrl.includes("deepseek") ? "deepseek" : baseUrl.includes("openrouter") ? "openrouter" : "openai");
+    if (timeoutController.signal.aborted) throw new ProviderError("PROVIDER_TIMEOUT");
+    const settle = await reserveSpend(completionReservationUsd(providerId, model, systemPrompt + userPrompt, maxOutputTokens));
+    if (timeoutController.signal.aborted) { await settle(0); throw new ProviderError("PROVIDER_TIMEOUT"); }
     const res = await fetch(`${baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -150,11 +157,12 @@ export async function callChatCompletions(
         finish_reason?: string;
       }[];
       usage?: {
+        cost?: number;
         prompt_tokens?: number;
         completion_tokens?: number;
         total_tokens?: number;
         // OpenAI / OpenRouter expose cache-hit input tokens nested here…
-        prompt_tokens_details?: { cached_tokens?: number };
+        prompt_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number };
         // …while DeepSeek's native endpoint puts them at the top level.
         prompt_cache_hit_tokens?: number;
       };
@@ -164,14 +172,6 @@ export async function callChatCompletions(
     const finishReason = choice?.finish_reason;
     const content = choice?.message?.content?.trim() ?? "";
     const citations = parseCitations(choice?.message?.annotations);
-    if (!content) {
-      // Empty content with finish_reason "length" means the model spent its
-      // entire token budget on hidden reasoning and never emitted an answer.
-      // That's deterministic (not a transient hiccup), so surface the
-      // token-ceiling error and let it fail fast instead of retrying blindly.
-      if (finishReason === "length") throw new ProviderError("TOKEN_LIMIT_EXCEEDED");
-      throw new ProviderError("PROVIDER_ERROR");
-    }
 
     const inputTokens = data.usage?.prompt_tokens ?? 0;
     // Cache-hit input tokens: OpenAI/OpenRouter nest it, DeepSeek tops it.
@@ -190,9 +190,25 @@ export async function callChatCompletions(
             data.usage.total_tokens ??
             inputTokens + (data.usage.completion_tokens ?? 0),
           ...(cachedInputTokens > 0 ? { cachedInputTokens } : {}),
+          ...((data.usage.prompt_tokens_details?.cache_write_tokens ?? 0) > 0
+            ? { cacheWriteInputTokens: data.usage.prompt_tokens_details!.cache_write_tokens }
+            : {}),
         }
       : undefined;
 
+    // Reconcile even when all output was hidden thinking and the visible answer
+    // is empty. A subsequent retry is a separate, newly reserved paid attempt.
+    const reported = data.usage?.cost;
+    const validUsage = usage && Number.isFinite(usage.inputTokens) && usage.inputTokens >= 0 &&
+      Number.isFinite(usage.outputTokens) && usage.outputTokens >= 0 &&
+      typeof data.usage?.prompt_tokens === "number" && typeof data.usage?.completion_tokens === "number";
+    const actual = providerId === "openrouter" && typeof reported === "number" && Number.isFinite(reported) && reported >= 0
+      ? reported : validUsage ? calculateCost(providerId, model, usage).totalCost : undefined;
+    await settle(actual);
+    if (!content) {
+      if (finishReason === "length") throw new ProviderError("TOKEN_LIMIT_EXCEEDED");
+      throw new ProviderError("PROVIDER_ERROR");
+    }
     return { content, usage, finishReason, citations };
   } catch (err) {
     if (err instanceof ProviderError) throw err;

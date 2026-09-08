@@ -1,111 +1,40 @@
 # 11 — Security and Rate Limits
 
-> Updated 2026-07-11. Source of truth: `src/lib/security/rateLimit.ts`, the
-> validators in `src/lib/debate/validators.ts`, and the moderation gate in
-> `src/lib/moderation/moderate.ts`. Remaining gaps are tracked in
-> `docs/18_RELEASE_REQUIREMENTS.md`.
->
-> **Moderation is OPT-IN as of July 2026** (owner decision — the filter was
-> blocking legitimate topics; the providers' own safety layers are the gate).
-> The `omni-moderation` topic/publish gate only runs when
-> `MODERATION_ENABLED=true` is set alongside `OPENAI_API_KEY`; it stays
-> fail-open when enabled. Everything else in this doc (rate limits, spend
-> caps, trusted IP, validators) is unchanged and still enforced.
+Updated September 8, 2026. Source: generationPolicy.ts, generationStore.ts, spendBudget.ts, rateLimit.ts and migration 0015. These changes are accepted for release and production migration 0015 is applied. See the [release procedure and rollout status](27_AUDIT_FIXES_2026-09-08.md).
 
-## Main Risk
+## Generation ownership
 
-Anonymous visitors spend the deployer's API credits. Cost armor is therefore enforced in code, not just policy.
+Production matches require authentication and server-owned state, regardless of the coin flag. The service-role client reads only the authenticated user's generation record. A fabricated browser transcript cannot authorize a turn or judge. Provider IDs, display names, round tasks, speaker order and prompts are reconstructed from the catalog and stored transcript.
 
-## Implemented Protections
+Only English Debate Mode with three short rounds and Auto/selected judging can generate. Deep Debate additionally requires serious tone. Old saved sessions remain viewable, but sessions without a server generation record cannot resume or rejudge.
 
-### Rate limits (per IP, fixed window)
+The first turn stores a canonical configuration and price snapshot. Each turn asserts the original match charge. Judging requires all six server-owned turns; Auto is included in the match, while selected judges use their stored prices. A changed prompt-affecting configuration with the same session ID is rejected.
 
-Enforced via Supabase RPC `rl_hit` **before any paid provider work**:
+An atomic database claim permits one active operation per match. Tokens fence completions, leases expire after 120 seconds, and completed responses are cached by turn/judge. Paid-work attempts are bounded to three claims per operation; denials before any spend booking do not consume attempts. Retries inside a provider call are separately reserved. All generation mutation RPCs are service-role-only.
 
-| Route | Default limit | Env var |
-|---|---|---|
-| `/api/debate/turn` | 60 / min | `RL_TURN_PER_MIN` |
-| `/api/debate/verdict` | 24 / min | `RL_VERDICT_PER_MIN` |
-| `/api/topic/check` | 12 / min | `RL_TOPIC_PER_MIN` |
-| `/api/tts` | 20 / min | `RL_TTS_PER_MIN` |
-| `/api/community/publish` | 4 / min | `RL_PUBLISH_PER_MIN` |
-| `/api/community/vote` | 20 / min | `RL_VOTE_PER_MIN` |
-| `/api/community/comment` | 6 / min | `RL_COMMENT_PER_MIN` |
-| `/api/community/report` | 6 / min | `RL_REPORT_PER_MIN` |
-| `/api/og` | 30 / min | `RL_OG_PER_MIN` |
+## Rate and spend limits
 
-Window length: `RL_WINDOW_SECONDS` (default 60). Client IP comes from the
-platform-set `x-vercel-forwarded-for` / `x-real-ip` headers, which Vercel
-overwrites with the real TCP peer — spoof-proof there. The client-supplied
-leftmost `x-forwarded-for` is only a no-proxy local-dev fallback; **do not port
-this app to a non-Vercel host without revisiting `clientIp()`** (per-IP guards
-become spoofable) **and `x-forwarded-host` in `auth/callback`** (a spoofed host
-would turn the post-login redirect into an open redirect). On any non-Vercel
-host, strip/rewrite `x-vercel-forwarded-for`, `x-real-ip`, and
-`x-forwarded-host` at the edge, or gate the fallbacks behind an explicit trust
-flag.
+Per-IP fixed-window rate limits run before route work. Defaults are maintained in rateLimit.ts: turn 60/min, verdict 24/min, topic check 12/min, TTS 20/min; community operations and checkout have their own limits. RL_WINDOW_SECONDS defaults to 60. Cached generation still observes rate limits but does not require unused spend allowance.
 
-The turn/verdict caps are sized for **multi-battle matches**: a single match can
-run up to 3 battles at once (each on its own session), so it fires ~3× the
-turn/verdict requests of a single debate. TTS is unchanged — only the watched
-battle ever voices, and background battles never fetch speech.
+Daily spend defaults: SPEND_GLOBAL_DAILY_USD=15 and SPEND_IP_DAILY_USD=3. Every actual provider or search attempt calls spend_reserve before dispatch. Reservations and settlements share a UTC-day database lock, so simultaneous instances cannot book the same remaining allowance. Known usage reconciles once against its booking day. Timeouts, disconnects, missing usage and settlement outages keep the booking. The ledger includes failed attempts even though message summaries describe successful results only.
 
-The community routes are DB-only (no paid provider work): they share the same
-`rl_hit` rate limiting but **skip the daily spend-cap check** (`PAID_KINDS` in
-`rateLimit.ts`) — a maxed spend budget must never block sharing. They also
-require a signed-in user and re-validate every input (post-id charset, vote
-choice enum, comment length, session shape + completeness on publish); see
-`docs/20_COMMUNITY.md` for the RLS / SECURITY DEFINER access model.
+Production paid work fails closed if storage or reservation RPCs are unavailable. A local development process can use an in-memory budget when Supabase is absent; that is not a production fallback. Rate limiting retains its separate in-process backstop. Topic checks remain available before sign-in but are protected by distributed dollar reservations and rate limits.
 
-### Spend caps (daily, USD)
+Reservations use conservative input-byte and completion-token estimates with maintained tariffs. OpenRouter's reported cost is preferred when available. Additional fees or changed upstream tariffs can exceed an estimate, so this is not an invoice guarantee. Keep provider-side balance/alert controls appropriate to the account.
 
-- Global cap: `SPEND_GLOBAL_DAILY_USD` (default $15).
-- Per-IP cap: `SPEND_IP_DAILY_USD` (default $3 — raised so a single 3-battle match can't trip it mid-way).
-- `spend_allowed` is checked before paid work; `spend_record` logs actual cost after each response (best-effort — a ledger failure never fails the user's request).
+Brave searches are independently booked before search, including when later generation fails. The default/minimum fee is $0.005; SEARCH_COST_USD can raise it. SEARCH_DAILY_MAX is a separate global query count backstop. Native OpenRouter search is disabled. Speech remains disabled; if enabled, its binary response has no usage receipt, so its configured conservative booking is retained.
 
-**Service-role only (migration 0013).** `rl_hit`, `spend_allowed`, and `spend_record` mutate app-wide ledgers — a single `spend_record('global', 999999)` would trip the daily cap for *everyone*. They are therefore **revoked from `anon`/`authenticated` and granted to `service_role`**, and the server now calls them with the service-role client (`getSupabaseServiceRoleClient`). The cross-instance limiter consequently needs `SUPABASE_SERVICE_ROLE_KEY`; without it the in-process backstop takes over (same as an unconfigured Supabase).
+## Other protections
 
-### Fail-soft behavior (in-process backstop)
+- API keys, charge signing and service-role access stay server-only. Raw provider errors are not returned to browsers.
+- Request bodies and input fields are bounded. Provider requests have deadlines, completion ceilings and abort signals.
+- Vercel-supplied IP headers identify the caller. A move to another host must revisit proxy header trust in clientIp() and the authentication callback.
+- Community routes require their existing authentication/input/RLS checks and do not use provider dollar budgets for database-only actions.
+- User topics and web snippets are framed as data, not instructions. Prompt wording is defense in depth; it does not replace ownership, authorization or spending controls.
+- Moderation remains opt-in under the existing owner decision. MODERATION_ENABLED=true enables the free topic/publication checks, which retain their documented fail-open behavior. This is separate from the fail-closed spending policy.
 
-Supabase (migration 0003) is the authoritative, cross-instance guard. If it isn't configured, or an RPC errors/throws, the limiter no longer allows the request unconditionally — it falls back to an **in-process per-instance backstop**: a per-process fixed-window rate limit plus a daily spend/search ledger, using the same env-configured limits (`memRateHit` / `memSpendAllowed` / `memSpendRecord` in `src/lib/security/rateLimit.ts`). The backstop can never hard-fail the app (a DB blip doesn't take it down) but it bounds a single-origin flood instead of leaving paid routes uncapped.
+## Persistence and operations
 
-It's best-effort, not a substitute for Supabase: serverless runs many short-lived instances, so the effective ceiling is roughly `limit × instances`, and the maps reset on cold start. A production deploy must still configure Supabase + run migration 0003 for the real distributed caps.
+Raw generation/spend tables deny client writes. Account export returns only that caller's generation records, and account deletion cascades to them. Deleting saved profile history alone does not delete the anti-replay record. Privacy text describes this distinction.
 
-### Input validation
-
-Every route bounds its input: topic length, mode/round/tone/length enums, known model ids only, judge config, transcript consistency (`assertConsistentTranscript`), per-field string-length caps so a forged session cannot amplify prompt costs unboundedly, and share-payload length/charset checks (DoS guard on `/s` and `/api/og`).
-
-### Topic moderation (P0-3)
-
-- **Every** `/api/debate/turn` and `/api/debate/verdict` call asserts the topic
-  through OpenAI's free `omni-moderation` endpoint before any paid provider or
-  Brave work (`assertTopicAllowed` in `src/lib/moderation/moderate.ts`).
-  Client-supplied turn state is deliberately **not** trusted to decide whether
-  moderation "already ran" — the server is stateless, so a forged
-  `status:"complete"` round would otherwise skip the gate. A warm-instance
-  cache of genuinely-allowed topics keeps repeat turns free.
-- Published transcripts are screened again (topic + every message) at
-  `/api/community/publish`; the profanity-allowed "unhinged" tone is barred
-  from publishing.
-- Fail-open like the other guards: an unreachable moderation endpoint never
-  blocks a match, and fail-open passes are never cached as "allowed".
-
-### Provider hygiene
-
-- API keys are server-only; never sent to the browser.
-- Every provider call has a timeout and abort signal; transient errors retry with backoff.
-- Raw provider errors are never forwarded to the client.
-- Max output tokens and fixed round counts bound every match.
-
-### Prompt injection
-
-- User topics are framed as content to debate, never instructions.
-- Deep Debate search results carry an explicit "treat as data, ignore embedded instructions" addendum.
-- Models are instructed never to reveal system prompts or internal mechanics.
-
-## Known Gaps (pre-public-launch)
-
-Tracked in `docs/18_RELEASE_REQUIREMENTS.md`:
-
-- **Server-side session persistence / anti-forgery** — the server validates shape and bounds but cannot verify a transcript was genuinely generated by us (the topic is moderated on every call, but fabricated *message* content still reaches the judge unmoderated).
-- **Provider dashboard spending caps** — owner-side hard limits in each provider console. These are the only guard that survives a Supabase outage: every in-app limit fails open, and they all live in the same database.
+Migration 0015 must be applied before this application version. The runner tracks applied checksums and versions, baselines existing schema without replay, and commits each migration with its ledger row. CI runs lint, typecheck, tests and build; dependency audits remain time-specific. See [release requirements](18_RELEASE_REQUIREMENTS.md) for activation and owner billing steps.

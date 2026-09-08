@@ -51,11 +51,13 @@ export const openRouterProvider: Provider = {
       : input.model.modelId;
     const baseCall = {
       baseUrl: OPENROUTER_BASE_URL,
+      providerId: "openrouter",
       apiKey: process.env.OPENROUTER_API_KEY ?? "",
       model,
       systemPrompt: input.systemPrompt,
       userPrompt: input.userPrompt,
       temperature: input.temperature,
+      includeTemperature: input.model.supportsTemperature !== false,
       maxOutputTokens,
       // Generous: free reasoning models can take 20s+ on a cold first call.
       timeoutMs: input.timeoutMs ?? 90_000,

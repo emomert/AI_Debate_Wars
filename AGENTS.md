@@ -1,4 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
+
+## Scope
+
+Repository instructions for coding agents working on Debator. These instructions apply throughout this repository; a more specific `AGENTS.md` can add directory-level guidance. Follow the user's current request and preserve unrelated work already in the checkout.
 
 ## Project Name
 
@@ -6,7 +10,7 @@ Debator (AI Debate Arena)
 
 ## Product Summary
 
-Debator is a gamified web application where users make two AI models debate a topic in a structured, finite match. Users pick a topic, choose two fighters from a large model catalog, set the round count, tone, response length, and pace, optionally enable Deep Debate (web-search-grounded turns with citations) and a neutral AI judge, then watch the match unfold in an arcade-style interface with live per-turn cost tracking.
+Debator is a gamified web application where users make two AI models debate a topic in a structured, finite match. Users pick a topic, choose two fighters, tone and pace, optionally enable Deep Debate (web-search-grounded turns with citations), then watch three short rounds followed by a mandatory judge. Costs are tracked internally; monetary cost displays are currently hidden.
 
 The desired product feeling is:
 
@@ -14,13 +18,29 @@ The desired product feeling is:
 
 ## Current Status
 
+### September 8, 2026 accepted release
+
+Accepted for production release on September 8, 2026. The existing Supabase database was baselined through 0014 without replaying SQL, then migration 0015 was applied successfully. The ledger reports 15 versions and no pending migrations. This release is published through GitHub main and the existing Vercel integration; consult the deployment/check status for the current rollout result. No payment or hosting-plan purchase was made.
+
+- Added 13 text-completion-verified models, bringing the catalog to 103: Astra, DeepSeek Vision, and new Claude/Gemini/Grok/Qwen/GLM/Tencent/Meta entries. See `docs/26_PROJECT_AUDIT_2026-09-08.md` for exact IDs, sources, exclusions, and open findings. New ratings are editorial, not benchmark results.
+- Astra needs modern token parameters, low reasoning, no temperature, and cache-write billing; Fable 5.1 omits temperature. Provider capabilities belong in the registry/adapters.
+- Refreshed 19 existing OpenRouter price pairs and DeepSeek peak rates. Follow-up coin pricing uses net pack revenue and explicit cost allowances; current prices are in `src/lib/coins/economy.ts`. The 5× estimate is not a profitability guarantee. See `docs/23_COINS.md`.
+- Git connection survived the move. Baseline local main was three documentation commits ahead of deployed/GitHub `ba37ff6`, with matching application source. Vercel production was READY on Node 24; team reports Hobby. No push/deploy was done.
+- Read-only live metadata confirms daily-claim schema 0014. The runner now baselines a verified existing schema without replay, tracks checksums, and applies pending migrations transactionally. Use its status/dry-run modes before applying 0015.
+- Follow-up fixes are accepted for release: authenticated server-owned generation, fenced leases/cached results, frozen quotes, canonical new-match policy, atomic per-attempt spend reservations, real-pack economics, patched dependencies, lint/CI and a migration ledger. See docs/27_AUDIT_FIXES_2026-09-08.md. Production migration 0015 is applied. Verify GitHub checks and Vercel deployment state when reporting current rollout status.
+- Initial catalog validation included provider probes and browser picker selection. Follow-up validation: 145 tests across 27 files, TypeScript, production build, lint (10 existing warnings), zero dependency audit advisories, disposable SQL integration verification and a passing live baseline dry run. Validation preceded release approval; migration 0015 has since been applied. No real payment or hosting-plan purchase was made. See docs/27_AUDIT_FIXES_2026-09-08.md.
+
+### Earlier implementation history
+
+The entries below record earlier decisions; the dated snapshot above and current source take precedence where status has changed.
+
 The product is feature-complete and polished, in pre-public-launch state.
 
 - **Debate Mode only in the UI for now.** Blitz Mode is fully built but hidden behind `BLITZ_ENABLED = false` in `src/lib/debate/blitzConfig.ts`: the setup mode toggle is not rendered (Debate is the sole mode) and a persisted `mode: "blitz"` config is coerced back to Debate, so no Blitz session can start. The whole implementation (stage, runner, roster, prompts, pipeline handling) stays intact — flip the flag to bring it back. Discussion Mode was removed from the setup UI; its types remain in `debateTypes.ts` for backward compatibility. Do not resurface Discussion or Blitz without an explicit request.
 - **English-only UI for launch.** Turkish localization is fully built but hidden behind `MULTILOCALE_ENABLED = false` in `src/lib/i18n/config.ts`.
 - **Fighter Voices hidden for now.** The opt-in 🔊 voice-over (TTS) is fully built but hidden behind `VOICE_ENABLED = false` in `src/lib/tts/config.ts`: the setup voice card, arena HUD voice toggle + cost badge, and per-message play buttons don't render, the `voicePlayer` engine no-ops, and server TTS reports unconfigured so `/api/tts` never fires. This is separate from the arcade audio control (SFX + music share **one combined toggle** since July 12). Flip the flag to bring voices back with no other changes.
 - **Launch hardening + UX/accessibility audit (in progress).** Two remediation passes are underway and shipping incrementally to `main`: (1) pre-launch security/trust/cost blockers, and (2) a 109-finding honest UX/a11y audit. Done so far: topic + publish moderation, a spoof-proof rate-limit IP, a Brave metered-billing guard, signed share verdicts (verified/unverified), a reduce-motion/instant-text escape hatch + screen-reader live regions, contrast + tab-semantics + responsive fixes, a `/contact` page + data-controller identity, a report/flag + admin-takedown system, and a signup consent/13+ age gate. **Remaining pre-launch work is tracked in `docs/18_RELEASE_REQUIREMENTS.md` and `docs/13_ROADMAP.md`** (the standalone launch-checklist and UX-audit report files were removed from the repo root once their findings were worked through).
-- **July 28 owner round.** (1) **Daily coins are now claim-gated** — a "🎁 Claim" button in the header (beside the balance chip) and on `/pricing`; skip a day and that day's coins are gone. The allowance stays COMPUTED, never credited: `coin_claim_daily()` only writes a `coin_daily_claims (user_id, claim_date)` row (PK = structurally un-double-claimable), and `coin_status`/`coin_spend_match` return 0 daily coins until it exists — so a replayed or forged claim can mint nothing. **Migration `0014_daily_claim.sql` is written but NOT applied** (owner action; note it DROPs + recreates `coin_status()` for the new `claimed_today` column and recreates `coin_spend_match` against it). (2) Verdict card: a winner badge in the top-right corner, and **judge tabs** so a re-judged match can switch back to earlier verdicts (`session.pastVerdicts` was already persisted but never rendered). (3) Removals: the "How to play" modal + `HelpButton` entirely, `/pricing`'s "what that buys" examples + subtitle, "✓ Saved to your profile", and the re-judge billing/second-opinion + publish-privacy notes.
+- **July 28 owner round.** (1) **Daily coins are now claim-gated** — a "🎁 Claim" button in the header (beside the balance chip) and on `/pricing`; skip a day and that day's coins are gone. The allowance stays COMPUTED, never credited: `coin_claim_daily()` only writes a `coin_daily_claims (user_id, claim_date)` row (PK = structurally un-double-claimable), and `coin_status`/`coin_spend_match` return 0 daily coins until it exists — so a replayed or forged claim can mint nothing. **Migration `0014_daily_claim.sql` daily-claim schema is present (read-only verification 2026-09-08)** (owner action; note it DROPs + recreates `coin_status()` for the new `claimed_today` column and recreates `coin_spend_match` against it). (2) Verdict card: a winner badge in the top-right corner, and **judge tabs** so a re-judged match can switch back to earlier verdicts (`session.pastVerdicts` was already persisted but never rendered). (3) Removals: the "How to play" modal + `HelpButton` entirely, `/pricing`'s "what that buys" examples + subtitle, "✓ Saved to your profile", and the re-judge billing/second-opinion + publish-privacy notes.
 - **July 17 payments wiring (Polar, dark).** Real checkout is BUILT and ships behind `NEXT_PUBLIC_PAYMENTS_ENABLED` (default off — /pricing keeps "coming soon" until the flag + Polar env exist): `GET /api/checkout?pack=N` (rate-limited `checkout` kind, auth-required, pack→product resolved server-side, Supabase user attached as Polar `externalCustomerId`) and `POST /api/webhooks/polar` (signature-verified `order.paid` → `coin_ledger` credit via service role; idempotent on the UNIQUE `order_id` index, 23505 = redelivery; unfixable payloads 200+logged to /admin, infra failures 500 so Polar retries). /pricing shows `?checkout=` status banners and pokes the balance chip (`ada:coins-changed`). Polar re-validated for a GLOBAL audience 7/16 (90+ presentment currencies, TR payouts via Stripe Connect Express; Paddle stays fallback — sub-$10 packs need their sales team). Operator setup/test/go-live steps: `docs/24_PAYMENTS_POLAR_WALKTHROUGH.html`; details in `docs/23_COINS.md`. Refunds v1 = manual (Polar dashboard + `mint-coins.mjs` clawback).
 - **July 16 owner round.** (1) The setup **Match Card now has a dedicated "Total cost" row** (coins, across battles, judge included) at the bottom of the card — the old badge-cloud chip was easy to miss; `d.coins.matchCost` was replaced by `totalCostLabel`/`totalCostValue`. (2) **Response length is strictly `short`** — the setup picker (`ResponseLengthSelector`), `LENGTH_OPTIONS`, and the length dict entries were removed; persisted configs are coerced in setup (mirrors the 3-rounds clamp); the engine + validators still accept medium/long so legacy sessions render; the coin "long ×2" multiplier stays in `economy.ts` for legacy but is unreachable from the UI; /pricing copy updated. (3) **"Mistral is slow" root-caused and fixed:** the July catalog expansion blanket-tagged every OpenRouter model with `reasoningEffort: "low"`, but OpenRouter's `reasoning.effort` param only CAPS models that think by default — on opt-in reasoners it SWITCHES THINKING ON (measured: Mistral Medium 0 → 3,577 thinking tokens/turn; Gemma 4 5.8s → 183s hitting the token ceiling). Every OpenRouter model was probed bare vs `effort:"low"`; the tag was removed from 22 opt-in/non-reasoners (Mistral, all Claude, Gemini Flash/Lite, Gemma, Grok 4.20, Llama 4, Nova, Hunyuan, Nemotron Nano/Ultra) and kept on the 17 measured default-on thinkers (Kimi, GLM, Qwen, MiniMax, Xiaomi, Grok 4.3/4.5, Gemini 2.5 Pro, Nemotron Super). Rule going forward: **probe before tagging** (see docs/07). Also: Google approved the OAuth brand — the consent screen now shows the Debator name/logo.
 - **July 13 security hardening.** A four-surface audit (coin/payment routes, Supabase RLS/RPCs, injection/XSS/SSRF, secrets) found the app clean except a live coin-economy bypass — now fixed. (1) `coin_spend_match` is reachable over PostgREST and trusted a client-supplied allowance, so a direct call could pre-seed a match's charge or inflate the free bucket: closed by **HMAC-signing charge keys** (`src/lib/coins/chargeKey.ts`; secret = `SUPABASE_SERVICE_ROLE_KEY` or `COIN_CHARGE_SECRET`) so a forged key can't collide with a real match, plus **migration 0013** makes the DB ignore the client allowance. (2) The **judge is now priced at the verdict route from the RESOLVED judge**, keyed on the transcript (`ensureJudgeCharged`) — Auto free, a picked third-model judge charged, re-running the *same* judge free — closing the free-premium-judge bypass (behavior change: re-judging only charges when you **switch** judges, not for an identical re-run). (3) `rl_hit`/`spend_allowed`/`spend_record` were anon-callable (a spoofed `spend_record` could trip the global spend cap for everyone) → **service-role-only** (migration 0013), called via `getSupabaseServiceRoleClient`. (4) `safeNextPath` backslash open-redirect fix, `import "server-only"` on three secret-reading modules, and baseline security headers in `next.config.mjs`. **Coins + the cross-instance rate limiter now require `SUPABASE_SERVICE_ROLE_KEY`** (fail closed / fall back to the in-process backstop without it).
@@ -38,7 +58,7 @@ The AI models must not control the debate flow.
 The application controls:
 
 - who speaks next, which round is active, and the task of each round
-- when the debate ends (3/5/7 rounds, deterministic plan, no loops)
+- when the debate ends (three rounds for new generation; legacy formats remain readable)
 - which model judges (a judge always appears — mandatory since July 2026)
 - how costs are calculated
 - when the session is complete
@@ -53,8 +73,8 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Multi-battle: run up to 3 battles on the same topic at once (different or same fighter pairs), all running concurrently — a tab switcher in the arena and results; only the watched battle speaks/sounds; manual pace gates only the watched battle (see `docs/09_UX_FLOWS.md`). Only the fighters differ per battle; all other settings are shared.
 - Strictly 3 rounds (July 2026 — the 3/5/7 selector was removed; the engine still renders legacy 5/7 shared/persisted matches)
 - Tone per fighter: serious, aggressive, casual, or custom free text — plus a hidden "unhinged" easter-egg tone (5 rapid clicks on Aggressive in setup; profanity-allowed roast battle, hard ban on slurs/hate speech baked into the prompt)
-- Response length: short / medium / long; pace: manual or auto
-- Deep Debate: web-search-grounded turns with numbered citations (Brave injected search by default; OpenRouter `:online` in hybrid mode). Brave's free tier ended (Feb 2026): `SEARCH_COST_USD` defaults to ~$0.005/query and a hard daily search-count cap (`SEARCH_DAILY_MAX`) backstops the dollar caps.
+- Response length: short for new matches, with longer Deep Debate output; medium/long remain legacy types. Pace: manual or auto.
+- Deep Debate: web-search-grounded turns with numbered citations using app-managed Brave search. Native OpenRouter search is disabled. `SEARCH_COST_USD` defaults to a $0.005/query minimum reservation; `SEARCH_DAILY_MAX` adds a query-count backstop.
 - Mandatory judge (July 2026 — the setup on/off toggle was removed): auto-selected neutral model or user-picked third model; blind, decisive verdicts with scores. `judge.enabled` remains in the schema for legacy sessions and is coerced to true in setup.
 - Topic + published-transcript moderation (`src/lib/moderation/`) — **disabled by default since July 2026**; opt back in with `MODERATION_ENABLED=true`. The profanity-allowed "unhinged" tone is still barred from publishing.
 - Per-message and total cost tracking, cache-aware pricing — internal only for now: all cost displays are hidden behind `COST_UI_ENABLED = false` (`src/lib/cost/uiConfig.ts`); spend caps still enforce.
@@ -62,7 +82,7 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Stateless share links (`/s?d=...`) with generated OG images (`/api/og`). The verdict is HMAC-signed at generation (`src/lib/share/signing.ts`); `/s` + OG render verified vs ⚠ unverified to defeat forged share links. Dormant + safe until `SHARE_SECRET` is set.
 - Community hub (`/community`, `/m/[id]`): publish full matches (public or unlisted) with sharer-controlled privacy (hide model names, exclude verdict — stripped server-side, permanent), crowd side-voting (A/B/tie — built but **hidden** behind `VOTING_ENABLED = false` in `src/lib/community/config.ts` since July 2026), flat comments, profile handles + preset avatars, and a **report/flag** path on matches + comments with an operator admin-takedown script (see `docs/20_COMMUNITY.md`)
 - Optional Supabase auth (magic link + Google); a signup consent + **13+ age gate** (recorded in the private, own-rows-only `profile_consent` table — moved OFF the world-readable profiles row in migration 0008), match history/stats on `/profile`, and self-serve account deletion + JSON data export (`delete_my_account` cascade RPC, migration 0007)
-- Per-IP rate limits (spoof-proof trusted IP) and global/per-IP daily spend caps (Supabase RPCs; when Supabase is down/unconfigured they fall back to an in-process per-instance backstop, not fully open)
+- Per-IP rate limits with a local backstop, plus atomic per-attempt global/IP spend reservations that fail closed in production when Supabase is unavailable.
 - Arcade UI: synth SFX + generative background music behind **one combined audio toggle** (July 12 — flips both together), a **reduce-motion / instant-text** toggle + OS `prefers-reduced-motion` support, screen-reader live regions, mobile-responsive
 - Legal pages (`/about`, `/privacy`, `/terms`, `/contact`) with a named operator / data-controller identity and governing-law clause (values are placeholders in `src/lib/legal/identity.ts` — set before launch), and a living tech report (`/report`)
 - Owner analytics (July 2026): a dimensions-only "match card" (NO topic/transcript/custom-tone text) written server-side at verdict time + an owner-only `/admin` dashboard (model picks, judge choices, counts, cost). Gated by `SUPABASE_SERVICE_ROLE_KEY` + `ADMIN_USER_IDS`; see `docs/22_ANALYTICS.md`
@@ -83,12 +103,12 @@ The AI models only generate individual turn responses based on strict prompts. T
 - `src/lib/moderation/` — OpenAI `omni-moderation` gate (topics + published transcripts), fail-open
 - `src/lib/share/` — stateless share-link encoding + `signing.ts` (HMAC verdict signatures)
 - `src/lib/motion/` — reduce-motion preference store + `useReduceMotion` hook (OS flag OR in-app toggle)
-- `src/lib/legal/identity.ts` — operator / data-controller identity (placeholders; set before launch)
+- `src/lib/legal/identity.ts` — operator / data-controller identity (populated; owner review still applies)
 - `src/lib/i18n/` — locale config, dictionaries (en/tr), providers
 - `src/lib/audio/soundManager.ts` — synth SFX and music (both off by default)
 - `src/lib/state/ArenaContext.tsx` — client session/config state
 - `scripts/` — node+pg admin tooling: `apply-migrations.mjs` (applies SQL migrations via `SUPABASE_DB_URL`), `admin-takedown.mjs` (remove reported content)
-- `supabase/migrations/` — SQL migrations 0001–0007 (matches, match guards, rate limits, social/community, consent, reports, account deletion)
+- `supabase/migrations/` — SQL migrations 0001–0015 (matches, rate limits, community, consent, account deletion, analytics, coins, hardening, daily claims)
 - `docs/` — product and technical reference docs (see `docs/13_ROADMAP.md` for what's next)
 
 ## Required Architecture Rules
@@ -103,28 +123,29 @@ The AI models only generate individual turn responses based on strict prompts. T
 - Moderation is OPT-IN (July 2026): the `omni-moderation` gate on topics + published transcripts only runs when `MODERATION_ENABLED=true`; when enabled it still fails open. Do not re-enable by default without an explicit request.
 - Shareable verdicts are HMAC-signed server-side; `/s` and the OG image must never present an unsigned/forged verdict as verified.
 - Honor reduced motion (OS flag or the in-app toggle): no infinite/continuous animation, and reveal turns instantly when it's set — see `src/lib/motion/`.
-- Supabase is optional: the app must keep working signed-out and without Supabase configured. Without Supabase the rate/spend caps fall back to an in-process per-instance backstop (`src/lib/security/rateLimit.ts`) rather than failing fully open — keep that backstop when touching the limiter.
+- Production generation always requires Supabase service-role storage and an authenticated owner. Only local development with coins disabled may use in-memory generation and spend state. Each paid model/search attempt reserves spend atomically; production storage failures stop paid work. Rate limiting retains a local backstop, but that is not a replacement for distributed spend reservations.
 - The `/report` page must keep rendering from the real source of truth (prompt builder, model registry, pricing).
 
 ## Environment Variables
 
 Providers: `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`.
-Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD` (default ~`0.005`/query), `SEARCH_DAILY_MAX` (hard daily search-count cap, default 2000), `DEEP_SEARCH_MODE` (`unified` | `hybrid`).
+Search: `SEARCH_PROVIDER` (default `brave`), `BRAVE_SEARCH_API_KEY`, `SEARCH_COST_USD` (default/minimum `0.005`/query), `SEARCH_DAILY_MAX` (daily search-count cap, default 2000). Legacy `DEEP_SEARCH_MODE=hybrid` no longer enables native search.
 Moderation: OFF by default; `MODERATION_ENABLED=true` (plus `OPENAI_API_KEY`) enables, `MODERATION_MODEL` (default `omni-moderation-latest`).
 Coins: ON by default (UI + turn-route charging); `NEXT_PUBLIC_COINS_ENABLED=false` is the kill switch (build-time inlined — needs a redeploy). Charging now signs its idempotency keys with `SUPABASE_SERVICE_ROLE_KEY` (or the optional `COIN_CHARGE_SECRET` override) — **coins fail closed without one of them set** (see July 13 hardening).
 Payments (Polar, server-only except the flag): `POLAR_ACCESS_TOKEN` (org access token), `POLAR_WEBHOOK_SECRET` (endpoint signing secret), `POLAR_SERVER` (`sandbox` | `production`), `POLAR_PRODUCT_100`/`POLAR_PRODUCT_250`/`POLAR_PRODUCT_700` (product ids), `NEXT_PUBLIC_PAYMENTS_ENABLED` (build-time UI flag — buy buttons render only when `true`), `RL_CHECKOUT_PER_MIN`.
 Sharing: `SHARE_SECRET` — HMAC key for signing share verdicts. Unset = signing dormant (shares render normally, never falsely "verified"). **Set a strong random value in prod to activate verification.**
 Voice: `TTS_PROVIDER` (`none` disables; otherwise on whenever `OPENAI_API_KEY` is set), `TTS_OPENAI_MODEL` (default `gpt-4o-mini-tts`), `TTS_SPEED` (0.25–4.0, default 1.3), `TTS_COST_USD_PER_1M` (price override), `RL_TTS_PER_MIN`.
-Supabase (optional): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Admin/migrations (server-only, never client): `SUPABASE_DB_URL`.
+Supabase (required for production generation): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Admin/migrations (server-only, never client): `SUPABASE_DB_URL`.
 Analytics/admin + security (server-only): `SUPABASE_SERVICE_ROLE_KEY` — enables the dimensions-only match-analytics writer + admin dashboard, **signs coin charge keys, and is the caller identity for the service-role-only rate-limit/spend RPCs** (never expose to the client); `COIN_CHARGE_SECRET` (optional override for the charge-key HMAC); `ADMIN_USER_IDS` (comma-separated Supabase user ids allowed to view `/admin`).
 Limits: `RL_WINDOW_SECONDS`, `RL_TURN_PER_MIN`, `RL_VERDICT_PER_MIN`, `RL_TOPIC_PER_MIN`, `RL_PUBLISH_PER_MIN`, `RL_VOTE_PER_MIN`, `RL_COMMENT_PER_MIN`, `RL_REPORT_PER_MIN`, `RL_OG_PER_MIN`, `SPEND_GLOBAL_DAILY_USD`, `SPEND_IP_DAILY_USD`.
 
 ## Development Workflow
 
-The phased MVP build is complete. Work now happens in small, user-approved increments:
+The phased MVP build is complete. Work within the scope of the user's request:
 
-- Propose and discuss notable changes before implementing them; do not auto-advance into adjacent work.
-- Run `npx tsc --noEmit` (and a build when relevant) before declaring a change done.
+- Complete authorized work without repeatedly asking for permission; clarify material ambiguity and avoid unrelated changes.
+- Prefer cheaper models for straightforward tasks when model selection is available.
+- Run checks appropriate to the change: `npm run lint`, `npm run typecheck`, focused tests, and a production build when relevant. Documentation-only edits need reference/diff checks, not the application test suite.
 - Update the relevant doc in `/docs` when behavior it describes changes.
 
 ## Design Direction

@@ -26,6 +26,7 @@ export const deepseekProvider: Provider = {
     );
     const { content, usage, finishReason } = await callChatCompletions({
       baseUrl: DEEPSEEK_BASE_URL,
+      providerId: "deepseek",
       apiKey: process.env.DEEPSEEK_API_KEY ?? "",
       model: input.model.modelId,
       systemPrompt: input.systemPrompt,

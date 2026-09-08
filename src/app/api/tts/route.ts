@@ -1,7 +1,8 @@
+import { withSpendBudget } from "@/lib/security/spendBudget";
 /**
  * POST /api/tts — synthesize one debate message into speech (docs/21).
  *
- * Cost armor, in order and BEFORE any paid work (CLAUDE.md rule):
+ * Cost armor, in order and BEFORE any paid work (AGENTS.md rule):
  *  1. 503 when no TTS provider is configured (client falls back to the free
  *     Web Speech tier — this route is never required for the app to work)
  *  2. per-IP rate limit (RL_TTS_PER_MIN) + daily spend caps
@@ -14,7 +15,7 @@
 
 import { NextResponse } from "next/server";
 
-import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { enforceLimits } from "@/lib/security/rateLimit";
 import { recordApiError } from "@/lib/analytics/errorLog";
 import {
   isServerTtsConfigured,
@@ -26,6 +27,7 @@ import { JUDGE_VOICE_STYLE, VOICE_STYLE_BY_TONE } from "@/lib/tts/voices";
 import type { Speaker } from "@/lib/debate/debateTypes";
 import { ProviderError, httpStatusForCode, toAppError } from "@/lib/utils/errors";
 import type { ApiErrorBody } from "@/lib/api/contracts";
+import { readJsonBody } from "@/lib/api/serverBody";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -64,14 +66,18 @@ function voiceInstructions(
   return VOICE_STYLE_BY_TONE[tone];
 }
 
-export async function POST(req: Request): Promise<NextResponse> {
+export function POST(req: Request): Promise<NextResponse> {
+  return withSpendBudget(req, () => handlePost(req));
+}
+
+async function handlePost(req: Request): Promise<NextResponse> {
   try {
     if (!isServerTtsConfigured()) {
       throw new ProviderError("INVALID_REQUEST", "Server TTS is not configured");
     }
-    await enforceLimits(req, "tts");
+    await enforceLimits(req, "tts", true);
 
-    const body = (await req.json().catch(() => null)) as TtsRequest | null;
+    const body = await readJsonBody<TtsRequest>(req);
     const content = body?.content;
     const speaker = body?.speaker;
     if (
@@ -95,9 +101,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       voiceInstructions(speaker as Speaker, body?.tone, body?.customTone),
     );
 
-    const costUsd = (text.length / 1_000_000) * ttsCostUsdPer1MChars();
-    await recordSpend(req, costUsd);
 
+    const costUsd = (text.length / 1_000_000) * ttsCostUsdPer1MChars();
     return new NextResponse(audio, {
       headers: {
         "Content-Type": contentType,

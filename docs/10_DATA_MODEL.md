@@ -1,12 +1,16 @@
 # 10 — Data Model
 
+> September 8 follow-up: migration 0015 adds server-owned generation and spend reservations. Production was baselined through 0014 and migration 0015 was applied on September 8; the ledger has no pending versions. Use the versioned runner and [release procedure](27_AUDIT_FIXES_2026-09-08.md).
+
+`TokenUsage` now also carries optional `cacheWriteInputTokens` for providers that report cache-write billing. Persisted older sessions without this field remain compatible.
+
 > Updated 2026-06-11. Source of truth: `src/lib/debate/debateTypes.ts` (client
 > types), `src/lib/supabase/matches.ts` + `src/lib/community/types.ts`, and the
 > Supabase migrations in `supabase/migrations/` (persistence).
 
 ## State Strategy
 
-- **Live match:** client-side (`ArenaContext` + sessionStorage). No server record exists while a match runs; server routes re-validate and bound the client-supplied session on every call.
+- **Live match:** the browser retains presentation state in `ArenaContext`/sessionStorage; `generation_matches` owns authoritative configuration, transcript, fixed quotes, cached responses and fenced generation leases. API calls never trust client progress or message content to authorize new work.
 - **Saved matches:** signed-in users explicitly save finished matches to Supabase (`matches` table, RLS-protected).
 - **Share links:** stateless — the verdict payload is base64url-encoded in the URL.
 - **Shared matches (community):** a sanitized snapshot copied into `shared_matches` at publish time; independent of the private `matches` row. See `docs/20_COMMUNITY.md`.
@@ -20,6 +24,12 @@
 - `DebateVerdict` — winner (`modelA | modelB | tie | not_applicable`), 0–100 scores, reasoning, judge model, usage/cost. (Strongest/weakest per side are legacy-optional — retired from the judge prompt and the UI in July 2026; old stored verdicts may still carry them.)
 
 ## Supabase Tables
+
+### Generation and budgets (0015)
+
+`generation_matches` is keyed by authenticated user/session and stores canonical state, completed responses, revision and bounded lease attempts. Raw access is service-role-only; authenticated `generation_export()` returns only the caller’s records. Account deletion cascades. Generation records are retained separately from profile history to prevent replay.
+
+`spend_reservations` records a UUID, IP, original UTC day, amount and settlement status. Atomic reserve/settle RPCs update the existing global/IP `spend_ledger`; uncertain calls keep their booking. Neither clients nor anonymous callers can invoke the accounting RPCs.
 
 ### `profiles`
 

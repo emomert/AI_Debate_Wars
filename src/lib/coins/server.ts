@@ -78,7 +78,9 @@ async function requireCoinClient(authMessage: string): Promise<ServerSupabase> {
  * Throws ProviderError: AUTH_REQUIRED (signed out), OUT_OF_COINS (balance),
  * PROVIDER_ERROR (ledger unreachable — fail CLOSED; coins are money).
  */
-export async function ensureMatchCharged(session: DebateSession): Promise<void> {
+export interface CoinQuote { total: number; premium: number }
+
+export async function ensureMatchCharged(session: DebateSession, quote?: CoinQuote): Promise<void> {
   if (!COINS_ENABLED) return;
 
   const costInput = {
@@ -87,8 +89,8 @@ export async function ensureMatchCharged(session: DebateSession): Promise<void> 
     deepDebate: session.deepDebate,
     responseLength: session.responseLength,
   };
-  const total = matchCoinCost(costInput);
-  const premium = premiumCoinCost(costInput);
+  const total = quote?.total ?? matchCoinCost(costInput);
+  const premium = quote?.premium ?? premiumCoinCost(costInput);
 
   const fingerprint = matchContentFingerprint({
     topic: session.topic,
@@ -115,20 +117,21 @@ export async function ensureMatchCharged(session: DebateSession): Promise<void> 
 export async function ensureJudgeCharged(
   session: DebateSession,
   judgeModelId: string,
+  quote?: CoinQuote,
 ): Promise<void> {
   if (!COINS_ENABLED) return;
 
   const judge = { mode: session.judge.mode, modelId: judgeModelId };
-  const cost = judgeCoinCost(judge);
+  const supabase = await requireCoinClient("judging requires a signed-in account");
+  const cost = quote?.total ?? judgeCoinCost(judge);
   if (cost <= 0) return; // Auto / fighter-as-judge is included free.
-  const premium = judgePremiumCoinCost(judge);
+  const premium = quote?.premium ?? judgePremiumCoinCost(judge);
 
   const fingerprint = transcriptFingerprint(
     session.messages.map((m) => ({ speaker: m.speaker, content: m.content })),
   );
   const key = judgeChargeKey(chargeSecret(), session.id, judgeModelId, fingerprint);
 
-  const supabase = await requireCoinClient("re-judging requires a signed-in account");
   await spend(supabase, key, cost, premium);
 }
 

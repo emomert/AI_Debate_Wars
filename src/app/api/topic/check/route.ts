@@ -1,3 +1,4 @@
+import { withSpendBudget } from "@/lib/security/spendBudget";
 /**
  * POST /api/topic/check — AI sanity-check / improve a proposed debate topic.
  *
@@ -26,13 +27,8 @@ import {
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
 import { recordApiError } from "@/lib/analytics/errorLog";
-import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { enforceLimits } from "@/lib/security/rateLimit";
 import { moderateText } from "@/lib/moderation/moderate";
-import {
-  buildUsage,
-  calculateCost,
-  estimateTokensFromText,
-} from "@/lib/cost/calculateCost";
 import { TOPIC_MAX_LENGTH, TOPIC_MIN_LENGTH } from "@/lib/constants";
 import {
   ProviderError,
@@ -66,11 +62,15 @@ function resolveTopicCheckModel(): { providerId: Backend; modelId: string } {
   );
 }
 
-export async function POST(req: Request): Promise<NextResponse> {
+export function POST(req: Request): Promise<NextResponse> {
+  return withSpendBudget(req, () => handlePost(req));
+}
+
+async function handlePost(req: Request): Promise<NextResponse> {
   // Which checker model the failed call targeted — read by the catch's error log.
   let errModelId: string | undefined;
   try {
-    await enforceLimits(req, "topic");
+    await enforceLimits(req, "topic", true);
     const deadlineMs = Date.now() + 25_000;
     const body = await readJsonBody<TopicCheckRequest>(req);
 
@@ -125,16 +125,6 @@ export async function POST(req: Request): Promise<NextResponse> {
       2,
       deadlineMs,
     );
-
-    const estimated = !result.usage;
-    const usage =
-      result.usage ??
-      buildUsage(
-        estimateTokensFromText(systemPrompt + userPrompt),
-        estimateTokensFromText(result.content),
-      );
-    const cost = calculateCost(providerId, modelId, usage, estimated);
-    await recordSpend(req, cost.totalCost);
 
     const res: TopicCheckResponse = { result: parseTopicCheck(result.content, topic) };
     return NextResponse.json(res);

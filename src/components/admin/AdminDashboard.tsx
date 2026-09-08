@@ -423,7 +423,7 @@ export function AdminDashboard() {
 
         {truncated ? (
           <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Showing the most recent 20,000 matches — older ones aren't included in these numbers.
+            Showing the most recent 20,000 matches — older ones are not included in these numbers.
           </p>
         ) : null}
 

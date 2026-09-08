@@ -35,8 +35,9 @@ export function SetupSummaryCard({
   const d = useT();
   const pairs = getBattlePairs(config);
   // Total match price in coins (multi-battle: each battle is priced + charged
-  // on its own, so the card shows the sum across all pairs; the judge is priced
-  // per battle — Auto is free, a picked third-model judge adds its coin price).
+  // on its own, so the card shows the sum across all pairs. Each match total
+  // includes the 4-coin verdict allocation; a picked third-model judge adds its
+  // separate coin price.
   const totalCoins = pairs.reduce(
     (sum, p) =>
       sum +
@@ -188,9 +189,14 @@ export function SetupSummaryCard({
             <p className="text-[10px] font-bold uppercase tracking-wide text-night/50">
               {d.coins.totalCostLabel}
             </p>
-            <p className="font-heading text-base font-extrabold leading-none">
-              {d.coins.totalCostValue(totalCoins)}
-            </p>
+            <div className="text-right">
+              <p className="font-heading text-base font-extrabold leading-none">
+                {d.coins.totalCostValue(totalCoins)}
+              </p>
+              <p className="mt-1 max-w-[15rem] text-[10px] font-semibold leading-tight text-night/55">
+                {d.coins.totalCostNote}
+              </p>
+            </div>
           </div>
         ) : null}
       </div>

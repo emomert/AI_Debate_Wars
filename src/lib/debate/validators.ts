@@ -120,9 +120,7 @@ export function assertValidSession(session: DebateSession): void {
 /**
  * Deep Debate fixed-format guard for NEW turn generation only (3 rounds —
  * deep turns are long and burn search quota — and the standard serious tone).
- * Lives outside assertValidSession so the verdict route never runs it: a
- * finished deep debate from before these limits existed must still get its
- * verdict, but no further deep turns may be generated for it.
+ * Generation policy uses this guard; legacy display validation stays separate.
  */
 export function assertDeepTurnAllowed(session: DebateSession): void {
   if (!session.deepDebate) return;
@@ -135,10 +133,8 @@ export function assertDeepTurnAllowed(session: DebateSession): void {
 }
 
 /**
- * Best-effort transcript sanity check (NOT an anti-forgery boundary — the server
- * is stateless and holds no record of what it actually generated, so a
- * determined client can still fabricate consistent-looking content; true
- * anti-forgery needs server-side persistence or signed messages, see docs/11).
+ * Shape validation for saved/shared data, not proof of generation. Live paid
+ * routes use generationStore's server-owned transcript instead of this check.
  *
  * It (a) requires the number of completed turns to equal the number of messages
  * — so the judge can't run on an empty/partial transcript — and (b) bounds each

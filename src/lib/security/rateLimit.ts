@@ -201,7 +201,7 @@ let warnedUnconfigured = false;
  * in the client's silent-retry set) when a guard trips. Call BEFORE doing any
  * paid work.
  */
-export async function enforceLimits(req: Request, kind: RouteKind): Promise<void> {
+export async function enforceLimits(req: Request, kind: RouteKind, reservedSpend = false): Promise<void> {
   const ip = clientIp(req);
   const supabase = getSupabaseServiceRoleClient();
 
@@ -214,7 +214,8 @@ export async function enforceLimits(req: Request, kind: RouteKind): Promise<void
       );
       warnedUnconfigured = true;
     }
-    enforceLimitsInMemory(ip, kind); // per-instance backstop, not fail-open
+    if (reservedSpend) memEnforceRate(ip, kind);
+    else enforceLimitsInMemory(ip, kind);
     return;
   }
 
@@ -239,7 +240,9 @@ export async function enforceLimits(req: Request, kind: RouteKind): Promise<void
   }
 
   // 2) Daily spend caps (global + per-IP) — paid provider routes only.
-  if (!PAID_KINDS.has(kind)) return;
+  // Paid routes now reserve each actual attempt. Don't deny an already-paid
+  // cached answer simply because another request exhausted today's budget.
+  if (reservedSpend || !PAID_KINDS.has(kind)) return;
   try {
     const { data: spendOk, error } = await supabase.rpc("spend_allowed", {
       p_ip: ip,

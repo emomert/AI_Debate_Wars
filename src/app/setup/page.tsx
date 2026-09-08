@@ -23,7 +23,7 @@ import { SetupSummaryCard } from "@/components/setup/SetupSummaryCard";
 
 import { useArena, toSelectedModel, defaultFighters } from "@/lib/state/ArenaContext";
 import { playSound } from "@/lib/audio/soundManager";
-import { COINS_ENABLED } from "@/lib/coins/config";
+import { MATCH_AUTH_REQUIRED } from "@/lib/coins/config";
 import { SignupGateModal } from "@/components/coins/SignupGateModal";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { validateSetup } from "@/lib/debate/validators";
@@ -252,11 +252,11 @@ export default function SetupPage() {
   const handleStart = async () => {
     setAttempted(true);
     if (!validateSetup(config, { injectedSearchReady, locale }).valid) return;
-    // Coin gate (docs/23_COINS.md): matches need an account once coins are on.
+    // Production matches need an owner even when coin charging is disabled.
     // Everything up to here stays browsable signed-out — pressing START shows a
     // "sign up first" warning (owner 7/12: warn, don't redirect immediately);
     // the server enforces the same rule regardless.
-    if (COINS_ENABLED) {
+    if (MATCH_AUTH_REQUIRED) {
       const supabase = getSupabaseBrowserClient();
       if (supabase) {
         const {
@@ -278,7 +278,7 @@ export default function SetupPage() {
     <GameShell wide>
       {/* (The "coins power the arena" intro popup was removed 7/12 — owner
           found it intrusive on every setup visit; /pricing carries the tiers.) */}
-      {COINS_ENABLED ? <SignupGateModal open={gateOpen} onClose={() => setGateOpen(false)} /> : null}
+      {MATCH_AUTH_REQUIRED ? <SignupGateModal open={gateOpen} onClose={() => setGateOpen(false)} /> : null}
       <div className="mb-5">
         <h1 className="font-display text-4xl tracking-tight sm:text-5xl">
           {d.setup.heading}

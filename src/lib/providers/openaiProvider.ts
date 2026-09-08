@@ -11,7 +11,7 @@ import { callChatCompletions } from "@/lib/providers/openaiCompatible";
 const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
 
 /**
- * gpt-5.x and o-series use the newer param name (max_completion_tokens).
+ * gpt-5.x, gpt-6 and o-series use the newer param name (max_completion_tokens).
  * NOTE: the `*-chat-latest` variants are NOT reasoning models — they accept a
  * custom temperature and don't burn hidden reasoning tokens. So we split the two
  * concerns: `isNewStyleModel` (param name) vs `isReasoningStyle` (drop
@@ -19,11 +19,11 @@ const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v
  * temperature (0.8 turns / 0.4 judge).
  */
 function isNewStyleModel(modelId: string): boolean {
-  return /^(gpt-5|o[0-9])/.test(modelId);
+  return /^(gpt-[56](?:[.-]|$)|o[0-9])/.test(modelId);
 }
 
 function isReasoningStyle(modelId: string): boolean {
-  return /^(gpt-5|o[0-9])/.test(modelId) && !modelId.includes("-chat");
+  return isNewStyleModel(modelId) && !modelId.includes("-chat");
 }
 
 export const openaiProvider: Provider = {
@@ -42,6 +42,7 @@ export const openaiProvider: Provider = {
 
     const { content, usage, finishReason } = await callChatCompletions({
       baseUrl: OPENAI_BASE_URL,
+      providerId: "openai",
       apiKey: process.env.OPENAI_API_KEY ?? "",
       model: input.model.modelId,
       systemPrompt: input.systemPrompt,
@@ -52,6 +53,11 @@ export const openaiProvider: Provider = {
       signal: input.signal,
       tokenParam: newStyle ? "max_completion_tokens" : "max_tokens",
       includeTemperature: !reasoning,
+      // Astra rejects temperature and has no "none" reasoning mode. Keep
+      // short debate turns responsive with the lowest supported effort.
+      ...(input.model.modelId === "gpt-6-astra"
+        ? { extraBody: { reasoning_effort: "low" } }
+        : {}),
     });
     return {
       content,

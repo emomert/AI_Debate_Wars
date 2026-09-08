@@ -3,10 +3,8 @@ import "server-only";
 /**
  * Brave Web Search implementation of `SearchProvider`.
  *
- * Free plan: 2,000 queries/month at 1 req/s — enough for ~140 deep debates at
- * zero cost. Upgrading to a paid Brave tier for heavier demand needs no code
- * change: same endpoint and key, just set SEARCH_COST_USD if the tier bills
- * per query so the cost HUD stays honest.
+ * Every query is metered and reserved before dispatch. SEARCH_COST_USD can
+ * raise the default $0.005 booking to match the configured account's tariff.
  *
  * The key is read from BRAVE_SEARCH_API_KEY at call time, server-side only —
  * it never reaches the client (same rule as the model-provider keys).
@@ -16,6 +14,7 @@ import type { Citation } from "@/lib/debate/debateTypes";
 import type { SearchOptions, SearchProvider } from "@/lib/search/types";
 import { rankCitations } from "@/lib/search/sourceRanking";
 import { ProviderError } from "@/lib/utils/errors";
+import { reserveSpend } from "@/lib/security/spendBudget";
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const DEFAULT_COUNT = 5;
@@ -105,6 +104,10 @@ export const braveSearchProvider: SearchProvider = {
     else opts.signal?.addEventListener("abort", onCallerAbort, { once: true });
 
     try {
+      // Search is booked independently of whether the subsequent model succeeds.
+      const fee = Math.max(0.005, Number(process.env.SEARCH_COST_USD?.trim() || 0.005));
+      if (!Number.isFinite(fee) || fee < 0.005) throw new ProviderError("PROVIDER_ERROR", "Invalid search cost configuration");
+      const settle = await reserveSpend(fee);
       const res = await fetch(`${BRAVE_ENDPOINT}?${params}`, {
         headers: {
           Accept: "application/json",
@@ -133,6 +136,7 @@ export const braveSearchProvider: SearchProvider = {
       }
 
       const data = (await res.json()) as { web?: { results?: BraveWebResult[] } };
+      await settle(fee);
       // Map the FULL pool, then prefer academic/authoritative sources and trim
       // to the requested count (re-indexed 1..count for the inline [n] markers).
       const pool = mapResults(data.web?.results ?? [], POOL_COUNT);

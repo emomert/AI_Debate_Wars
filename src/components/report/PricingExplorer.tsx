@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n/LocaleProvider";
 import { MODEL_CATALOG } from "@/lib/models/modelRegistry";
 import { getModelPrice, priceKey } from "@/lib/cost/pricing";
+import { LOWEST_NET_COIN_USD } from "@/lib/coins/economy";
 import { BrandLogo } from "@/components/report/BrandLogo";
 import { cn } from "@/lib/utils/cn";
 
@@ -61,7 +62,15 @@ export function PricingExplorer() {
 
   // Log scale so $0.28 and $30 are both visible on the same bar.
   const barWidth = (n: number) =>
-    n <= 0 ? 0 : Math.max(4, Math.round((100 * Math.log10(1 + n / 0.05)) / Math.log10(1 + maxOutput / 0.05)));
+    n <= 0
+      ? 0
+      : Math.max(
+          4,
+          Math.round(
+            (100 * Math.log10(1 + n / LOWEST_NET_COIN_USD)) /
+              Math.log10(1 + maxOutput / LOWEST_NET_COIN_USD),
+          ),
+        );
 
   const sortableTh = (key: SortKey, label: string) => (
     <th className="py-2 pr-3">

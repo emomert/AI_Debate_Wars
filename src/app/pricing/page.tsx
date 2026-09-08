@@ -30,9 +30,9 @@ import { useT } from "@/lib/i18n/LocaleProvider";
 // Match prices the pack cards translate into "what that buys". Coin amounts
 // only — the copy deliberately names no models (owner 7/28), so these stay
 // correct as the catalog moves.
-const QUICK_MATCH_COINS = 2; // two 1-coin fighters
-const PREMIUM_BOUT_COINS = 6; // e.g. a 4-coin fighter vs a 2-coin fighter
-const FLAGSHIP_FIGHT_COINS = 13; // a 12-coin flagship + a 1-coin sparring partner
+const QUICK_MATCH_COINS = 12; // two 4-coin fighters + the included Auto verdict allocation
+const PREMIUM_BOUT_COINS = 20; // a 12-coin fighter + a 4-coin fighter + Auto allocation
+const FLAGSHIP_FIGHT_COINS = 168; // a 160-coin flagship + a 4-coin fighter + Auto allocation
 
 export default function PricingPage() {
   const d = useT();

@@ -31,13 +31,17 @@ export function AccountActions({ userId }: { userId: string }) {
     setError(null);
     try {
       // RLS returns only this user's own rows for each table.
-      const [profile, consent, matches, shared, votes] = await Promise.all([
+      const [profile, consent, matches, shared, votes, generation] = await Promise.all([
         supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("profile_consent").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("matches").select("*").order("created_at", { ascending: false }),
         supabase.from("shared_matches").select("*").eq("owner_id", userId),
         supabase.from("shared_match_votes").select("*").eq("user_id", userId),
+        supabase.rpc("generation_export"),
       ]);
+      if ([profile, consent, matches, shared, votes, generation].some(result => result.error)) {
+        throw new Error("Data export is incomplete; please retry");
+      }
       const payload = {
         exportedAt: new Date().toISOString(),
         profile: profile.data ?? null,
@@ -45,6 +49,7 @@ export function AccountActions({ userId }: { userId: string }) {
         matches: matches.data ?? [],
         sharedMatches: shared.data ?? [],
         votes: votes.data ?? [],
+        generationRecords: generation.data ?? [],
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);

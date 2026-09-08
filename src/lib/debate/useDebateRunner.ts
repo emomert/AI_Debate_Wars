@@ -95,7 +95,6 @@ function isTransient(err: unknown): boolean {
 function delay(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) return reject(new DOMException("aborted", "AbortError"));
-    let id: ReturnType<typeof setTimeout>;
     // Named handler so it can be detached on resolve — otherwise every frame of
     // the typewriter (thousands per debate) leaks an abort listener on the
     // long-lived run signal.
@@ -103,7 +102,7 @@ function delay(ms: number, signal: AbortSignal): Promise<void> {
       clearTimeout(id);
       reject(new DOMException("aborted", "AbortError"));
     };
-    id = setTimeout(() => {
+    const id = setTimeout(() => {
       signal.removeEventListener("abort", onAbort);
       resolve();
     }, ms);

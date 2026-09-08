@@ -1,156 +1,34 @@
-# 18 · Public Release & Monetization Requirements
+# 18 — Release requirements
 
-> Status as of 2026-06-10. What Debator needs before it can be opened to the
-> public and monetized, in priority order — including what only the project
-> owner can provide. Items are marked ✅ BUILT where shipped since the
-> original 2026-06-07 draft.
+Updated September 8, 2026. The original audit's engineering findings are addressed in the accepted release. Production migration 0015 is applied; application rollout uses the existing GitHub/Vercel integration. See [implementation and commands](27_AUDIT_FIXES_2026-09-08.md).
 
----
+## Ready in this checkout
 
-## 🔴 Tier 1 — Cost armor (required before ANY public traffic)
+| Original finding | Implementation |
+| --- | --- |
+| Free verdict authorization | Authenticated owner, six stored generated turns and original match charge |
+| Generation replay | Atomic fenced lease, bounded retries, stored responses |
+| Underpriced legacy formats | Canonical three-round/short/English Debate Mode policy |
+| Concurrent/unrecorded spend | Per-attempt atomic reserve and idempotent settlement; uncertain work remains booked |
+| Price/margin mismatch | Fixed match quotes and real net pack assumptions including judge/retry/search costs |
+| Vulnerable dependencies | Patched Next 15, Vitest 5 and transitive dependencies |
+| Missing lint/CI | ESLint plus Node 24 GitHub Actions checks |
+| Unsafe migration replay | Version/checksum ledger, verified baseline, advisory lock, pending-only apply |
 
-Anonymous visitors currently spend the deployer's API credits directly. None
-of the items below are optional for a public launch.
+## Activate the changes
 
-### 1. Rate limiting + budget caps — ✅ BUILT
+1. Review the changed files and the database baseline dry run.
+2. Record the verified baseline through 0014 without replaying SQL; apply pending migration 0015. The runner refuses an unbaselined populated schema.
+3. Run locked installation, lint, TypeScript, tests and production build. Publish through the existing GitHub/Vercel workflow.
+4. Start a new authenticated match after release. Existing saved sessions remain readable; old sessions without a server record cannot resume paid generation.
 
-- Shipped via Supabase RPCs (not Upstash as originally recommended): per-IP
-  fixed-window limits on turn/verdict/topic routes plus global and per-IP
-  daily spend caps, all enforced before paid work. Defaults and env vars in
-  `docs/11_SECURITY_RATE_LIMITS.md`.
-- Note: when Supabase is unconfigured/down the limits **fall back to an
-  in-process per-instance backstop** (not fully open) — but that's best-effort
-  (`limit × instances`, resets on cold start), so production must still have
-  Supabase env vars set + migration 0003 applied for the real distributed caps.
+SUPABASE_SERVICE_ROLE_KEY and the public Supabase configuration are required for production generation even if coin charging is disabled. Local-only free development is explicitly separate. Keep the database migration ahead of the application release. A code rollback also restores the old generation behavior.
 
-**Needs from owner:** nothing further (Supabase project already required for auth).
+## Owner and operational items
 
-### 2. Vercel Pro plan
+- The connected team reported Vercel Hobby, whose [plan documentation](https://vercel.com/docs/plans/hobby) restricts commercial use. A suitable plan requires an owner billing action; this task does not purchase or change it.
+- Payment code/configuration is present. Real purchases, refunds and webhook failure scenarios were not exercised in this fix; use the payment test environment for release acceptance.
+- Provider invoices and future tariffs can differ from application estimates. Maintain balances/alerts and review the documented 5× estimated-cost target against observed net revenue.
+- Keep backups/recovery, support and content handling operational. The changes add generation records to exports and account deletion, and update the privacy description.
 
-- ⚠️ **Vercel Hobby's fair-use terms prohibit commercial use.** Monetizing on
-  Hobby risks suspension; Pro is ~$20/month.
-- Bonus: Pro raises serverless `maxDuration` from 60s to 300s — removing Deep
-  Debate's tightest constraint (slow reasoning models + web search in one
-  60s window).
-
-**Needs from owner:** the plan upgrade.
-
-### 3. Provider spending caps
-
-Hard monthly limits set in each dashboard, so a bug or abuse can never spend
-more than the configured maximum:
-
-- OpenAI → Settings → Limits (monthly budget + email threshold)
-- DeepSeek → account top-up model (prepaid only = natural cap)
-- OpenRouter → buy fixed credits, no auto-top-up
-- Brave → free plan hard-stops at 2,000 queries/month (no overage risk)
-
-**Needs from owner:** ~5 minutes per dashboard. No code changes.
-
-### 4. Server-side session persistence (anti-forgery) — 🟡 PARTIAL
-
-- The server is stateless today: it validates session *shape* and bounds all
-  string lengths, but cannot verify a transcript was really generated by us.
-  A crafted client can replay/forge sessions to amplify prompt costs
-  (bounded by the validators, but real money at public scale).
-- Since the draft: Supabase auth + saved matches + history/stats shipped
-  (docs/19), so the storage layer exists. The remaining gap is validating
-  turn/verdict requests against server-stored session records instead of
-  trusting the client transcript.
-
-**Needs from owner:** nothing — implementation only.
-
-### 5. Legal pages — ✅ BUILT (owner review pending)
-
-- `/privacy`, `/terms`, and `/about` shipped. A consent banner is still
-  needed if ads/analytics cookies are ever added.
-
-**Needs from owner:** review the published copy; confirm operator/business
-name + contact e-mail.
-
-### 6. Audio licensing
-
-- `public/music/background.mp3`, `round_start.mp3`, `drum_roll.mp3` were
-  supplied manually. Commercial use requires confirming their license.
-
-**Needs from owner:** the files' source/license — or approval to swap in CC0
-tracks.
-
-### 7. Topic moderation
-
-- User topics are forwarded verbatim to OpenAI/DeepSeek/OpenRouter and (in
-  Deep Debate) to Brave. Abusive topics risk provider account standing.
-- Fix: run topics through a moderation check (OpenAI's moderation endpoint is
-  free) before starting a match; reject with friendly copy.
-
-**Needs from owner:** nothing — implementation only.
-
----
-
-## 🟡 Tier 2 — Monetization machinery (pick the model first)
-
-### Option A — Freemium subscriptions (best fit for per-debate costs)
-
-- Auth: Clerk or Supabase Auth (magic link / OAuth).
-- Billing: Stripe subscriptions + customer portal + webhooks.
-- Quota gating (requires Tier 1 §4 persistence):
-  - Free tier: N debates/day, free (OpenRouter) fighters only, no Deep Debate.
-  - Paid tier: premium fighters (GPT-5.x, DeepSeek), Deep Debate, higher caps.
-- The model picker already encodes cost tiers (`FREE/$/$$/$$$`), so plan
-  gating maps cleanly onto the existing catalog.
-
-**Needs from owner:** Stripe account (business + tax info), auth provider
-preference, price points.
-
-### Option B — Ads (AdSense or similar)
-
-- Lowest setup; requires Tier 1 §5 legal pages + cookie consent.
-- Pays little until traffic is significant; arcade aesthetic needs careful
-  ad placement to not break the feel.
-
-**Needs from owner:** AdSense account + site approval.
-
-### Option C — Bring-your-own-key (pro perk)
-
-- Users paste their own OpenAI/OpenRouter key (kept per-session server-side,
-  never persisted client-readable); their debates bill their key.
-- Zero marginal cost; pairs well with Option A as a power-user feature.
-
-**Needs from owner:** decision only.
-
----
-
-## 🟢 Tier 3 — Quality & scale (after launch)
-
-| Item | Why | Needs from owner |
-| --- | --- | --- |
-| ~$10 OpenRouter credits | Free models 429 heavily without credits (50/day → 1,000/day) | One-time top-up |
-| Custom domain | Trust + SEO | Buy domain, add in Vercel |
-| Error monitoring | Sentry free tier + Vercel Analytics | Account/approval |
-| SEO/OG pass | Meta tags, OG images, sitemap | Nothing |
-| CI on PRs | GitHub Action: `tsc` + `next build` | Nothing |
-| Brave paid tier | Only when >2,000 deep searches/month; then set `SEARCH_COST_USD` so the HUD stays honest | Plan upgrade when needed |
-| Verify estimate prices | `gpt-5.4`/`gpt-5.5` pricing rows are family-mirrored estimates | Check openai.com/api/pricing once |
-| Cross-browser/mobile QA + a11y pass | Public-traffic polish | Nothing |
-
----
-
-## Recommended order
-
-1. **Cost armor first** (Tier 1 §1–3) — nothing else matters if a viral tweet
-   can drain the API budget overnight.
-2. **Persistence + legal + domain** (Tier 1 §4–7).
-3. **Auth + billing** (Tier 2, Option A recommended; Option C as a follow-up).
-4. Tier 3 as traffic grows.
-
-## Open decisions for the owner
-
-- [ ] Vercel Pro upgrade
-- [x] Rate-limiting infra — resolved: Supabase RPCs (no Upstash needed)
-- [x] DB/auth vendor — resolved: Supabase (shipped)
-- [ ] Monetization model: subscriptions / ads / BYO-key (or combination)
-- [ ] Stripe account + price points (if subscriptions)
-- [ ] Domain name
-- [ ] Operator name + contact e-mail for legal pages
-- [ ] Audio license confirmation
-- [ ] Provider dashboard spending caps (owner-side task)
+Accepted for production release on September 8, 2026. The existing Supabase database was baselined through 0014 without replaying SQL, then migration 0015 was applied successfully. The ledger reports 15 versions and no pending migrations. This release is published through GitHub main and the existing Vercel integration; consult the deployment/check status for the current rollout result. No payment or hosting-plan purchase was made. Final focused validation is recorded in [the fix report](27_AUDIT_FIXES_2026-09-08.md).

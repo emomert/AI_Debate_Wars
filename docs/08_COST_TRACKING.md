@@ -1,6 +1,6 @@
 # 08 — Cost Tracking
 
-> Updated 2026-07-11. Source of truth: `src/lib/cost/pricing.ts` and
+> Updated 2026-09-08. Source of truth: `src/lib/cost/pricing.ts` and
 > `src/lib/cost/calculateCost.ts`. The `/report` page renders the live pricing
 > table.
 >
@@ -13,7 +13,7 @@
 
 ## Goal
 
-AI usage cost is tracked and understood internally: every message computes its estimated cost, and session totals feed the spend caps (displays are currently hidden — see the banner above).
+AI usage cost is tracked and understood internally: every message computes its estimated cost, while per-attempt reservations enforce spend caps independently of session totals (displays are currently hidden — see the banner above).
 
 ## Cost Badge
 
@@ -21,11 +21,15 @@ Each message card shows compact cost data (`$0.0031 • 842 tok • 2.4s`); expa
 
 ## Pricing (`pricing.ts`)
 
-- Rates are **verified against official provider pricing pages** (last pass June 2026) and stored per model: input / cached-input / output USD per 1M tokens.
+- September refresh: Astra and DeepSeek from official docs, OpenRouter from its live model API. Added 13 models and refreshed 19 existing OpenRouter price pairs. Older OpenAI entries retain their prior verified rates. See [the dated audit](26_PROJECT_AUDIT_2026-09-08.md).
 - **Cached input discounts** are modeled: 90% for the GPT-5 family, 75% for GPT-4.1, 50% for GPT-4o; DeepSeek has separate cache-hit rates. Prompts are ordered stable-first so caches actually hit (see `docs/05_PROMPTING.md`).
-- OpenRouter free models are $0/$0.
+- The selectable OpenRouter catalog is paid-only. Tests require explicit API prices for every selectable model.
 - Unknown models fall back to $0.5 input / $1.5 output per 1M.
-- Deep Debate adds a per-search fee: `DEEP_SEARCH_COST_USD` (~$0.005) for OpenRouter native search; injected Brave search costs `SEARCH_COST_USD` (default $0 on the free tier).
+- Deep Debate uses app-managed Brave search only. `SEARCH_COST_USD` defaults to and cannot reserve below $0.005 per query; raise it for a higher-priced plan. Native provider search is disabled.
+
+DeepSeek uses current peak rates conservatively; off-peak invoices can be lower. Astra cache writes cost $12.50/M input tokens, versus $10/M ordinary input and $1/M cache hits. `TokenUsage.cacheWriteInputTokens` retains provider-reported writes; the calculation bounds them to non-hit input and adds only the write surcharge.
+
+Every actual provider attempt reserves a conservative amount atomically before dispatch. Known usage reconciles once; failures, timeouts and missing usage retain bookings. OpenRouter cost receipts are preferred when available. Ledger values remain tariff estimates, not invoice guarantees. Coin estimates use the cheapest net pack after fee, retry, operating, judge and search allowances; 5× is a planning target, not guaranteed profit. See [audit fixes](27_AUDIT_FIXES_2026-09-08.md).
 
 Pricing never lives in UI components.
 

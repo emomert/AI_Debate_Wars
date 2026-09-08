@@ -4,10 +4,8 @@
  *
  * Configured by env so scaling up later is a dashboard change, not a deploy:
  *  - SEARCH_PROVIDER  — engine id (default "brave"; add engines in PROVIDERS).
- *  - SEARCH_COST_USD  — per-query fee surfaced in the cost HUD (default 0;
- *                       set it when moving off a free search tier).
- *  - DEEP_SEARCH_MODE — "unified" (default) or "hybrid" (OpenRouter fighters
- *                       search natively via ":online"); read in modelRegistry.
+ *  - SEARCH_COST_USD  — per-query fee, with a default/minimum of $0.005.
+ * Native provider search is disabled to keep all paid searches budgeted.
  */
 
 import { braveSearchProvider } from "@/lib/search/braveSearch";
@@ -37,6 +35,6 @@ export function isInjectedSearchConfigured(): boolean {
  * exact rate with SEARCH_COST_USD to match your Brave plan.
  */
 export function injectedSearchCostUsd(): number {
-  const raw = Number(process.env.SEARCH_COST_USD);
-  return Number.isFinite(raw) && raw >= 0 ? raw : 0.005;
+  const raw = Number(process.env.SEARCH_COST_USD?.trim() || 0.005);
+  return Number.isFinite(raw) && raw >= 0.005 ? raw : 0.005;
 }

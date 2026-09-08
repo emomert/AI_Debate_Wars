@@ -33,9 +33,12 @@ export function calculateCost(
   const cachedRate = price.cachedInputCostPer1M ?? price.inputCostPer1M;
   const cachedInput = Math.min(Math.max(usage.cachedInputTokens ?? 0, 0), usage.inputTokens);
   const uncachedInput = usage.inputTokens - cachedInput;
+  const cacheWriteInput = Math.min(Math.max(usage.cacheWriteInputTokens ?? 0, 0), uncachedInput);
+  const cacheWriteRate = price.cacheWriteInputCostPer1M ?? price.inputCostPer1M;
   const inputCost =
     (uncachedInput / 1_000_000) * price.inputCostPer1M +
-    (cachedInput / 1_000_000) * cachedRate;
+    (cachedInput / 1_000_000) * cachedRate +
+    (cacheWriteInput / 1_000_000) * (cacheWriteRate - price.inputCostPer1M);
   const outputCost = (usage.outputTokens / 1_000_000) * price.outputCostPer1M;
   // What the cache discount actually saved (vs billing the cached tokens at the
   // full rate). 0 for models priced without a cached rate, so the UI only shows

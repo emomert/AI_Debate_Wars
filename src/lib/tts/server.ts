@@ -13,6 +13,7 @@ import { TTS_COST_USD_PER_1M_CHARS } from "@/lib/cost/pricing";
 import { OPENAI_VOICES } from "@/lib/tts/voices";
 import { VOICE_ENABLED } from "@/lib/tts/config";
 import type { Speaker } from "@/lib/debate/debateTypes";
+import { reserveSpend } from "@/lib/security/spendBudget";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
@@ -52,6 +53,14 @@ export async function synthesizeSpeech(
     throw new ProviderError("INVALID_REQUEST", "Server TTS is not configured");
   }
   const model = process.env.TTS_OPENAI_MODEL ?? "gpt-4o-mini-tts";
+  // Speech returns binary audio without a usable cost receipt. Retain this
+  // explicit conservative booking, including on a timeout. Voices remain off.
+  const ceiling = Number(process.env.TTS_MAX_REQUEST_USD?.trim() || 0.5);
+  if (!Number.isFinite(ceiling) || ceiling <= 0 || text.length > 4000 ||
+      !["gpt-4o-mini-tts", "tts-1", "tts-1-hd"].includes(model)) {
+    throw new ProviderError("INVALID_REQUEST", "Unsupported speech budget or model");
+  }
+  await reserveSpend(Math.max(ceiling, text.length / 1_000_000 * ttsCostUsdPer1MChars()));
   const res = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: {

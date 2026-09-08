@@ -1,40 +1,30 @@
 # 13 — Roadmap
 
-> Updated 2026-06-10. The original MVP and most of V1 have shipped. Detailed
-> launch requirements live in `docs/18_RELEASE_REQUIREMENTS.md`.
+Updated September 8, 2026. See [initial audit](26_PROJECT_AUDIT_2026-09-08.md) and [follow-up fixes](27_AUDIT_FIXES_2026-09-08.md).
 
-## Shipped
+## Existing product
 
-- Full arcade UI (home, setup, arena, result) — mobile responsive, sound + music
-- Debate Mode with deterministic 3/5/7-round plans (Discussion Mode shipped, later removed from UI)
-- Three providers behind one interface: OpenAI, DeepSeek, OpenRouter (56+ models, free tier included)
-- Judge Mode: auto neutral judge or third model, blind decisive verdicts, re-judge from result
-- Deep Debate: web-search-grounded turns with citations (unified Brave search; hybrid OpenRouter `:online` mode)
-- AI topic check/improve
-- Cache-aware cost tracking with verified pricing; per-message and session totals
-- Stateless share links with generated OG images
-- Supabase auth (magic link + Google), match history + stats, match delete
-- Per-IP rate limits + global/per-IP daily spend caps
-- Legal pages (about, privacy, terms); living tech report (`/report`)
-- Turkish localization (built, hidden behind `MULTILOCALE_ENABLED`)
+- English Debate Mode, three short rounds, mandatory blind judge and arcade UI.
+- OpenAI, DeepSeek and paid OpenRouter catalog, including 13 verified September additions.
+- App-managed Brave search and citations for Deep Debate.
+- Supabase accounts, private history, community features, analytics, claim-gated daily coins and configured Polar integration.
 
-## Next — Public Launch (see docs/18)
+## Accepted September 8 release
 
-- Vercel Pro (Hobby prohibits commercial use; also raises `maxDuration`)
-- Provider dashboard spending caps (owner task)
-- Server-side session persistence / anti-forgery validation
-- Topic moderation pass before matches
-- Audio license confirmation; custom domain; error monitoring; CI
+- Authenticated server-owned transcripts, fixed price quotes, atomic generation leases and cached responses.
+- Paid-match verification before included judging and canonical new-match format enforcement.
+- Atomic per-attempt spend reservations with failed/aborted work accounted for.
+- Economics using discounted net pack revenue, fees, reasoning, retries, judge and search allowances.
+- Patched dependencies, working ESLint, Node 24 CI, version/checksum migration runner.
+- Export and privacy updates for generation records.
 
-## Then — Monetization (see docs/18 Tier 2)
+## Next operational steps
 
-- Pick the model: freemium subscriptions (recommended), ads, and/or bring-your-own-key
-- Stripe billing + quota gating mapped onto the existing FREE/$/$$/$$$ cost tiers
+1. Database baseline and migration 0015 are complete. Track the accepted release through GitHub checks and Vercel production status.
+2. Resolve the connected Hobby plan's suitability for a monetized service through the owner's billing settings.
+3. Verify payment lifecycle cases in the payment test environment and maintain provider balances, alerts and backups.
+4. Recheck model retirements/account availability and compare actual costs with pricing assumptions over time.
 
-## Later Ideas
+## Later product work
 
-- Turkish launch (flip `MULTILOCALE_ENABLED`)
-- Public debate gallery, leaderboards, community voting
-- Debate templates, custom roles, rematch/swap-sides shortcuts
-- Tournaments, classroom mode, export to markdown/PDF
-- More providers (Anthropic, Google) — the provider layer already supports adding them without rewrites
+Templates, rematches, tournaments, classroom features, richer exports and leaderboards remain possible additions. Turkish UI, Blitz, voices and cost displays remain disabled. Moderation remains opt-in; those existing product decisions are unchanged.

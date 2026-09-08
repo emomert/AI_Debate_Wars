@@ -1,3 +1,5 @@
+import { claimGeneration, type GenerationClaim } from "@/lib/debate/generationStore";
+import { withSpendBudget, hasReservedSpend } from "@/lib/security/spendBudget";
 /**
  * POST /api/debate/turn — generate EXACTLY ONE AI turn (docs/06).
  *
@@ -9,7 +11,7 @@
  *   4. calls the provider via the registry (openai / deepseek / openrouter),
  *   5. computes cost from the configurable pricing table,
  *   6. returns one DebateMessage.
- * It never advances the debate or runs more than one turn.
+ * The server saves the completed turn; the browser controls its presentation.
  */
 
 import { NextResponse } from "next/server";
@@ -21,12 +23,6 @@ import type {
 } from "@/lib/api/contracts";
 import type { Citation, DebateMessage } from "@/lib/debate/debateTypes";
 import {
-  assertConsistentTranscript,
-  assertDeepTurnAllowed,
-  assertValidSession,
-} from "@/lib/debate/validators";
-import {
-  getNextTurn,
   getTurnById,
   speakerModel,
 } from "@/lib/debate/orchestrator";
@@ -49,7 +45,6 @@ import { recordApiError } from "@/lib/analytics/errorLog";
 import {
   enforceLimits,
   enforceSearchBudget,
-  recordSpend,
 } from "@/lib/security/rateLimit";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
 import { parseMove } from "@/lib/debate/parseMove";
@@ -64,7 +59,6 @@ import {
   calculateCost,
   estimateTokensFromText,
 } from "@/lib/cost/calculateCost";
-import { ensureMatchCharged } from "@/lib/coins/server";
 import {
   ProviderError,
   httpStatusForCode,
@@ -75,67 +69,39 @@ import { now } from "@/lib/utils/time";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Reasoning models (DeepSeek/OpenRouter) can take 20-40s. Vercel's default is
-// 10s; 60 is the Hobby cap (Pro/Enterprise can raise it up to 300+).
+// Keep the explicit route deadline aligned with provider retries and leases.
 export const maxDuration = 60;
 
-export async function POST(req: Request): Promise<NextResponse> {
+export function POST(req: Request): Promise<NextResponse> {
+  return withSpendBudget(req, () => handlePost(req));
+}
+
+async function handlePost(req: Request): Promise<NextResponse> {
   // Which model the failed call targeted — set once resolved, read by the
   // error log in the catch (owner dashboard: spot models that keep failing).
   let errModelId: string | undefined;
+  let claim: GenerationClaim | undefined;
   try {
     // Cost/abuse guard FIRST: cheaply reject floods + enforce the daily spend
     // cap before doing any paid work (rate limit + spend caps, per IP).
-    await enforceLimits(req, "turn");
+    await enforceLimits(req, "turn", true);
     // Keep total work under Vercel's maxDuration=60 (return a clean JSON error
     // before the platform kills the function with an opaque 502/504).
     const deadlineMs = Date.now() + 55_000;
     const body = await readJsonBody<GenerateTurnRequest>(req);
-    const session = body?.session;
-    assertValidSession(session);
-    assertDeepTurnAllowed(session);
-    assertConsistentTranscript(session);
-
-    const turn = getTurnById(session, body.turnId);
-    if (!turn) throw new ProviderError("INVALID_REQUEST", "Unknown turn");
-    if (turn.status === "complete") {
-      throw new ProviderError("INVALID_REQUEST", "Turn already generated");
-    }
-    if (turn.speaker === "judge") {
-      throw new ProviderError("INVALID_REQUEST", "Judge runs via /api/debate/verdict");
-    }
-    // The APP — not the request payload — controls order: only the next pending
-    // turn may be generated, so every earlier turn must already be complete.
-    const next = getNextTurn(session);
-    if (!next || next.id !== turn.id) {
-      throw new ProviderError("INVALID_REQUEST", "Turns must be generated in order");
-    }
-
-    // Topic moderation gate (P0-3): screen the user's topic through the free
-    // moderation endpoint BEFORE any paid generation — an ungated topic flows
-    // verbatim to the paid providers + Brave (abuse + TOS risk). Gating "only
-    // the opening turn" is NOT safe here: the server is stateless and turn
-    // statuses come from the client, so a forged `status:"complete"` round 1
-    // would skip the gate entirely. Every turn re-asserts instead; a
-    // warm-instance cache of allowed topics keeps repeat turns free. Fails
-    // OPEN, so a moderation outage never breaks a match.
+    if (typeof body?.turnId !== "string") throw new ProviderError("INVALID_REQUEST", "Missing turn ID");
+    claim = await claimGeneration(body.session, body.turnId);
+    if (claim.cached) return NextResponse.json(claim.cached);
+    const session = claim.session;
+    const turn = getTurnById(session, body.turnId)!;
     await assertTopicAllowed(session.topic, req.signal);
-
-    // Coin gate (docs/23_COINS.md; no-op while COINS_ENABLED is off): every
-    // turn asserts the match is paid — the DB charge is idempotent per
-    // (user, session, price), so only the first turn actually spends. Runs
-    // BEFORE any paid provider work, after the free validations above.
-    await ensureMatchCharged(session);
 
     const model = speakerModel(session, turn.speaker);
     errModelId = model.modelId;
     const modelConfig = getProviderModelConfig(model.modelId);
     const provider = getProvider(modelConfig.providerId);
 
-    // Deep Debate: web search + fixed longer template. By default every turn
-    // uses the app-run search (search registry, e.g. Brave) injected into the
-    // prompt; DEEP_SEARCH_MODE=hybrid routes OpenRouter fighters through their
-    // native ":online" search instead.
+    // Deep Debate uses metered app-managed search and a longer fixed template.
     const deep = session.deepDebate;
     const searchMode = deep ? deepSearchStrategy(model.modelId) : null;
     const nativeSearch = searchMode === "native";
@@ -233,9 +199,6 @@ export async function POST(req: Request): Promise<NextResponse> {
       }
     }
 
-    // Record what this turn actually cost against the daily spend ledger.
-    await recordSpend(req, cost.totalCost);
-
     // Blitz: pull the leading move tag off the model's reply, strip it from the
     // shown text, and attach it to the message so the stage can fire a splash.
     // Non-blitz sessions are untouched. Unknown/missing tag → move stays undefined.
@@ -272,8 +235,10 @@ export async function POST(req: Request): Promise<NextResponse> {
     };
 
     const res: GenerateTurnResponse = { message };
+    await claim.complete(res);
     return NextResponse.json(res);
   } catch (err) {
+    await claim?.fail(!hasReservedSpend());
     await recordApiError("turn", err, { modelId: errModelId }); // owner error log
     const appErr = toAppError(err);
     const errorBody: ApiErrorBody = { error: appErr };

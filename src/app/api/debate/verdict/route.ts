@@ -1,11 +1,12 @@
+import { claimGeneration, type GenerationClaim } from "@/lib/debate/generationStore";
+import { withSpendBudget, hasReservedSpend } from "@/lib/security/spendBudget";
 /**
  * POST /api/debate/verdict — generate the judge verdict (docs/06).
  *
  * Runs ONLY after every round is complete (the judge evaluates, never continues
  * the debate). Resolves which model judges based on the judge config:
- *   - modelA / modelB → that fighter (may be biased; UI warns at setup)
  *   - thirdModel      → the chosen neutral model
- *   - auto            → a neutral model based on which API keys are present
+ *   - auto            → the neutral model frozen when the match was created
  * Returns a structured, scored DebateVerdict.
  */
 
@@ -16,28 +17,20 @@ import type {
   GenerateVerdictRequest,
   GenerateVerdictResponse,
 } from "@/lib/api/contracts";
-import type { DebateSession, DebateVerdict } from "@/lib/debate/debateTypes";
-import {
-  assertConsistentTranscript,
-  assertValidSession,
-} from "@/lib/debate/validators";
-import { isDebateComplete } from "@/lib/debate/orchestrator";
+import type { DebateVerdict } from "@/lib/debate/debateTypes";
 import { JUDGE_SYSTEM_PROMPT, buildJudgePrompt } from "@/lib/debate/promptBuilder";
 import { formatVerdictText, parseVerdict } from "@/lib/debate/verdictParser";
 import {
   generateWithRetry,
   getProvider,
-  resolveAutoJudge,
 } from "@/lib/providers/providerRegistry";
 import {
-  getModelById,
   getProviderModelConfig,
 } from "@/lib/models/modelRegistry";
 import { readJsonBody } from "@/lib/api/serverBody";
-import { ensureJudgeCharged } from "@/lib/coins/server";
 import { recordApiError } from "@/lib/analytics/errorLog";
 import { assertTopicAllowed } from "@/lib/moderation/moderate";
-import { enforceLimits, recordSpend } from "@/lib/security/rateLimit";
+import { enforceLimits } from "@/lib/security/rateLimit";
 import { recordMatchAnalytics } from "@/lib/analytics/recordMatch";
 import { buildSharePayload } from "@/lib/share/shareLink";
 import { signSharePayload } from "@/lib/share/signing";
@@ -47,7 +40,6 @@ import {
   estimateTokensFromText,
 } from "@/lib/cost/calculateCost";
 import {
-  ProviderError,
   httpStatusForCode,
   toAppError,
 } from "@/lib/utils/errors";
@@ -59,69 +51,24 @@ export const dynamic = "force-dynamic";
 // The judge can be a slow reasoning model; same Vercel duration note as /turn.
 export const maxDuration = 60;
 
-/**
- * Resolve which model acts as judge. Only the modelId is load-bearing — the
- * real backend is derived from the catalog by getProviderModelConfig — so we
- * return just the id (no provider-id type laundering / `as never`).
- */
-function resolveJudgeModelId(session: DebateSession): string {
-  const { judge } = session;
-  switch (judge.mode) {
-    case "modelA":
-      return session.modelA.modelId;
-    case "modelB":
-      return session.modelB.modelId;
-    case "thirdModel": {
-      if (!judge.model) throw new ProviderError("INVALID_REQUEST", "No judge model chosen");
-      if (!getModelById(judge.model.modelId)) {
-        throw new ProviderError("INVALID_MODEL", "Unknown judge model");
-      }
-      return judge.model.modelId;
-    }
-    case "auto":
-    default:
-      return resolveAutoJudge(session).modelId;
-  }
+export function POST(req: Request): Promise<NextResponse> {
+  return withSpendBudget(req, () => handlePost(req));
 }
 
-export async function POST(req: Request): Promise<NextResponse> {
+async function handlePost(req: Request): Promise<NextResponse> {
   // Which judge the failed call targeted — read by the error log in the catch.
   let errModelId: string | undefined;
+  let claim: GenerationClaim | undefined;
   try {
-    await enforceLimits(req, "verdict"); // cost/abuse guard before any paid work
+    await enforceLimits(req, "verdict", true);
     const deadlineMs = Date.now() + 55_000; // stay under Vercel maxDuration=60
     const body = await readJsonBody<GenerateVerdictRequest>(req);
-    const session = body?.session;
-    assertValidSession(session);
-    assertConsistentTranscript(session);
-
-    if (!session.judge.enabled) {
-      throw new ProviderError("INVALID_REQUEST", "Judge mode is disabled");
-    }
-    if (!isDebateComplete(session)) {
-      throw new ProviderError("INVALID_REQUEST", "Debate is not complete yet");
-    }
-    // With a consistent transcript + a complete debate, this also guarantees a
-    // non-empty transcript (messages === turns), so the judge never evaluates an
-    // empty debate.
-    if (session.messages.length === 0) {
-      throw new ProviderError("INVALID_REQUEST", "Debate transcript is empty");
-    }
-
-    // Same P0-3 gate as /turn: this route is directly reachable with a fully
-    // fabricated "complete" session, so the topic must be screened here too
-    // before it reaches the paid judge. Cached, fail-open (see moderate.ts).
-    await assertTopicAllowed(session.topic, req.signal);
-
-    const judgeModelId = resolveJudgeModelId(session);
+    claim = await claimGeneration(body?.session);
+    if (claim.cached) return NextResponse.json(claim.cached);
+    const session = claim.session;
+    const judgeModelId = claim.judgeModelId!;
     errModelId = judgeModelId;
-
-    // Coin gate for the JUDGE (docs/23_COINS.md; no-op while COINS_ENABLED is
-    // off, or for the Auto/fighter judge which is free). Priced from the
-    // RESOLVED judge and keyed on (session, judge, transcript), so it runs
-    // before any paid judge work and can't be dodged with a forged verdict
-    // ordinal — each distinct picked third-model judge costs its coin price.
-    await ensureJudgeCharged(session, judgeModelId);
+    await assertTopicAllowed(session.topic, req.signal);
 
     const modelConfig = getProviderModelConfig(judgeModelId);
     const provider = getProvider(modelConfig.providerId);
@@ -185,9 +132,6 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     const cost = calculateCost(modelConfig.providerId, judgeModelId, usage, estimated);
 
-    // Record the judge call's cost against the daily spend ledger.
-    await recordSpend(req, cost.totalCost);
-
     const verdict: DebateVerdict = {
       id: createId("verdict"),
       sessionId: session.id,
@@ -232,8 +176,10 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     const res: GenerateVerdictResponse = { verdict };
+    await claim.complete(res);
     return NextResponse.json(res);
   } catch (err) {
+    await claim?.fail(!hasReservedSpend());
     await recordApiError("verdict", err, { modelId: errModelId }); // owner error log
     const appErr = toAppError(err);
     const errorBody: ApiErrorBody = { error: appErr };
