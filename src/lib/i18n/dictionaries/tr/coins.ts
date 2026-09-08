@@ -8,7 +8,6 @@ export const coins = {
   premiumHint: "Premium yarışmacı — satın alınmış jeton kullanır",
   totalCostLabel: "Toplam maliyet",
   totalCostValue: (n: number) => `🪙 ${n} jeton`,
-  totalCostNote: "Maç kararı için 4 jeton ayrılır; seçilen hakemin fiyatı ayrıca eklenir.",
 
   gate: {
     accountBody: "Maçı başlatmak ve ilerlemenizi hesabınıza bağlamak için giriş yapın.",
@@ -43,9 +42,9 @@ export const coins = {
     packsTitle: "Jeton paketleri",
     // "Ne alır" — sadece kademeler, model adı YOK (sahip 7/28).
     examplesIntro: "Bu ne alır:",
-    exampleQuick: (n: number) => `≈ ${n} normal maç (12 jeton)`,
-    examplePremium: (n: number) => `≈ ${n} premium karşılaşma (20 jeton)`,
-    exampleFlagship: (n: number) => `≈ ${n} amiral dövüşü (168 jeton)`,
+    exampleQuick: (n: number) => `≈ ${n} normal maç (2 jeton)`,
+    examplePremium: (n: number) => `≈ ${n} premium karşılaşma (6 jeton)`,
+    exampleFlagship: (n: number) => `≈ ${n} zirve dövüşü (13 jeton)`,
     comingSoon: "Ödemeler çok yakında",
     buy: "Hemen satın al",
     checkoutSuccess:
@@ -59,10 +58,10 @@ export const coins = {
     rulesTitle: "Jetonlar nasıl çalışır?",
     rules: [
       "Bir maç, Yarışmacı A + Yarışmacı B jetonlarına mal olur — fiyat her yarışmacı kartında yazar.",
-      "Derin Münazara sabit 20 jeton ekler. Bu ölçümlü ek özellik, iki yarışmacı da ücretsiz kademede olsa bile satın alınmış veya promosyon jetonlarını kullanır.",
-      "Otomatik hakem ücretsiz dahildir; her maç bu karar için 4 jeton ayırır. Kendi hakeminizi seçmek o modelin jeton fiyatını ekler.",
+      "Derin Münazara sabit 2 jeton ekler.",
+      "Otomatik hakem ücretsiz dahildir. Kendi hakeminizi seçmek o modelin jeton fiyatını ekler.",
       "Farklı bir hakeme geçmek o hakemin jeton fiyatına mal olur; aynı hakemi (veya Otomatik hakemi) yeniden çalıştırmak ücretsizdir.",
-      "4 jetondan pahalı yarışmacılar satın alınmış ya da promosyon jetonu kullanır — günlük ücretsiz jetonlar 4 jeton ve altındaki yarışmacıları kapsar.",
+      "Premium yarışmacılar (8 jeton ve üzeri) satın alınmış ya da promosyon jetonu kullanır — günlük ücretsiz jetonlar 4 jetona kadar her şeyi kapsar.",
       "Satın alınan ve promosyon jetonlarının süresi asla dolmaz.",
     ],
     promoTitle: "Promosyon kodunuz mu var?",

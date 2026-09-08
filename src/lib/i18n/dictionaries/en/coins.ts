@@ -12,7 +12,6 @@ export const coins = {
   // Match Card dedicated total row (owner 7/16 — the old chip was easy to miss)
   totalCostLabel: "Total cost",
   totalCostValue: (n: number) => `🪙 ${n} ${n === 1 ? "coin" : "coins"}`,
-  totalCostNote: "Includes 4 coins for the match verdict; a picked judge adds its own price.",
 
   // Signed-out START gate (warning modal — owner 7/12: warn, don't redirect)
   gate: {
@@ -48,9 +47,9 @@ export const coins = {
     // "What that buys" — tiers only, NO model names (owner 7/28: naming
     // specific fighters dates the copy every time the catalog moves).
     examplesIntro: "What that buys:",
-    exampleQuick: (n: number) => `≈ ${n} regular matches (12 coins)`,
-    examplePremium: (n: number) => `≈ ${n} premium bouts (20 coins)`,
-    exampleFlagship: (n: number) => `≈ ${n} flagship fights (168 coins)`,
+    exampleQuick: (n: number) => `≈ ${n} regular matches (2 coins)`,
+    examplePremium: (n: number) => `≈ ${n} premium bouts (6 coins)`,
+    exampleFlagship: (n: number) => `≈ ${n} frontier fights (13 coins)`,
     comingSoon: "Payments launching soon",
     buy: "Buy now",
     // ?checkout= status banners (set by /api/checkout redirects)
@@ -65,10 +64,10 @@ export const coins = {
     rulesTitle: "How coins work",
     rules: [
       "A match costs fighter A + fighter B coins — the price is on every fighter card.",
-      "Deep Debate adds 20 coins flat. This metered add-on uses purchased or promo coins, including when both fighters are in the free band.",
-      "The Auto judge is included free; every match allocates 4 coins toward that verdict. Picking your own judge adds that model's coin price.",
+      "Deep Debate adds 2 coins flat.",
+      "The Auto judge is included free. Picking your own judge adds that model's coin price.",
       "Switching to a different judge costs that judge's coin price; re-running the same judge (or the Auto judge) is free.",
-      "Fighters priced above 4 coins use purchased or promo coins — daily free coins cover fighters priced at 4 coins or less.",
+      "Premium fighters (8 coins and up) use purchased or promo coins — daily free coins cover everything up to 4 coins.",
       "Purchased and promo coins never expire.",
     ],
     promoTitle: "Have a promo code?",

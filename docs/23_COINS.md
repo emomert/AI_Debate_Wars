@@ -1,8 +1,8 @@
 # 23 — Coin Economy
 
-> **September 8 update:** 13 verified model additions have explicit coin prices. Billable fighter bands now account for the least-revenue pack, hidden reasoning, retries, Deep Debate search, longer output, and the included Auto verdict: 4 / 8 / 12 / 40 / 80 / 160 coins. GPT-5/GPT-6 variants are priced with hidden reasoning included. The live daily-claim schema is present; earlier “0014 pending” notes are stale. Payment implementation is complete but activation depends on environment and verified operations.
+> **September 8 pricing correction:** restored all 90 existing model prices to the pre-audit values, with the 13 new models on the same 1 / 2 / 4 / 8 / 12 / 20 coin scale. Removed the audit release’s global uplift and 4-coin Auto allocation; Deep Debate is +2 again and remains daily-eligible. Pack prices and the 15 daily coins are unchanged. Security fixes, model additions and provider tariff updates remain.
 >
-> **Billing note:** the economic checks are conservative planning invariants, not a guaranteed profit statement or an upper bound on provider invoices. Match ownership, persisted quotes, generation replay protection, and provider spend reservations are enforced separately; see [the audit](26_PROJECT_AUDIT_2026-09-08.md) for boundaries.
+> **Billing note:** provider cost estimates are informational; they do not automatically set customer prices or enforce a 5× margin. Match ownership, persisted quotes, replay protection and provider spend reservations are enforced separately.
 
 > LIVE since 2026-07-12 (owner decision: launch before checkout — coins are
 > distributed via promo codes + `scripts/mint-coins.mjs` until Polar lands).
@@ -14,10 +14,7 @@
 
 ## The user-facing rule
 
-A match costs **fighter A + fighter B coins**, plus a 4-coin allocation for the
-included Auto verdict. Deep Debate adds **20 coins flat**. That metered add-on
-uses purchased or promo coins, including when both fighters are in the free
-band. (The old
+A match costs **fighter A + fighter B coins**. The Auto judge is **free**, with no match allocation or verdict fee. Deep Debate adds **2 coins flat**, payable with daily coins. (The old
 "long length ×2" multiplier survives in `economy.ts` for legacy sessions, but
 the UI is strictly short-length since July 2026, so new matches never hit it.) The judge is priced **separately, at the
 verdict route** (decoupled from the match charge 2026-07-13 — see below): the
@@ -37,20 +34,18 @@ and charged separately.
 ## Coin prices
 
 Explicit per-model map in `src/lib/coins/economy.ts` (`MODEL_COINS`) uses
-billable bands 4 / 8 / 12 / 40 / 80 / 160 per fighter. The source editorial
-bands remain in the file so each model's uplift is auditable. The 4-coin band
-is the free-tier ceiling; GPT-5/GPT-6 reasoning variants and the most expensive
-models occupy the higher bands.
-`economy.test.ts` enforces two invariants on every run:
+**1 / 2 / 4 / 8 / 12 / 20 coins** per fighter. Every existing model keeps its
+pre-audit price, including DeepSeek V4 Pro and GLM 5.2 at 1 coin. Astra and
+Fable 5.1 are 20; DeepSeek Vision is 1. The default DeepSeek Flash + GPT-5.4
+Mini match costs **2 coins**; Astra + Flash costs **21**; Fable vs Fable is **40**.
 
-- every catalog model has an **explicit** coin price (an own-property check now rejects fallback-only entries);
-- every model clears a conservative **≥5× planning comparison** at the lowest
-  net pack value, including short/medium/long fighter output;
-- every deep/long catalog pairing clears the same floor after the included Auto
-  judge allocation, search fees, retry allowance, and operating overhead;
-- every selectable third-model judge clears the floor against its verdict cost.
+Tests check explicit catalog coverage, the original price bands, match/judge
+charges, daily eligibility and pack offers. Provider cost estimates remain
+separate: a cost increase is information to review, not permission to raise
+model prices, change pack values or add fees. No 5× margin is claimed or enforced.
+When adding a model, update registry + provider pricing + explicit coin price.
 
-When adding a model: registry + pricing + `MODEL_COINS`, or the tests fail.
+### Informational cost estimates
 
 The 700-coin pack is the least-revenue case. With the documented processor
 allowance of 10% plus $0.30 per order, its net is $17.691, or **$0.0252729 per
@@ -71,15 +66,8 @@ These are conservative planning assumptions, not a profit guarantee and not a
 claim that the provider ledger bounds the final invoice. The checked-in GitHub
 Actions workflow runs economy tests alongside lint, TypeScript and build.
 
-For scale, the estimator puts one DeepSeek V4 Flash fighter at about $0.0084
-for a short match, $0.0110 for legacy long output, and $0.0359 for Deep Debate.
-GPT-6 Astra is about $0.3016 for a short match and $0.6006 for Deep Debate;
-its 160-coin fighter price is deliberately much higher because its published
-output rate is $50/M tokens and it carries hidden reasoning. A conservative
-Deep Debate match pairing DeepSeek V4 Flash with Haiku 4.5 (legacy long
-profile) is about $0.1325 including the Auto judge, six search calls, retries,
-and overhead; the corresponding charge is 40 coins (16 fighter coins × 2,
-plus 4 Auto allocation and 20 Deep Debate coins).
+The cost helpers retain reasoning, judge, search, retry and overhead estimates.
+They do not alter the billable map or guarantee profitability at existing prices.
 
 ## Free tier & packs
 
@@ -107,8 +95,7 @@ plus 4 Auto allocation and 20 Deep Debate coins).
     `rl_hit` brute-force limiter `coin_redeem_promo` uses.
 - Daily coins cover fighters **up to 4 coins** (`FREE_MAX_FIGHTER_COINS`);
   fighters above 4 coins (purple ★ chip) need purchased/promo coins. The
-  included Auto allocation is daily-eligible; Deep Debate's 20-coin metered
-  add-on is purchased/promo funded.
+  Auto judge is free; Deep Debate’s 2-coin add-on is daily-eligible.
 - Packs (owner-set): **100/$4.99 · 250/$9.99 · 700/$19.99** — `/pricing` buy
   buttons go to `/api/checkout?pack=N` when `NEXT_PUBLIC_PAYMENTS_ENABLED=true`
   (signed-out → the START signup gate); otherwise the disabled "coming soon"

@@ -12,6 +12,8 @@ The current launch shape is:
 - real providers: OpenAI, DeepSeek, OpenRouter
 - recorded demo video on the home page
 
+Coin prices retain the original 1/2/4/8/12/20 scale. Auto judging is free, Deep Debate adds 2 coins, and the daily allowance and pack offers are unchanged. Provider cost estimates do not automatically change customer prices; see [Coin Economy](docs/23_COINS.md).
+
 ## Quick Start
 
 ```bash

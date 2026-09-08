@@ -28,7 +28,6 @@ export const PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "tr
  *  so unused coins simply cease to matter at midnight UTC — nothing to expire. */
 export const FREE_DAILY_COINS = 15;
 
-/** Daily coins only work on fighters up to this band; pricier fighters charge
- * the purchased/promo balance only. Deep Debate's metered add-on is also
- * purchased/promo funded, even when both fighters are in this band. */
+/** Daily coins cover fighters up to this band and the Deep Debate add-on.
+ * Pricier fighters (8/12/20) use purchased/promo coins. */
 export const FREE_MAX_FIGHTER_COINS = 4;

@@ -29,7 +29,7 @@ Each message card shows compact cost data (`$0.0031 • 842 tok • 2.4s`); expa
 
 DeepSeek uses current peak rates conservatively; off-peak invoices can be lower. Astra cache writes cost $12.50/M input tokens, versus $10/M ordinary input and $1/M cache hits. `TokenUsage.cacheWriteInputTokens` retains provider-reported writes; the calculation bounds them to non-hit input and adds only the write surcharge.
 
-Every actual provider attempt reserves a conservative amount atomically before dispatch. Known usage reconciles once; failures, timeouts and missing usage retain bookings. OpenRouter cost receipts are preferred when available. Ledger values remain tariff estimates, not invoice guarantees. Coin estimates use the cheapest net pack after fee, retry, operating, judge and search allowances; 5× is a planning target, not guaranteed profit. See [audit fixes](27_AUDIT_FIXES_2026-09-08.md).
+Every actual provider attempt reserves a conservative amount atomically before dispatch. Known usage reconciles once; failures, timeouts and missing usage retain bookings. OpenRouter cost receipts are preferred when available. Ledger values remain tariff estimates, not invoice guarantees. Cost planning includes net pack revenue and fee, retry, operating, judge and search allowances. These estimates do not set customer coin prices or enforce a 5× margin; the original pricing scale is preserved. See [audit fixes](27_AUDIT_FIXES_2026-09-08.md).
 
 Pricing never lives in UI components.
 

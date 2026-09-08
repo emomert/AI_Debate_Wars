@@ -58,6 +58,8 @@ The app builds and its existing architecture remains usable. This is a targeted 
 
 ### P2 — The advertised margin floor uses a nominal coin value
 
+**Later owner correction:** the initial coin changes described below were superseded. Existing prices, including DeepSeek Pro and GLM 5.2 at 1 coin, are restored. The fix keeps accurate cost estimates and removes the misleading margin guarantee instead of increasing customer prices. See [the current coin specification](23_COINS.md).
+
 **Evidence:** `src/lib/coins/economy.ts` uses `$0.05` per coin for its 5× estimate, but the 700-coin pack sells for `$19.99`, or approximately `$0.02856` per coin before fees and taxes. A 20-coin Astra fighter has an estimated API cost of `$0.1918` under the existing three-short-round profile; that is about **2.98× gross revenue/API cost** at the largest pack, not 5×. The estimate excludes the included judge, Deep Debate expansion, retries, unusually long reasoning, and many operating costs. Several older OpenAI reasoning models also remain outside the estimator's explicit reasoning set.
 
 **Changed here:** added reasoning estimates and explicit coin prices for the new entries; updated DeepSeek Pro and GLM 5.2 from 1 to 2 coins after published price increases. Strengthened the coverage test so a fallback price cannot masquerade as an explicit price. Kept existing pack offers and the nominal-margin policy unchanged.

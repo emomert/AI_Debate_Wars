@@ -193,9 +193,6 @@ export function SetupSummaryCard({
               <p className="font-heading text-base font-extrabold leading-none">
                 {d.coins.totalCostValue(totalCoins)}
               </p>
-              <p className="mt-1 max-w-[15rem] text-[10px] font-semibold leading-tight text-night/55">
-                {d.coins.totalCostNote}
-              </p>
             </div>
           </div>
         ) : null}

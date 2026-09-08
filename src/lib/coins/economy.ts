@@ -1,21 +1,8 @@
 /**
- * The coin economy (docs/23_COINS.md).
- *
- * One rule users see: a match costs fighter A + fighter B coins. Modifiers:
- * long length ×2 (on the fighter total), a 4-coin included Auto allocation,
- * and Deep Debate +20 flat. The judge is
- * priced separately at the verdict route (Auto is free; a picked third-model
- * judge costs its coin price) — see judgeCoinCost.
- *
- * Coin prices are an EXPLICIT per-model map (auditable, owner-approved) derived
- * from conservative per-match API estimates. The price floor uses the least
- * valuable pack after a processor fee allowance (not the nominal 5¢ value).
- * The old 1/2/4/8/12/20 bands are retained as source bands below and uplifted
- * into the current 4/12/40/80/160 bands. This keeps every catalog id explicit
- * while making long/deep matches and the included Auto judge pay their costs.
- * economy.test.ts enforces coverage, net-pack margins, and deep-match
- * combinations against pricing.ts, so a price drift or a new model without a
- * coin price fails the test suite, which runs in the GitHub Actions workflow.
+ * Owner-set coin prices (docs/23_COINS.md): fighter A + fighter B,
+ * legacy long length ×2, Deep Debate +2, Auto judge free.
+ * A picked third-model judge costs its explicit model price separately.
+ * Cost estimates are informational and must not automatically reprice coins.
  */
 
 import { FREE_MAX_FIGHTER_COINS } from "./config";
@@ -27,7 +14,7 @@ import type { ResponseLength } from "@/lib/debate/debateTypes";
  * Pack prices are intentionally unchanged. These are conservative planning
  * assumptions for a payment processor; they are not a promise of profit.
  * A fixed fee matters most for the smallest pack, so the 700-coin pack is the
- * least-revenue case used by the margin invariant.
+ * least-revenue case used for cost planning.
  */
 export const PROCESSOR_FEE_RATE = 0.1;
 export const PROCESSOR_FIXED_FEE_USD = 0.3;
@@ -35,14 +22,10 @@ export const PROCESSOR_FIXED_FEE_USD = 0.3;
 /** Nominal comparison value retained for display/compatibility only. */
 export const COIN_USD = 0.05;
 
-/** Every band must clear this multiple of estimated API cost at retail. */
-export const MIN_MARGIN_MULTIPLE = 5;
-/** Coins allocated to the verdict call that is included with every match. */
-export const INCLUDED_AUTO_JUDGE_COIN_ALLOCATION = 4;
-/** Search + longer-output add-on. It is purchased balance, even for free-tier fighters. */
-export const DEEP_DEBATE_COIN_SURCHARGE = 20;
+/** Flat Deep Debate add-on; daily coins may cover it. */
+export const DEEP_DEBATE_COIN_SURCHARGE = 2;
 
-export type CoinPrice = 4 | 8 | 12 | 40 | 80 | 160;
+export type CoinPrice = 1 | 2 | 4 | 8 | 12 | 20;
 
 /** Owner-approved packs; checkout availability depends on Polar env + flag. */
 export const COIN_PACKS: ReadonlyArray<{ usd: number; coins: number }> = [
@@ -63,11 +46,9 @@ export function netCoinUsd(pack: { usd: number; coins: number }): number {
 /** The least revenue a coin can represent across the currently offered packs. */
 export const LOWEST_NET_COIN_USD = Math.min(...COIN_PACKS.map(netCoinUsd));
 
-/** Per-fighter coin price, per match. Explicit so a review can eyeball it. */
-type LegacyCoinPrice = 1 | 2 | 4 | 8 | 12 | 20;
-
-const BASE_MODEL_COINS: Readonly<Record<string, LegacyCoinPrice>> = {
-  // September 2026 additions; estimates include hidden reasoning.
+/** Explicit per-fighter prices; preserve existing prices when adding models. */
+export const MODEL_COINS: Readonly<Record<string, CoinPrice>> = {
+  // September 2026 additions on the existing coin scale.
   "gpt-6-astra": 20,
   "deepseek-v4-flash-vision-exp": 1,
   "anthropic/claude-fable-5.1": 20,
@@ -81,7 +62,7 @@ const BASE_MODEL_COINS: Readonly<Record<string, LegacyCoinPrice>> = {
   "z-ai/glm-5.3-flash": 1,
   "tencent/hy4-preview": 2,
   "meta/muse-glimmer-30b": 1,
-  // ── Source band 1 (Budget) ──────────────────────────────────────────────
+  // ── 1 coin (Budget) ─────────────────────────────
   "gpt-5.4-mini": 1,
   "gpt-5.4-nano": 1,
   "gpt-5-mini": 1,
@@ -89,9 +70,11 @@ const BASE_MODEL_COINS: Readonly<Record<string, LegacyCoinPrice>> = {
   "gpt-4.1-mini": 1,
   "gpt-4.1-nano": 1,
   "gpt-4o-mini": 1,
+  "deepseek-v4-pro": 1,
   "deepseek-v4-flash": 1,
   "xiaomi/mimo-v2.5-pro": 1,
   "xiaomi/mimo-v2.5": 1,
+  "z-ai/glm-5.2": 1,
   "z-ai/glm-4.7-flash": 1,
   "qwen/qwen3.7-plus": 1,
   "qwen/qwen3.7-flash": 1,
@@ -124,9 +107,7 @@ const BASE_MODEL_COINS: Readonly<Record<string, LegacyCoinPrice>> = {
   "moonshotai/kimi-k2": 1,
   "google/gemini-2.5-flash-lite": 1,
   "tencent/hunyuan-a13b-instruct": 1,
-  // ── Source band 2 (Standard) ───────────────────────────────────────────
-  "deepseek-v4-pro": 2,
-  "z-ai/glm-5.2": 2,
+  // ── 2 coins (Standard — ≤ $0.02) ───────────────────────────────────────
   "gpt-4.1": 2,
   "gpt-4o": 2,
   "x-ai/grok-4.3": 2,
@@ -150,25 +131,22 @@ const BASE_MODEL_COINS: Readonly<Record<string, LegacyCoinPrice>> = {
   "moonshotai/kimi-k2-thinking": 2,
   "amazon/nova-premier-v1": 2,
   "x-ai/grok-4.20-multi-agent": 2,
-  // ── Source band 4 (Premium) ─────────────────────────────────────────────
+  // ── 4 coins (Premium — ≤ $0.04; the free-tier ceiling) ─────────────────
   "gpt-5.6-luna": 4,
   "x-ai/grok-4.5": 4,
   "anthropic/claude-sonnet-5": 4,
   "google/gemini-3.5-flash": 4,
-  // 3.6 Flash thinks by default; the thinking-inclusive estimate needs 4.
   "google/gemini-3.6-flash": 4,
   "google/gemini-2.5-pro": 4,
   "mistralai/mistral-medium-3-5": 4,
   "anthropic/claude-sonnet-4.5": 4,
   "anthropic/claude-sonnet-4": 4,
-  // ── Source band 8 (Elite) ───────────────────────────────────────────────
+  // ── 8 coins (Elite — ≤ $0.08) ──────────────────────────────────────────
   "gpt-5.6-terra": 8,
   "gpt-5.4": 8,
   "anthropic/claude-sonnet-4.6": 8,
-  // Kimi K3 is priced like Sonnet 4.6 ($3/$15) AND thinks by default; its
-  // billable uplift is applied in ECONOMIC_BANDS below.
   "moonshotai/kimi-k3": 8,
-  // ── Source band 12 (Flagship) ───────────────────────────────────────────
+  // ── 12 coins (Flagship — ≤ $0.12) ──────────────────────────────────────
   "gpt-5.6-sol": 12,
   "gpt-5.5": 12,
   "anthropic/claude-opus-5": 12,
@@ -178,57 +156,12 @@ const BASE_MODEL_COINS: Readonly<Record<string, LegacyCoinPrice>> = {
   "anthropic/claude-opus-4.5": 12,
   "anthropic/claude-opus-4.1": 12,
   "anthropic/claude-opus-4": 12,
-  // ── Source band 20 (Boss) ───────────────────────────────────────────────
+  // ── 20 coins (Boss) ────────────────────────────────────────────────────
   "anthropic/claude-fable-5": 20,
 };
 
-/**
- * Economic uplift from the legacy editorial bands. A model's source band is
- * still easy to review above, while the exported map is the billable price
- * used by both client previews and server charging.
- */
-const ECONOMIC_BANDS: Record<LegacyCoinPrice, CoinPrice> = {
-  1: 4,
-  2: 12,
-  4: 40,
-  8: 80,
-  12: 160,
-  20: 160,
-};
-
-/** A small set of low-cost standard models stays inside the daily free band. */
-const FREE_STANDARD_MODELS = new Set([
-  "google/gemini-2.5-flash",
-  "amazon/nova-pro-v1",
-  "minimax/minimax-m1",
-  "x-ai/grok-4.20",
-  "z-ai/glm-4.7",
-  "z-ai/glm-4.5",
-  "anthropic/claude-haiku-4.5",
-  "nvidia/nemotron-3-ultra-550b-a55b",
-  "qwen/qwen3.6-plus",
-  "qwen/qwen3.5-plus-20260420",
-  "z-ai/glm-5",
-]);
-
-function billableBand(id: string, sourceBand: LegacyCoinPrice): CoinPrice {
-  const editorialBand = FREE_STANDARD_MODELS.has(id) ? 4 : ECONOMIC_BANDS[sourceBand];
-  // GPT-5/GPT-6 bill hidden reasoning even when the catalog entry has no
-  // reasoningEffort field. Keep their smallest family members out of the free
-  // band; the deep/long floor requires the 40-coin tier for them.
-  if ((/^gpt-[56](?:[.-]|$)/.test(id) || id === "gpt-4.1" || id === "gpt-4o") && editorialBand < 40) return 40;
-  return editorialBand;
-}
-
-export const MODEL_COINS: Readonly<Record<string, CoinPrice>> = Object.fromEntries(
-  Object.entries(BASE_MODEL_COINS).map(([id, sourceBand]) => [
-    id,
-    billableBand(id, sourceBand),
-  ]),
-) as Readonly<Record<string, CoinPrice>>;
-
 /** Unknown/legacy ids (removed models in old sessions) price defensively. */
-const FALLBACK_COINS: CoinPrice = 12;
+const FALLBACK_COINS: CoinPrice = 2;
 
 export function coinPriceForModel(modelId: string): CoinPrice {
   return MODEL_COINS[modelId] ?? FALLBACK_COINS;
@@ -251,30 +184,23 @@ export interface JudgeCostInput {
 const lengthMultiplier = (l: ResponseLength) => (l === "long" ? 2 : 1);
 
 /** Total coins a MATCH charges (fighters only — the judge is separate):
- *  (A + B) × lengthMult, +INCLUDED_AUTO_JUDGE_COIN_ALLOCATION for the included
- *  Auto verdict, and +DEEP_DEBATE_COIN_SURCHARGE for Deep Debate. Deep Debate is a paid add-on:
- *  it buys six search calls and the longer response budget, so the surcharge
- *  is included in premiumCoinCost too.
- */
+ *  (A + B) × lengthMult, +2 for Deep Debate. */
 export function matchCoinCost(input: CoinCostInput): number {
   const fighters = coinPriceForModel(input.modelAId) + coinPriceForModel(input.modelBId);
-  return fighters * lengthMultiplier(input.responseLength) +
-    INCLUDED_AUTO_JUDGE_COIN_ALLOCATION +
-    (input.deepDebate ? DEEP_DEBATE_COIN_SURCHARGE : 0);
+  return fighters * lengthMultiplier(input.responseLength) + (input.deepDebate ? DEEP_DEBATE_COIN_SURCHARGE : 0);
 }
 
 /**
  * The premium share of a match — the fighter coins daily free coins may NOT pay
- * (fighters above FREE_MAX_FIGHTER_COINS with the length multiplier), plus the
- * metered Deep Debate add-on.
+ * (fighters above FREE_MAX_FIGHTER_COINS with the length multiplier). The deep
+ * surcharge and free-band models stay daily-eligible.
  */
 export function premiumCoinCost(input: CoinCostInput): number {
   const premium = [input.modelAId, input.modelBId]
     .map(coinPriceForModel)
     .filter((c) => c > FREE_MAX_FIGHTER_COINS)
     .reduce((s, c) => s + c, 0);
-  return premium * lengthMultiplier(input.responseLength) +
-    (input.deepDebate ? DEEP_DEBATE_COIN_SURCHARGE : 0);
+  return premium * lengthMultiplier(input.responseLength);
 }
 
 /**
@@ -296,7 +222,7 @@ export function judgePremiumCoinCost(judge: JudgeCostInput | undefined): number 
   return c > FREE_MAX_FIGHTER_COINS ? c : 0;
 }
 
-/* ---- conservative cost model used by the economic invariants ---- */
+/* ---- informational cost model, separate from coin prices ---- */
 
 /**
  * These values describe a three-round match and intentionally include costs
@@ -341,8 +267,7 @@ const DEEPSEEK_REASONING = new Set(["deepseek-v4-pro", "deepseek-v4-flash", "dee
  * Measured 2026-07-28: each burns hundreds of thinking tokens bare, and
  * effort:"low" does NOT reduce them (it raises them, or does nothing) — so the
  * tag is correctly absent, yet the tokens are still billed. Without this set
- * the estimator would price them as non-reasoners and the margin floor would be
- * fiction. Probe before adding here, exactly as for the tag itself (docs/07).
+ * the estimator would undercount their provider cost. Probe before adding here, exactly as for the tag itself (docs/07).
  */
 const OPENROUTER_DEFAULT_THINKERS = new Set([
   "google/gemini-3.7-flash", // Sept 8 probe: 289 bare -> 304 with low; leave uncapped.
