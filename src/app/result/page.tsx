@@ -20,6 +20,9 @@ import { RejudgePanel } from "@/components/result/RejudgePanel";
 import { SourcesList, mergeCitations } from "@/components/debate/SourcesList";
 import { isDebateComplete } from "@/lib/debate/orchestrator";
 import { validateSetup } from "@/lib/debate/validators";
+import { switchSidesConfig } from "@/lib/debate/rematch";
+import { COINS_ENABLED } from "@/lib/coins/config";
+import { matchCoinCost, judgeCoinCost } from "@/lib/coins/economy";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { useArena } from "@/lib/state/ArenaContext";
 import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
@@ -44,6 +47,7 @@ export default function ResultPage() {
   const { locale } = useLocale();
   const {
     config,
+    setConfig,
     sessions,
     activeBattleIndex,
     setActiveBattleIndex,
@@ -92,6 +96,25 @@ export default function ResultPage() {
       return;
     }
     startMatch();
+    router.push("/debate");
+  };
+
+  const reversedConfig = switchSidesConfig(session);
+  const reversedCost = matchCoinCost({
+    modelAId: reversedConfig.modelA.modelId,
+    modelBId: reversedConfig.modelB.modelId,
+    deepDebate: reversedConfig.deepDebate,
+    responseLength: reversedConfig.responseLength,
+  }) + judgeCoinCost({ mode: reversedConfig.judge.mode, modelId: reversedConfig.judge.model?.modelId });
+  const switchSides = () => {
+    const injectedSearchReady = availability ? availability.webSearch : null;
+    if (!validateSetup(reversedConfig, { injectedSearchReady, locale }).valid) {
+      setConfig(reversedConfig);
+      router.push("/setup");
+      return;
+    }
+    // Passing the config directly avoids starting with React's previous draft.
+    startMatch(reversedConfig);
     router.push("/debate");
   };
 
@@ -239,10 +262,17 @@ export default function ResultPage() {
         <ArcadeButton variant="primary-green" onClick={rematch}>
           {d.result.page.actions.rematch}
         </ArcadeButton>
+        <ArcadeButton variant="primary-yellow" onClick={switchSides} aria-describedby="switch-sides-note">
+          {d.result.page.actions.switchSides}
+          {COINS_ENABLED ? ` · ${reversedCost} 🪙` : ""}
+        </ArcadeButton>
         <ArcadeButton variant="neutral-white" onClick={() => router.push("/")}>
           {d.result.page.actions.home}
         </ArcadeButton>
       </div>
+      <p id="switch-sides-note" className="mx-auto mt-3 max-w-lg text-center text-xs text-ink/65">
+        {d.result.page.actions.switchSidesHint}
+      </p>
     </GameShell>
   );
 }

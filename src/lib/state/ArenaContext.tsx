@@ -137,8 +137,8 @@ interface ArenaContextValue {
   session: DebateSession | null;
   /** Replace the WHOLE match with a single battle (Try-a-Sample, reopen, clear). */
   setSession: (session: DebateSession | null) => void;
-  /** Build a fresh session PER battle from the current config and store them. */
-  startMatch: () => DebateSession[];
+  /** Build fresh battles; an explicit config also replaces the setup draft. */
+  startMatch: (nextConfig?: DebateConfig) => DebateSession[];
 
   soundEnabled: boolean;
   toggleSound: () => void;
@@ -286,20 +286,22 @@ export function ArenaProvider({ children }: { children: ReactNode }) {
     setConfigState((prev) => (prev.battles && prev.battles.length ? { ...prev, battles: [] } : prev));
   }, []);
 
-  const startMatch = useCallback(() => {
+  const startMatch = useCallback((nextConfig?: DebateConfig) => {
+    const source = nextConfig ?? config;
     // Single choke point for the match format. Matches are strictly 3 rounds
     // (July 2026), and Deep Debate additionally forces the standard tone —
     // Rematch buttons call startMatch without passing through the setup page's
     // normalization, so a stale persisted config must be clamped here too.
     const effective: DebateConfig = {
-      ...config,
+      ...source,
       roundCount: 3,
-      ...(config.deepDebate ? { tone: "serious" as const } : null),
+      ...(source.deepDebate ? { tone: "serious" as const } : null),
     };
     // Stamp the debate with the language it should run in — the live UI locale,
     // read straight from the cookie so it's correct even if the persisted config
     // predates the current choice. One session per battle pairing (1–3).
     const next = createDebateSessions({ ...effective, language: readClientLocale() });
+    if (nextConfig) setConfigState(effective);
     setSessionsState(next);
     setActiveBattleIndexState(0);
     return next;

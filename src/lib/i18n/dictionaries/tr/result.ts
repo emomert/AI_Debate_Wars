@@ -26,6 +26,8 @@ export const result = {
       backToArena: "↩ Arenaya dön",
       newSetup: "⚙️ Yeni Kurulum",
       rematch: "🔁 Rövanş",
+      switchSides: "⇄ Taraf değiştir",
+      switchSidesHint: "Taraf değiştir, aynı yarışmacılar karşıt görüşleri savunacak şekilde bu dövüşün yeni bir rövanşını başlatır.",
       home: "🏠 Ana sayfa",
     },
   },

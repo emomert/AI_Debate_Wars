@@ -8,6 +8,7 @@ Updated September 8, 2026. See [initial audit](26_PROJECT_AUDIT_2026-09-08.md) a
 - OpenAI, DeepSeek and paid OpenRouter catalog, including 13 verified September additions.
 - App-managed Brave search and citations for Deep Debate.
 - Supabase accounts, private history, community features, analytics, claim-gated daily coins and configured Polar integration.
+- Switch-sides rematches from the viewed result, keeping fighter tones and the selected judge; normal coin prices apply.
 
 ## Accepted September 8 release
 
@@ -27,4 +28,4 @@ Updated September 8, 2026. See [initial audit](26_PROJECT_AUDIT_2026-09-08.md) a
 
 ## Later product work
 
-Templates, rematches, tournaments, classroom features, richer exports and leaderboards remain possible additions. Turkish UI, Blitz, voices and cost displays remain disabled. Moderation remains opt-in; those existing product decisions are unchanged.
+Templates, tournaments, classroom features, richer exports and leaderboards remain possible additions. Regular and switch-sides rematches are available. The highlight-clip sample was declined and is not part of the website. Turkish UI, Blitz, voices and cost displays remain disabled. Moderation remains opt-in; those existing product decisions are unchanged.

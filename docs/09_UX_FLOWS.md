@@ -68,6 +68,21 @@
 9. After the final round, the judge deliberates (drum roll) and the verdict reveals.
 10. Result screen: verdict, scores, summary — with **share** (auto-unfurling link + image), **history auto-save** (signed-in users; visible retry on failure — July 2026, replaced the manual save button), **change judge & re-judge**, and rematch options.
 
+## Switch-sides rematch (September 8, 2026)
+
+The result screen has a **Switch sides** action beside Rematch, showing the
+normal coin total including a selected judge. It starts one new battle from
+the result currently being viewed: the former Against fighter now argues Pro,
+and the former Pro fighter argues Against. The topic, pace, Deep Debate setting,
+selected judge and each fighter's custom tone are retained. Slot colors follow
+the new positions. Multi-battle results replay only the selected battle.
+
+The action uses the saved session rather than the potentially unrelated setup
+draft and gives the rematch fresh session/turn IDs and an empty transcript.
+Normal billing applies; switching sides adds no fee. Invalid settings open
+the prepared setup for correction. Legacy matches use the current three-short-round
+Debate format and mandatory judging. The original saved result is unchanged.
+
 ## Blitz Mode
 
 > **Currently HIDDEN** behind `BLITZ_ENABLED = false` in

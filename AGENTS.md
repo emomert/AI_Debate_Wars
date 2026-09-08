@@ -36,6 +36,8 @@ Accepted for production release on September 8, 2026. The existing Supabase data
 
 ### Earlier implementation history
 
+- **September 8 switch-sides rematch:** the result action starts a fresh, normally billed single battle from the viewed session, swaps the models and their custom tones, keeps the selected judge and shared settings, and uses current launch-format limits. Its price is shown on the button. Do not derive this action from stale setup state or restart unrelated battles. The standalone highlight video sample was declined; do not add clips to the website.
+
 The entries below record earlier decisions; the dated snapshot above and current source take precedence where status has changed.
 
 The product is feature-complete and polished, in pre-public-launch state.

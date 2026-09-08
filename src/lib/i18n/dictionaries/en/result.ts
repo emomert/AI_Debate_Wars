@@ -26,6 +26,8 @@ export const result = {
       backToArena: "↩ Back to arena",
       newSetup: "⚙️ New Setup",
       rematch: "🔁 Rematch",
+      switchSides: "⇄ Switch sides",
+      switchSidesHint: "Switch sides starts a new rematch of this battle, with the same fighters arguing the opposite positions.",
       home: "🏠 Home",
     },
   },
